@@ -54,3 +54,5 @@ def fetch_data(
                 print(f"{ticker} downloaded and saved in data\\raw \
                       {ticker}.csv \n Run again to check availability")
 
+
+

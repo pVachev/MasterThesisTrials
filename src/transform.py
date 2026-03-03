@@ -17,7 +17,9 @@ def clean_data(tickers:list[str]) -> pd.DataFrame:
                        index_col="Date",
                        usecols=[0,1])
       df.index = pd.to_datetime(df.index)
-      df.rename({"Unnamed: 1":file}, axis=1, inplace=True)      
+      df.rename({"Unnamed: 1":file.removesuffix(".csv")}, 
+                axis=1, 
+                inplace=True)      
 
       dfs.append(df)
   final_data = pd.concat(dfs, axis=1) 

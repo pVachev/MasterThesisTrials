@@ -8,73 +8,36 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.style.use('ggplot')
 from hmmlearn import hmm
+from src.hmm import hmm_converge
 
 
 def main():
 
-    tickers = ["BND", "SPY", "^IRX"]
-#    
-# 
-# clean_data("BND")
-#    new_path = os.path.dirname(os.path.realpath(__file__)) + "\\raw\\"
+    tickers = ["SPY", "^IRX", "WFBIX"]
+
     df = clean_data(tickers)
 
+    n_states = 3
 
-    seed = 7 
+    df = diff_data(df, tickers)
 
-    df = diff_data(df)
+    x = prepare_data(df, tickers)
 
-    # print(df.head())
+    out, df_m, model = hmm_converge(x, 
+                                    n_states, 
+                                    tickers, 
+                                    cov_type="full",
+                                    return_details=True
 
+    )
     
-    cols = ["ExcessLogBND", "ExcessLogSPY"]
-
-    # # plot_returns(bnd,gspc)
-    df_m = df
-    df_m = df_m.resample("ME").sum()[cols].dropna()
-    df_m = df_m[cols]
-
-    print(df_m["ExcessLogBND"].mean())
-    print(df_m["ExcessLogSPY"].mean())
-    print(df)
     print(df_m)
-
-    X = df_m.to_numpy()
-
-    
-
-    n_states = 2
-
-
-    model = hmm.GaussianHMM(n_components=n_states, 
-                            n_iter=3000, 
-                            covariance_type="full",
-                            random_state=seed)
-    
-
-
-    model.fit(X)
-
-    states = model.predict(X)
-    probs = model.predict_proba(X)
-    df_m["state"] = states
-
+    print(df)
+    # # plot_returns(bnd,gspc)
 
     
+    
 
-
-    g = df_m.groupby(by=["state"])[cols]
-    out = pd.concat(
-        [
-            (100* g.mean()).add_prefix("mean_%_"),
-            (100 * g.std(ddof=1)).add_prefix("std_%_"),
-            df_m.groupby(["state"]).size().rename("n_obs"),
-    ],
-    axis=1)
-
-    out.sort_values(f"std_%_{cols[0]}", ascending=False)
-
-    print(out)
 
     # dist_plot(bnd)
 

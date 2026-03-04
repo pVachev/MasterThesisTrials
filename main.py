@@ -2,12 +2,8 @@ from data.getData import fetch_data
 from data.getData import FILEPATH
 from src.load import *
 import os
-import tabulate
 from src.transform import clean_data
-import numpy as np
-import matplotlib.pyplot as plt
 plt.style.use('ggplot')
-from hmmlearn import hmm
 from src.hmm import hmm_converge
 
 

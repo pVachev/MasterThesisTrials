@@ -6,56 +6,6 @@ from src.load import diff_data, prepare_data
 
 
 
-
-# def hmm_converge(df: pd.DataFrame, 
-#                  n_states: int,
-#                  cols: list[str],
-#                  cov_type: str,
-#                  seed = 7,
-#                  verbose=True, 
-#                  ):
-
-#     model = hmm.GaussianHMM(n_components=n_states, 
-#                             n_iter=300, 
-#                             covariance_type=cov_type,
-#                             random_state=seed)
-    
-#     df_m = df
-#     if verbose: 
-#         df_m = df_m.resample("ME").sum()[cols].dropna()
-#     df_m = df_m[cols]
-
-
-#     print(df_m["ExcessLogBND"].mean())
-#     print(df_m["ExcessLogSPY"].mean())
-#     print(df)
-#     print(df_m)
-
-#     X = df_m.to_numpy()
-
-
-#     model.fit(X)
-
-#     states = model.predict(X)
-#     probs = model.predict_proba(X)
-#     df_m["state"] = states
-
-
-#     g = df_m.groupby(by=["state"])[cols]
-#     out = pd.concat(
-#         [
-#             (100* g.mean()).add_prefix("mean_%_"),
-#             (100 * g.std(ddof=1)).add_prefix("std_%_"),
-#             df_m.groupby(["state"]).size().rename("n_obs"),
-#     ],
-#     axis=1)
-
-#     out.sort_values(f"std_%_{cols[0]}", ascending=False)
-
-#     return out 
-
-
-
 def hmm_converge(
     df: pd.DataFrame,
     n_states: int,
@@ -161,7 +111,7 @@ def hmm_converge(
         iters = getattr(model.monitor_, "iter", None)
         if conv is not None:
             print(f"Converged: {conv}" + (f" | iters: {iters}" if iters is not None else ""))
-        print(out)
+        # print(out)
 
     if return_details:
         return out, df_m, model

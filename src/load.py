@@ -7,51 +7,49 @@ from src.transform import yld_to_lnr
 
 
 
-# def diff_data(df: pd.DataFrame) -> pd.DataFrame:
-#     rf = yld_to_lnr(df["^IRX"]).reindex(df.index).ffill()
-
-#     df = df.sort_index().copy()
-#     df["LogBND"] = np.log(df["BND"]).diff()
-#     df["LogSPY"] = np.log(df["SPY"]).diff()
-
-#     df["ExcessLogBND"] = df["LogBND"] - rf
-#     df["ExcessLogSPY"] = df["LogSPY"] - rf
-
-#     df = df.dropna(subset=["ExcessLogBND", "ExcessLogSPY"])
-#     return df
-
-import numpy as np
-import pandas as pd
-
-def diff_data(df: pd.DataFrame, cols: list[str], rf_col: str = "^IRX") -> pd.DataFrame:
+def diff_data(
+    df: pd.DataFrame,
+    cols: list[str],
+    rf_col: str = "^IRX",
+    yield_cols: list[str] | None = None,
+) -> pd.DataFrame:
     """
     Adds Log{col} and ExcessLog{col} for each col in `cols`.
-    ExcessLog{col} = log-diff(col) - rf, where rf comes from rf_col via yld_to_lnr.
-    """
 
-        # ensure rf exists
+    - If col is in `yield_cols`: Log{col} = yld_to_lnr(col) (aligned to df.index)
+    - Else:                  Log{col} = log(col).diff()
+
+    ExcessLog{col} = Log{col} - rf
+    rf is built from rf_col via yld_to_lnr.
+    """
     if rf_col not in df.columns:
         raise KeyError(f"Missing risk-free column in df: {rf_col}")
 
     # ignore rf_col if user passed it in cols
     cols = [c for c in cols if c != rf_col]
 
-
-
-    missing = [c for c in ([rf_col] + cols) if c not in df.columns]
+    missing = [c for c in cols if c not in df.columns]
     if missing:
         raise KeyError(f"Missing column(s) in df: {missing}")
 
+    yield_set = set(yield_cols or [])
+    # rf itself is yield-like by construction (even if not included in yield_cols)
     rf = yld_to_lnr(df[rf_col]).reindex(df.index).ffill()
 
     df = df.sort_index().copy()
 
     ex_cols: list[str] = []
     for col in cols:
-        log_name = f"Log{col}"          # if you truly meant first character: f"Log{col[0]}"
-        ex_name  = f"ExcessLog{col}"    # if you truly meant first character: f"ExcessLog{col[0]}"
+        log_name = f"Log{col}"
+        ex_name  = f"ExcessLog{col}"
 
-        df[log_name] = np.log(df[col]).diff()
+        if col in yield_set:
+            # yield -> daily log return, aligned
+            df[log_name] = yld_to_lnr(df[col]).reindex(df.index).ffill()
+        else:
+            # price -> log-diff
+            df[log_name] = np.log(df[col]).diff()
+
         df[ex_name] = df[log_name] - rf
         ex_cols.append(ex_name)
 

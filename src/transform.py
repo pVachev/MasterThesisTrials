@@ -14,11 +14,13 @@ def clean_data(tickers:list[str]) -> pd.DataFrame:
     if file.endswith(".csv"):
       df = pd.read_csv(FILEPATH + file,
                        skiprows=lambda x: x in [0,1],
-                       index_col="Date",
+                       index_col=0,
                        usecols=[0,1])
       df.index = pd.to_datetime(df.index)
-      df.rename({"Unnamed: 1":file.removesuffix(".csv")}, 
-                axis=1, 
+
+      # ticker = file.removesuffix(".csv")
+
+      df.rename(columns={df.columns[0]:file.removesuffix(".csv")}, 
                 inplace=True)      
 
       dfs.append(df)

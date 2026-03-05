@@ -6,56 +6,44 @@ from scipy import stats
 from src.transform import yld_to_lnr
 
 
-
 def diff_data(
     df: pd.DataFrame,
     cols: list[str],
     rf_col: str = "^IRX",
-    yield_cols: list[str] | None = None,
+    monthly_cols: list[str] | None = None,
 ) -> pd.DataFrame:
-    """
-    Adds Log{col} and ExcessLog{col} for each col in `cols`.
 
-    - If col is in `yield_cols`: Log{col} = yld_to_lnr(col) (aligned to df.index)
-    - Else:                  Log{col} = log(col).diff()
-
-    ExcessLog{col} = Log{col} - rf
-    rf is built from rf_col via yld_to_lnr.
-    """
     if rf_col not in df.columns:
         raise KeyError(f"Missing risk-free column in df: {rf_col}")
 
-    # ignore rf_col if user passed it in cols
     cols = [c for c in cols if c != rf_col]
 
     missing = [c for c in cols if c not in df.columns]
     if missing:
         raise KeyError(f"Missing column(s) in df: {missing}")
 
-    yield_set = set(yield_cols or [])
-    # rf itself is yield-like by construction (even if not included in yield_cols)
-    rf = yld_to_lnr(df[rf_col]).reindex(df.index).ffill()
+    monthly_set = set(monthly_cols or [])
 
     df = df.sort_index().copy()
+    rf = yld_to_lnr(df[rf_col]).reindex(df.index).ffill()
 
     ex_cols: list[str] = []
     for col in cols:
         log_name = f"Log{col}"
         ex_name  = f"ExcessLog{col}"
 
-        if col in yield_set:
-            # yield -> daily log return, aligned
-            df[log_name] = yld_to_lnr(df[col]).reindex(df.index).ffill()
+        if col in monthly_set:
+            m = df[col].ffill().resample("ME").last()
+            m_log = np.log(m).diff()
+            # IMPORTANT: align to daily index but DO NOT ffill across days
+            df[log_name] = m_log.reindex(df.index)
         else:
-            # price -> log-diff
             df[log_name] = np.log(df[col]).diff()
 
         df[ex_name] = df[log_name] - rf
         ex_cols.append(ex_name)
 
-    df = df.dropna(subset=ex_cols)
-    return df
-
+    return df.dropna(subset=ex_cols)
 
 def prepare_data(df: pd.DataFrame, cols: list[str], rf_col: str = "^IRX") -> pd.DataFrame:
     """

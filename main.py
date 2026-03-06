@@ -8,8 +8,10 @@ from src.hmm import hmm_converge
 
 
 def main():
-    tickers = ["SPY", "WFBIX","^IRX", "LBUSTRUU"]
-    m_tickers = ["LBUSTRUU"]
+    tickers = ["SPY", "WFBIX","^IRX", "LBUSTRUU", "LT09TRUU"]
+    m_tickers = ["LBUSTRUU", "LT09TRUU"]
+    m_tickersA = ["LBUSTRUU"]
+    m_tickersB = ["LT09TRUU"]
    
 
     """
@@ -20,32 +22,37 @@ def main():
     df = clean_data(tickers, m_tickers)
 
     # print(df)
-
+    # df.to_excel("df_debug.xlsx")
  
 
     tickers_A = ["SPY", "WFBIX", "^IRX"]
     tickers_B = ["SPY", "LBUSTRUU", "^IRX"]
-    n_states = 3
+    tickers_C = ["SPY", "LT09TRUU", "^IRX"]
+
+    n_states = 4
 
 
     dfA = diff_data(df, tickers_A)
-    dfB = diff_data(df, tickers_B, monthly_cols=m_tickers)
+    dfB = diff_data(df, tickers_B, monthly_cols=m_tickersA)
+    dfC = diff_data(df, tickers_C, monthly_cols=m_tickersB)
 
     # print(dfA)
     # print(dfB)
 
     xA = prepare_data(dfA, tickers_A)
     xB = prepare_data(dfB, tickers_B)
+    xC = prepare_data(dfC, tickers_C)
 
     # print(xA)
     # print(xB)
+    # print(xC)
 
 
     print("--------------------------THIS IS MODEL A (BOND ETF)--------------------------")
     out_A, df_mA, model_A = hmm_converge(xA, 
                                     n_states, 
                                     tickers_A, 
-                                    cov_type="full",
+                                    cov_type="diag",
                                     return_details=True)
     
 
@@ -55,9 +62,9 @@ def main():
 
     print("--------------------------THIS IS MODEL B (LBUSTRUU)--------------------------")
     out_B, df_mB, model_B = hmm_converge(xB, 
-                                    n_states=3, 
+                                    n_states, 
                                     cols=tickers_B, 
-                                    cov_type="full",
+                                    cov_type="diag",
                                     return_details=True)
     
     
@@ -67,6 +74,19 @@ def main():
     print(out_B)
 
 
+
+    print("--------------------------THIS IS MODEL C (LT09TRUU)--------------------------")
+    out_C, df_mC, model_C = hmm_converge(xC, 
+                                    n_states, 
+                                    cols=tickers_C, 
+                                    cov_type="diag",
+                                    return_details=True)
+    
+    
+
+    print(model_C)
+    print(df_mC)
+    print(out_C)
 
 
     # df_mB.to_excel("df_mB.xlsx")

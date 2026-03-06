@@ -22,7 +22,7 @@ def clean_data(
 
             df = pd.read_csv(
                 FILEPATH + file,
-                skiprows=lambda x: x in [0, 1],
+                skiprows=lambda x: x in [0,1],
                 index_col=0,
                 usecols=[0,1],
             )
@@ -48,19 +48,15 @@ def clean_data(
     return final_data
 
 
-def yld_to_lnr(df:pd.DataFrame):
-  
-  """
-  Function changes yields to a return (Useful for t-bills)
-  """
 
-  df = df / 100
-
-  df = df.shift(1) / 360
-  
-  df = np.log1p(df)
-
-  return df.dropna()
+def yld_to_lnr(y: pd.Series, periods_per_year: int) -> pd.Series:
+    """
+    Convert an annualized yield in % to per-period log return:
+      r_t = log(1 + (y_{t-1}/100)/periods_per_year)
+    """
+    y = y.astype(float) / 100.0
+    r = np.log1p(y.shift(1) / periods_per_year)
+    return r
 
 
 

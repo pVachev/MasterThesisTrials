@@ -5,45 +5,76 @@ import matplotlib.ticker as mtick
 from scipy import stats
 from src.transform import yld_to_lnr
 
-
 def diff_data(
     df: pd.DataFrame,
     cols: list[str],
     rf_col: str = "^IRX",
-    monthly_cols: list[str] | None = None,
+    freq: str = "ME",                    # "D" or "ME"
+    monthly_cols: list[str] | None = None,  # only matters when freq="ME"
 ) -> pd.DataFrame:
+    """
+    Computes Log{col} and ExcessLog{col} at the requested frequency.
 
+    freq="D":
+      - use df as-is (daily levels)
+      - Log{col} = log(level).diff()
+      - rf = yld_to_lnr(IRX, periods_per_year=360)
+
+    freq="ME":
+      - build a month-end LEVEL panel for rf_col + cols:
+          * daily series -> resample("ME").last() (labels at calendar month-end even if weekend)
+          * monthly Bloomberg series -> force index to month-end (Period -> Timestamp), de-dup by month
+      - Log{col} = log(level).diff() on monthly index
+      - rf = yld_to_lnr(IRX, periods_per_year=12)
+    """
     if rf_col not in df.columns:
         raise KeyError(f"Missing risk-free column in df: {rf_col}")
 
     cols = [c for c in cols if c != rf_col]
-
     missing = [c for c in cols if c not in df.columns]
     if missing:
         raise KeyError(f"Missing column(s) in df: {missing}")
 
-    monthly_set = set(monthly_cols or [])
-
     df = df.sort_index().copy()
-    rf = yld_to_lnr(df[rf_col]).reindex(df.index).ffill()
 
-    ex_cols: list[str] = []
-    for col in cols:
-        log_name = f"Log{col}"
-        ex_name  = f"ExcessLog{col}"
+    if freq.upper() in {"ME", "M"}:
+        monthly_set = set(monthly_cols or [])
+        needed = [rf_col] + cols
+        out = pd.DataFrame(index=df.index.to_period("M").to_timestamp("M").unique()).sort_index()
 
-        if col in monthly_set:
-            m = df[col].ffill().resample("ME").last()
-            m_log = np.log(m).diff()
-            # IMPORTANT: align to daily index but DO NOT ffill across days
-            df[log_name] = m_log.reindex(df.index)
-        else:
-            df[log_name] = np.log(df[col]).diff()
+        for c in needed:
+            s = df[c].dropna().sort_index()
 
-        df[ex_name] = df[log_name] - rf
-        ex_cols.append(ex_name)
+            if c in monthly_set:
+                # Bloomberg monthly: its date is already month-end, but make it deterministic
+                s.index = s.index.to_period("M").to_timestamp("M")
+                s = s[~s.index.duplicated(keep="last")]
+                out[c] = s
+            else:
+                # Daily series -> last available obs in month, indexed at calendar month-end
+                out[c] = s.resample("ME").last()
 
-    return df.dropna(subset=ex_cols)
+        rf = yld_to_lnr(out[rf_col], periods_per_year=12)
+
+        ex_cols = []
+        for c in cols:
+            out[f"Log{c}"] = np.log(out[c]).diff()
+            out[f"ExcessLog{c}"] = out[f"Log{c}"] - rf
+            ex_cols.append(f"ExcessLog{c}")
+
+        return out.dropna(subset=ex_cols)
+
+    else:
+        # Daily
+        rf = yld_to_lnr(df[rf_col], periods_per_year=360).reindex(df.index).ffill()
+
+        ex_cols = []
+        for c in cols:
+            df[f"Log{c}"] = np.log(df[c]).diff()
+            df[f"ExcessLog{c}"] = df[f"Log{c}"] - rf
+            ex_cols.append(f"ExcessLog{c}")
+
+        return df.dropna(subset=ex_cols)
 
 def prepare_data(df: pd.DataFrame, cols: list[str], rf_col: str = "^IRX") -> pd.DataFrame:
     """

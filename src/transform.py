@@ -26,7 +26,16 @@ def clean_data(
                 index_col=0,
                 usecols=[0,1],
             )
-            df.index = pd.to_datetime(df.index)
+            raw_idx = df.index.astype(str)
+
+            try:
+                if ticker in monthly_set:
+                    df.index = pd.to_datetime(raw_idx, dayfirst=True, errors="raise")
+                else:
+                    df.index = pd.to_datetime(raw_idx, dayfirst=False, errors="raise")
+            except Exception:
+                # last resort: try the other convention
+                df.index = pd.to_datetime(raw_idx, dayfirst=(ticker not in monthly_set), errors="raise")
 
             # rename the single value column to the ticker
             df.rename(columns={df.columns[0]: ticker}, inplace=True)

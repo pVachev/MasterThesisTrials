@@ -2,6 +2,8 @@ import pandas as pd
 from hmmlearn import hmm 
 import numpy as np   
 from src.load import diff_data, prepare_data
+import warnings
+
 
 
 
@@ -13,7 +15,7 @@ def hmm_converge(
     seed: int = 7,
     n_iter: int = 300,
     rf_col: str = "^IRX",
-    verbose: bool = True,
+    verbose: bool = False,
     return_details: bool = False,
     diff_kwargs: dict | None = None,   # pass monthly_cols/freq/etc if needed
 ):
@@ -32,15 +34,20 @@ def hmm_converge(
 
     X = df_m.to_numpy(dtype=float)
 
-    model = hmm.GaussianHMM(
-        n_components=n_states,
-        n_iter=n_iter,
-        covariance_type=cov_type,
-        random_state=seed,
-    ).fit(X)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="Model is not converging.*"
+        )
+        model = hmm.GaussianHMM(
+                n_components=n_states,
+                n_iter=n_iter,
+                covariance_type=cov_type,
+                random_state=seed,
+            ).fit(X)
 
-    states = model.predict(X)
-    probs = model.predict_proba(X)
+        states = model.predict(X)
+        probs = model.predict_proba(X)
 
     df_m = df_m.copy()
     df_m["state"] = states
@@ -66,3 +73,83 @@ def hmm_converge(
             print(f"Converged: {conv}" + (f" | iters: {iters}" if iters is not None else ""))
 
     return (out, df_m, model) if return_details else out
+
+
+def hmm_sweep_seeds(
+    df: pd.DataFrame,          # xA / xB / xC (already monthly ExcessLog cols)
+    n_states: int,
+    cols: list[str],           # tickers list e.g. ["SPY","WFBIX","^IRX"] (ok)
+    cov_type: str,
+    seeds=range(1, 41),
+    n_iter: int = 300,
+    min_state_frac: float = 0.05,
+    verbose: bool = False,
+):
+    rows = []
+    best_any = None
+    best_stable = None
+
+    for seed in seeds:
+        try: 
+            out, df_m, model = hmm_converge(
+                df=df,
+                n_states=n_states,
+                cols=cols,
+                cov_type=cov_type,
+                seed=seed,
+                n_iter=n_iter,
+                verbose=False,
+                return_details=True,
+            )
+        except Exception as e:
+            rows.append({
+                "seed": seed,
+                "logL": np.nan,
+                "n_states_used": 0,
+                "min_state_frac": 0.0,
+                "collapsed": True,
+                "error": type(e).__name__,
+            })
+            continue
+
+
+        feat_cols = [c for c in df_m.columns if c.startswith("ExcessLog")]
+        X = df_m[feat_cols].to_numpy(dtype=float)
+
+        logL = float(model.score(X))
+
+        occ = df_m["state"].value_counts(normalize=True).to_dict()
+        occ_full = {k: float(occ.get(k, 0.0)) for k in range(n_states)}
+        min_frac = min(occ_full.values())
+        n_used = sum(v > 0 for v in occ_full.values())
+        collapsed = (n_used < n_states) or (min_frac < min_state_frac)
+
+        row = {
+            "seed": seed,
+            "logL": logL,
+            "n_states_used": n_used,
+            "min_state_frac": min_frac,
+            "collapsed": collapsed,
+        }
+        for k in range(n_states):
+            row[f"frac_state{k}"] = occ_full[k]
+        rows.append(row)
+
+        pack = {"seed": seed, "logL": logL, "out": out, "df_m": df_m, "model": model, "collapsed": collapsed}
+
+        if best_any is None or logL > best_any["logL"]:
+            best_any = pack
+
+        if (not collapsed) and (best_stable is None or logL > best_stable["logL"]):
+            best_stable = pack
+
+    summary = pd.DataFrame(rows).sort_values("logL", ascending=False).reset_index(drop=True)
+    chosen = best_stable if best_stable is not None else best_any
+
+    if verbose:
+        print(summary.head(10))
+        if best_stable is None:
+            print(f"No seed passed stability filter (min_state_frac >= {min_state_frac}). Using best logL overall.")
+        print(f"Chosen seed: {chosen['seed']} | logL: {chosen['logL']:.3f} | collapsed: {chosen['collapsed']}")
+
+    return summary, chosen["seed"], chosen["out"], chosen["df_m"], chosen["model"]

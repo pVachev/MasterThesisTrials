@@ -20,7 +20,7 @@ class RegimePostProcessor:
         self.model_name = model_name
         self.n_states = n_states
         self.key_col = key_col
-        self.regime_names = regime_names or (["Bear", "Neutral", "Bull"] if n_states == 3 else [f"Regime {i}" for i in range(n_states)])
+        self.regime_names = regime_names or [f"Regime {i}" for i in range(n_states)]
 
         self.mapping_old_to_new: dict[int, int] | None = None
         self.order_old: list[int] | None = None
@@ -120,3 +120,85 @@ class RegimePostProcessor:
         long = tmp.melt(id_vars="metric", var_name="regime", value_name="value")
         long.insert(0, "model", self.model_name)
         return long
+    
+
+
+
+def hmm_persistence_report(model) -> pd.DataFrame:
+    """
+    Returns a DataFrame with:
+      - p_ii: self-transition prob
+      - expected_duration: 1 / (1 - p_ii)  (in periods; here: months)
+    Also returns the transition matrix as a DataFrame.
+    """
+    T = np.asarray(model.transmat_, dtype=float)
+    k = T.shape[0]
+
+    trans = pd.DataFrame(T, index=[f"state{i}" for i in range(k)], columns=[f"state{j}" for j in range(k)])
+
+    p_ii = np.diag(T)
+    # guard against division by 0 when p_ii ~ 1
+    expected = np.where(1 - p_ii > 1e-12, 1.0 / (1.0 - p_ii), np.inf)
+
+    summary = pd.DataFrame({
+        "p_ii": p_ii,
+        "expected_duration_months": expected,
+    }, index=[f"state{i}" for i in range(k)])
+
+    return trans, summary
+
+
+def realized_chatter_stats(df_m: pd.DataFrame) -> dict:
+    """
+    Uses the hard 'state' sequence in df_m to compute:
+      - number of switches
+      - switch rate
+      - average run length (months)
+      - median run length
+    """
+    if "state" not in df_m.columns:
+        raise KeyError("df_m must contain 'state' column.")
+
+    s = df_m["state"].astype(int).to_numpy()
+    if len(s) < 2:
+        return {"n_obs": len(s), "n_switches": 0, "switch_rate": np.nan, "avg_run": np.nan, "median_run": np.nan}
+
+    switches = np.sum(s[1:] != s[:-1])
+    switch_rate = switches / (len(s) - 1)
+
+    # run lengths
+    runs = []
+    run_len = 1
+    for i in range(1, len(s)):
+        if s[i] == s[i - 1]:
+            run_len += 1
+        else:
+            runs.append(run_len)
+            run_len = 1
+    runs.append(run_len)
+
+    runs = np.array(runs, dtype=int)
+
+    return {
+        "n_obs": len(s),
+        "n_switches": int(switches),
+        "switch_rate": float(switch_rate),
+        "avg_run": float(runs.mean()),
+        "median_run": float(np.median(runs)),
+        "min_run": int(runs.min()),
+        "max_run": int(runs.max()),
+    }
+
+def diagnose_hmm(name: str, model, df_m: pd.DataFrame):
+    trans, summ = hmm_persistence_report(model)
+    chat = realized_chatter_stats(df_m)
+
+    print(f"\n=== {name} ===")
+    print("Transition matrix (transmat_):")
+    print(trans)
+    print("\nExpected duration (months): 1/(1 - p_ii)")
+    print(summ)
+
+    print("\nRealized state-sequence chatter stats:")
+    for k, v in chat.items():
+        print(f"  {k}: {v}")

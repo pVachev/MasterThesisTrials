@@ -5,7 +5,11 @@ from src.load import diff_data, prepare_data
 import warnings
 
 
-
+def make_sticky_transmat(k: int, stay_prob: float) -> np.ndarray:
+    off = (1.0 - stay_prob) / (k - 1)
+    T = np.full((k, k), off, dtype=float)
+    np.fill_diagonal(T, stay_prob)
+    return T
 
 def hmm_converge(
     df: pd.DataFrame,
@@ -15,14 +19,14 @@ def hmm_converge(
     seed: int = 7,
     n_iter: int = 300,
     rf_col: str = "^IRX",
-    verbose: bool = False,
+    verbose: bool = True,
     return_details: bool = False,
-    diff_kwargs: dict | None = None,   # pass monthly_cols/freq/etc if needed
+    diff_kwargs: dict | None = None,
+    sticky: bool = False,
+    stay_prob: float = 0.95,
+    min_covar: float = 1e-4,  # helps full cov stability
 ):
-    # ignore rf if accidentally included
     cols = [c for c in cols if c != rf_col]
-
-    # always target ExcessLog columns
     ex_cols = [c if c.startswith("ExcessLog") else f"ExcessLog{c}" for c in cols]
 
     if all(c in df.columns for c in ex_cols):
@@ -34,26 +38,34 @@ def hmm_converge(
 
     X = df_m.to_numpy(dtype=float)
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            message="Model is not converging.*"
-        )
-        model = hmm.GaussianHMM(
-                n_components=n_states,
-                n_iter=n_iter,
-                covariance_type=cov_type,
-                random_state=seed,
-            ).fit(X)
 
-        states = model.predict(X)
-        probs = model.predict_proba(X)
+    model = hmm.GaussianHMM(
+        n_components=n_states,
+        n_iter=n_iter,
+        covariance_type=cov_type,
+        random_state=seed,
+        min_covar=min_covar,
+    )
+
+    if sticky:
+        model.startprob_ = np.full(n_states, 1.0 / n_states)
+        model.transmat_ = make_sticky_transmat(n_states, stay_prob)
+        # Don't re-initialize startprob/transmat randomly
+        model.init_params = "mc"   # initialize only means/covars
+        # Allow EM to update everything (including transmat/startprob)
+        model.params = "stmc"
+
+    model.fit(X)
+
+    states = model.predict(X)
+    probs = model.predict_proba(X)
 
     df_m = df_m.copy()
     df_m["state"] = states
     if return_details:
         for k in range(n_states):
             df_m[f"p_state{k}"] = probs[:, k]
+
 
     g = df_m.groupby("state")[ex_cols]
     means = (100 * g.mean()).add_prefix("mean_%_")

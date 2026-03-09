@@ -124,17 +124,26 @@ class RegimePostProcessor:
 
 
 
-def hmm_persistence_report(model) -> pd.DataFrame:
+def hmm_persistence_report(model, order_old: list[int] | None = None, regime_names: list[str] | None = None) -> pd.DataFrame:
     """
     Returns a DataFrame with:
       - p_ii: self-transition prob
       - expected_duration: 1 / (1 - p_ii)  (in periods; here: months)
     Also returns the transition matrix as a DataFrame.
+
+    If `order_old` is provided, rows/columns are reordered to match the
+    post-processed regime order. If `regime_names` is provided, those names are
+    used as index/column labels.
     """
     T = np.asarray(model.transmat_, dtype=float)
     k = T.shape[0]
 
-    trans = pd.DataFrame(T, index=[f"state{i}" for i in range(k)], columns=[f"state{j}" for j in range(k)])
+    if order_old is not None:
+        T = T[np.ix_(order_old, order_old)]
+
+    labels = regime_names if regime_names is not None else [f"state{i}" for i in range(k)]
+
+    trans = pd.DataFrame(T, index=labels, columns=labels)
 
     p_ii = np.diag(T)
     # guard against division by 0 when p_ii ~ 1
@@ -143,9 +152,10 @@ def hmm_persistence_report(model) -> pd.DataFrame:
     summary = pd.DataFrame({
         "p_ii": p_ii,
         "expected_duration_months": expected,
-    }, index=[f"state{i}" for i in range(k)])
+    }, index=labels)
 
     return trans, summary
+
 
 
 def realized_chatter_stats(df_m: pd.DataFrame) -> dict:
@@ -189,16 +199,27 @@ def realized_chatter_stats(df_m: pd.DataFrame) -> dict:
         "max_run": int(runs.max()),
     }
 
-def diagnose_hmm(name: str, model, df_m: pd.DataFrame):
-    trans, summ = hmm_persistence_report(model)
+def diagnose_hmm(
+    name: str,
+    model,
+    df_m: pd.DataFrame,
+    return_tables: bool = False,
+    order_old: list[int] | None = None,
+    regime_names: list[str] | None = None,
+):
+    trans, summ = hmm_persistence_report(model, order_old=order_old, regime_names=regime_names)
     chat = realized_chatter_stats(df_m)
 
-    print(f"\n=== {name} ===")
+    print(f"=== {name} ===")
     print("Transition matrix (transmat_):")
     print(trans)
-    print("\nExpected duration (months): 1/(1 - p_ii)")
+    print("Expected duration (months): 1/(1 - p_ii)")
     print(summ)
 
-    print("\nRealized state-sequence chatter stats:")
+    print("Realized state-sequence chatter stats:")
     for k, v in chat.items():
         print(f"  {k}: {v}")
+
+    if return_tables:
+        chat_df = pd.DataFrame([chat])
+        return trans, summ, chat_df

@@ -6,7 +6,7 @@ from src.transform import clean_data
 plt.style.use('ggplot')
 from src.hmm import hmm_converge, hmm_sweep_seeds
 from src.postprocess import RegimePostProcessor, diagnose_hmm
-from src.plot import plot_regime_dashboard_stack
+from src.plot import plot_regime_dashboard_stack, plot_regime_distribution_grid
 
 
 def main():
@@ -22,9 +22,6 @@ def main():
 
     df = clean_data(tickers, m_tickers)
     
-
-
-
 
     tickers_A = ["SPY", "WFBIX", "^IRX"]
     tickers_B = ["SPY", "LBUSTRUU", "^IRX"]
@@ -109,7 +106,14 @@ def main():
     ppA = RegimePostProcessor("Model A (WFBIX)", n_states).fit(dfmA, outA)
     regA = ppA.regime_summary("ExcessLogWFBIX")
     print(regA)
-    diagnose_hmm("Model a (WFBIX)", modelA, dfmA)
+    transA, durA, chatA = diagnose_hmm(
+        "Model A (WFBIX)",
+        modelA,
+        ppA.df_m,
+        return_tables=True,
+        order_old=ppA.order_old,
+        regime_names=ppA.regime_names,
+    )
     
     sumB, best_seedB, outB, dfmB, modelB = hmm_sweep_seeds(xB, n_states, tickers_B, "full", seeds=seeds)
     print("\n--- SWEEP MODEL B (LBUSTRUU) ---")
@@ -119,7 +123,14 @@ def main():
     ppB = RegimePostProcessor("Model B (LBUSTRUU)", n_states).fit(dfmB, outB)
     regB = ppB.regime_summary("ExcessLogLBUSTRUU")
     print(regB)
-    diagnose_hmm("Model B (LBUSTRUU)", modelB, dfmB)
+    transB, durB, chatB = diagnose_hmm(
+        "Model B (LBUSTRUU)",
+        modelB,
+        ppB.df_m,
+        return_tables=True,
+        order_old=ppB.order_old,
+        regime_names=ppB.regime_names,
+    )
 
     
     sumC, best_seedC, outC, dfmC, modelC = hmm_sweep_seeds(xC, n_states, tickers_C, "full", seeds=seeds)
@@ -128,14 +139,19 @@ def main():
     print(modelC)
 
 
-    # outC, dfmC, modelC = hmm_converge(
-    # xC, 4, tickers_C, "full", seed=6, return_details=True,
-    # sticky=True, stay_prob=0.95)
+
 
     ppC = RegimePostProcessor("Model C (LT09TRUU)", n_states).fit(dfmC, outC)
     regC = ppC.regime_summary("ExcessLogLT09TRUU")
     print(regC)
-    diagnose_hmm("Model C (LT09TRUU)", modelC, dfmC)
+    transC, durC, chatC = diagnose_hmm(
+        "Model C (LT09TRUU)",
+        modelC,
+        ppC.df_m,
+        return_tables=True,
+        order_old=ppC.order_old,
+        regime_names=ppC.regime_names,
+    )
 
 
     # comparison = pd.concat([regA, regB, regC], ignore_index=True)
@@ -155,11 +171,33 @@ def main():
     output_file = "hmm_regime_results.xlsx"
 
     with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
-        # main regime summary tables
-        regA.to_excel(writer, sheet_name="Regime_A", index=False)
-        regB.to_excel(writer, sheet_name="Regime_B", index=False)
-        regC.to_excel(writer, sheet_name="Regime_C", index=False)
-        # comparison.to_excel(writer, sheet_name="Comparison", index=False)
+        # combined summary sheets per model
+        startrow = 0
+        regA.to_excel(writer, sheet_name="Summary_A", index=False, startrow=startrow)
+        startrow += len(regA) + 3
+        transA.to_excel(writer, sheet_name="Summary_A", startrow=startrow)
+        startrow += len(transA) + 3
+        durA.to_excel(writer, sheet_name="Summary_A", startrow=startrow)
+        startrow += len(durA) + 3
+        chatA.to_excel(writer, sheet_name="Summary_A", index=False, startrow=startrow)
+
+        startrow = 0
+        regB.to_excel(writer, sheet_name="Summary_B", index=False, startrow=startrow)
+        startrow += len(regB) + 3
+        transB.to_excel(writer, sheet_name="Summary_B", startrow=startrow)
+        startrow += len(transB) + 3
+        durB.to_excel(writer, sheet_name="Summary_B", startrow=startrow)
+        startrow += len(durB) + 3
+        chatB.to_excel(writer, sheet_name="Summary_B", index=False, startrow=startrow)
+
+        startrow = 0
+        regC.to_excel(writer, sheet_name="Summary_C", index=False, startrow=startrow)
+        startrow += len(regC) + 3
+        transC.to_excel(writer, sheet_name="Summary_C", startrow=startrow)
+        startrow += len(transC) + 3
+        durC.to_excel(writer, sheet_name="Summary_C", startrow=startrow)
+        startrow += len(durC) + 3
+        chatC.to_excel(writer, sheet_name="Summary_C", index=False, startrow=startrow)
 
         # sweep summary tables
         sumA.to_excel(writer, sheet_name="Sweep_A")
@@ -186,6 +224,20 @@ def main():
         ("Model B (LBUSTRUU)", ppB.df_m),
         ("Model C (LT09TRUU)", ppC.df_m),
     ], figsize=(26, 18))
+
+
+    plot_regime_distribution_grid([
+        ("Model A (WFBIX)", ppA.df_m),
+        ("Model B (LBUSTRUU)", ppB.df_m),
+        ("Model C (LT09TRUU)", ppC.df_m),
+    ], value_col="ExcessLogSPY", bins=70, figsize=(20, 14), add_kde=True)
+
+    plot_regime_distribution_grid([
+        ("Model A (WFBIX)", ppA.df_m.rename(columns={"ExcessLogWFBIX": "_bond_col"})),
+        ("Model B (LBUSTRUU)", ppB.df_m.rename(columns={"ExcessLogLBUSTRUU": "_bond_col"})),
+        ("Model C (LT09TRUU)", ppC.df_m.rename(columns={"ExcessLogLT09TRUU": "_bond_col"})),
+    ], value_col="_bond_col", bins=70, figsize=(20, 14), add_kde=True)
+
 
 
     # df_mB.to_excel("df_mB.xlsx")

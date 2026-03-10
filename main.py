@@ -10,8 +10,8 @@ from src.plot import plot_regime_dashboard_stack, plot_regime_distribution_grid
 
 
 def main():
-    tickers = ["SPY", "WFBIX","^IRX", "LBUSTRUU", "LT09TRUU", "GC=F", "^GSPC"]
-    m_tickers = ["LBUSTRUU", "LT09TRUU"]
+    tickers = ["SPY", "WFBIX","^IRX", "LBUSTRUU", "LT09TRUU", "^SP500TR","G1BM","RF"]
+    m_tickers = ["LBUSTRUU", "LT09TRUU","G1BM", "RF"]
    
 
     """
@@ -19,25 +19,29 @@ def main():
     ModelB -> 10Y bonds 
     """
 
-
     df = clean_data(tickers, m_tickers)
-    
 
-    tickers_A = ["SPY", "WFBIX", "^IRX"]
-    tickers_B = ["SPY", "LBUSTRUU", "^IRX"]
-    tickers_C = ["SPY", "LT09TRUU", "^IRX"]
+   
+    # tickers_A = ["SPY", "WFBIX", "^IRX"]
+    # tickers_B = ["SPY", "LBUSTRUU", "^IRX"]
+    # tickers_C = ["SPY", "LT09TRUU", "^IRX"]
 
-    n_states = 3
+    # n_states = 3
+    tickers_A = ["SPY", "WFBIX", "RF"]
+    tickers_B = ["SPY", "LBUSTRUU", "RF"]
+    tickers_C = ["SPY", "LT09TRUU", "RF"]
 
-    dfA = diff_data(df, tickers_A)
-    dfB = diff_data(df, tickers_B, monthly_cols=m_tickers)
-    dfC = diff_data(df, tickers_C, monthly_cols=m_tickers)
+    dfA = diff_data(df, tickers_A, rf_col="RF", monthly_cols=m_tickers + ["RF"], rf_mode="simple_return_monthly_pct")
+    dfB = diff_data(df, tickers_B, rf_col="RF", monthly_cols=m_tickers + ["RF"], rf_mode="simple_return_monthly_pct")
+    dfC = diff_data(df, tickers_C, rf_col="RF", monthly_cols=m_tickers + ["RF"], rf_mode="simple_return_monthly_pct")
 
+    print(dfC)
 
+    df.to_excel("newsp.xlsx")
 
-    xA = prepare_data(dfA, tickers_A)
-    xB = prepare_data(dfB, tickers_B)
-    xC = prepare_data(dfC, tickers_C)
+    # xA = prepare_data(dfA, tickers_A)
+    # xB = prepare_data(dfB, tickers_B)
+    # xC = prepare_data(dfC, tickers_C)
 
 
     # xA_std = (xA - xA.mean()) / xA.std()
@@ -97,61 +101,61 @@ def main():
     # print(out_C)
 
 
-    seeds = range(1, 41)
-    sumA, best_seedA, outA, dfmA, modelA = hmm_sweep_seeds(xA, n_states, tickers_A, "full", seeds=seeds)
-    print("\n--- SWEEP MODEL A (WFBIX) ---")
-    print(outA)
-    print(modelA)
+    # seeds = range(1, 41)
+    # sumA, best_seedA, outA, dfmA, modelA = hmm_sweep_seeds(xA, n_states, tickers_A, "full", seeds=seeds)
+    # print("\n--- SWEEP MODEL A (WFBIX) ---")
+    # print(outA)
+    # print(modelA)
 
-    ppA = RegimePostProcessor("Model A (WFBIX)", n_states).fit(dfmA, outA)
-    regA = ppA.regime_summary("ExcessLogWFBIX")
-    print(regA)
-    transA, durA, chatA = diagnose_hmm(
-        "Model A (WFBIX)",
-        modelA,
-        ppA.df_m,
-        return_tables=True,
-        order_old=ppA.order_old,
-        regime_names=ppA.regime_names,
-    )
+    # ppA = RegimePostProcessor("Model A (WFBIX)", n_states).fit(dfmA, outA)
+    # regA = ppA.regime_summary("ExcessLogWFBIX")
+    # print(regA)
+    # transA, durA, chatA = diagnose_hmm(
+    #     "Model A (WFBIX)",
+    #     modelA,
+    #     ppA.df_m,
+    #     return_tables=True,
+    #     order_old=ppA.order_old,
+    #     regime_names=ppA.regime_names,
+    # )
     
-    sumB, best_seedB, outB, dfmB, modelB = hmm_sweep_seeds(xB, n_states, tickers_B, "full", seeds=seeds)
-    print("\n--- SWEEP MODEL B (LBUSTRUU) ---")
-    print(outB)
-    print(modelB)
+    # sumB, best_seedB, outB, dfmB, modelB = hmm_sweep_seeds(xB, n_states, tickers_B, "full", seeds=seeds)
+    # print("\n--- SWEEP MODEL B (LBUSTRUU) ---")
+    # print(outB)
+    # print(modelB)
 
-    ppB = RegimePostProcessor("Model B (LBUSTRUU)", n_states).fit(dfmB, outB)
-    regB = ppB.regime_summary("ExcessLogLBUSTRUU")
-    print(regB)
-    transB, durB, chatB = diagnose_hmm(
-        "Model B (LBUSTRUU)",
-        modelB,
-        ppB.df_m,
-        return_tables=True,
-        order_old=ppB.order_old,
-        regime_names=ppB.regime_names,
-    )
+    # ppB = RegimePostProcessor("Model B (LBUSTRUU)", n_states).fit(dfmB, outB)
+    # regB = ppB.regime_summary("ExcessLogLBUSTRUU")
+    # print(regB)
+    # transB, durB, chatB = diagnose_hmm(
+    #     "Model B (LBUSTRUU)",
+    #     modelB,
+    #     ppB.df_m,
+    #     return_tables=True,
+    #     order_old=ppB.order_old,
+    #     regime_names=ppB.regime_names,
+    # )
 
     
-    sumC, best_seedC, outC, dfmC, modelC = hmm_sweep_seeds(xC, n_states, tickers_C, "full", seeds=seeds)
-    print("\n--- SWEEP MODEL C (LT09TRUU) ---")
-    print(outC)
-    print(modelC)
+    # sumC, best_seedC, outC, dfmC, modelC = hmm_sweep_seeds(xC, n_states, tickers_C, "full", seeds=seeds)
+    # print("\n--- SWEEP MODEL C (LT09TRUU) ---")
+    # print(outC)
+    # print(modelC)
 
 
 
 
-    ppC = RegimePostProcessor("Model C (LT09TRUU)", n_states).fit(dfmC, outC)
-    regC = ppC.regime_summary("ExcessLogLT09TRUU")
-    print(regC)
-    transC, durC, chatC = diagnose_hmm(
-        "Model C (LT09TRUU)",
-        modelC,
-        ppC.df_m,
-        return_tables=True,
-        order_old=ppC.order_old,
-        regime_names=ppC.regime_names,
-    )
+    # ppC = RegimePostProcessor("Model C (LT09TRUU)", n_states).fit(dfmC, outC)
+    # regC = ppC.regime_summary("ExcessLogLT09TRUU")
+    # print(regC)
+    # transC, durC, chatC = diagnose_hmm(
+    #     "Model C (LT09TRUU)",
+    #     modelC,
+    #     ppC.df_m,
+    #     return_tables=True,
+    #     order_old=ppC.order_old,
+    #     regime_names=ppC.regime_names,
+    # )
 
 
     # comparison = pd.concat([regA, regB, regC], ignore_index=True)

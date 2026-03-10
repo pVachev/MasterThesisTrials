@@ -11,21 +11,35 @@ def diff_data(
     rf_col: str = "^IRX",
     freq: str = "ME",                    # "D" or "ME"
     monthly_cols: list[str] | None = None,  # only matters when freq="ME"
+    rf_mode: str = "yield_annualized",   # "yield_annualized" or "simple_return_monthly_pct"
 ) -> pd.DataFrame:
     """
     Computes Log{col} and ExcessLog{col} at the requested frequency.
 
-    freq="D":
-      - use df as-is (daily levels)
-      - Log{col} = log(level).diff()
-      - rf = yld_to_lnr(IRX, periods_per_year=360)
+    Supported risk-free conventions
+    --------------------------------
+    1) rf_mode="yield_annualized"
+       Use the EXISTING logic for ^IRX-like annualized yields quoted in %.
+       - monthly: log(1 + (y_{t-1}/100)/12)
+       - daily:   log(1 + (y_{t-1}/100)/360)
 
-    freq="ME":
-      - build a month-end LEVEL panel for rf_col + cols:
-          * daily series -> resample("ME").last() (labels at calendar month-end even if weekend)
-          * monthly Bloomberg series -> force index to month-end (Period -> Timestamp), de-dup by month
-      - Log{col} = log(level).diff() on monthly index
-      - rf = yld_to_lnr(IRX, periods_per_year=12)
+    2) rf_mode="simple_return_monthly_pct"
+       Use a MONTHLY simple return series already expressed in % for the same
+       month, such as the Fama-French monthly RF series.
+       - monthly only
+       - monthly rf log return = log(1 + RF_t/100)
+       - NO SHIFT is applied
+
+    Why this split matters
+    ----------------------
+    `^IRX` is a quoted annualized yield observed through time, so we convert it
+    into a holding-period return using the PREVIOUS observation.
+
+    A Fama-French-style monthly RF series is already the realized one-month
+    return for that month, so shifting it would misalign the timing.
+
+    This keeps the current ^IRX logic unchanged while allowing a second monthly
+    RF convention to be plugged in explicitly.
     """
     if rf_col not in df.columns:
         raise KeyError(f"Missing risk-free column in df: {rf_col}")
@@ -46,15 +60,29 @@ def diff_data(
             s = df[c].dropna().sort_index()
 
             if c in monthly_set:
-                # Bloomberg monthly: its date is already month-end, but make it deterministic
+                # Series that are already monthly (e.g. Bloomberg bond index,
+                # or a monthly RF file) are simply relabeled to calendar
+                # month-end so they align with the resampled daily series.
                 s.index = s.index.to_period("M").to_timestamp("M")
                 s = s[~s.index.duplicated(keep="last")]
                 out[c] = s
             else:
-                # Daily series -> last available obs in month, indexed at calendar month-end
+                # Daily series -> last available observation in month, labeled
+                # at calendar month-end.
                 out[c] = s.resample("ME").last()
 
-        rf = yld_to_lnr(out[rf_col], periods_per_year=12)
+        # Risk-free conversion depends on the convention of rf_col.
+        if rf_mode == "yield_annualized":
+            # Existing ^IRX logic kept intact.
+            rf = yld_to_lnr(out[rf_col], periods_per_year=12)
+        elif rf_mode == "simple_return_monthly_pct":
+            # Monthly realized simple return in % -> monthly log return.
+            # No shift here because the RF value already belongs to the same month.
+            rf = simple_to_log_m(out[rf_col], in_percent=True)
+        else:
+            raise ValueError(
+                "rf_mode must be either 'yield_annualized' or 'simple_return_monthly_pct'"
+            )
 
         ex_cols = []
         for c in cols:
@@ -63,18 +91,6 @@ def diff_data(
             ex_cols.append(f"ExcessLog{c}")
 
         return out.dropna(subset=ex_cols)
-
-    else:
-        # Daily
-        rf = yld_to_lnr(df[rf_col], periods_per_year=360).reindex(df.index).ffill()
-
-        ex_cols = []
-        for c in cols:
-            df[f"Log{c}"] = np.log(df[c]).diff()
-            df[f"ExcessLog{c}"] = df[f"Log{c}"] - rf
-            ex_cols.append(f"ExcessLog{c}")
-
-        return df.dropna(subset=ex_cols)
 
 def prepare_data(df: pd.DataFrame, cols: list[str], rf_col: str = "^IRX") -> pd.DataFrame:
     """

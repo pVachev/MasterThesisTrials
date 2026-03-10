@@ -29,13 +29,27 @@ def clean_data(
             raw_idx = df.index.astype(str)
 
             try:
-                if ticker in monthly_set:
+                if ticker == "RF":
+                    # Fama-French style monthly RF file: dates come as YYYYMM
+                    # like 192607, 192608, ... and must be parsed explicitly.
+                    # We do this BEFORE the generic monthly parsing because
+                    # dayfirst-based parsing is not reliable for this compact format.
+                    df.index = pd.to_datetime(raw_idx.str.strip(), format="%Y%m", errors="raise")
+                elif ticker in monthly_set:
+                    # Monthly series that already come with normal calendar dates
+                    # (for example Bloomberg monthly exports) keep the existing logic.
                     df.index = pd.to_datetime(raw_idx, dayfirst=True, errors="raise")
                 else:
+                    # Daily series keep the existing daily parsing path.
                     df.index = pd.to_datetime(raw_idx, dayfirst=False, errors="raise")
             except Exception:
-                # last resort: try the other convention
-                df.index = pd.to_datetime(raw_idx, dayfirst=(ticker not in monthly_set), errors="raise")
+                # Last resort fallback.
+                # Keep RF explicit here as well so we do not accidentally send a
+                # YYYYMM monthly code through generic dayfirst parsing.
+                if ticker == "RF":
+                    df.index = pd.to_datetime(raw_idx.str.strip(), format="%Y%m", errors="raise")
+                else:
+                    df.index = pd.to_datetime(raw_idx, dayfirst=(ticker not in monthly_set), errors="raise")
 
             # rename the single value column to the ticker
             df.rename(columns={df.columns[0]: ticker}, inplace=True)
@@ -55,7 +69,6 @@ def clean_data(
 
 
     return final_data
-
 
 
 def yld_to_lnr(y: pd.Series, periods_per_year: int) -> pd.Series:

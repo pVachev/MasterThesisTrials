@@ -9,7 +9,7 @@ FILEPATH = os.path.dirname(os.path.realpath(__file__)) + "\\raw\\"
 def get_data(ticker: list) -> pd.DataFrame: 
 
     df = yf.download(tickers=ticker,
-                        start="1990-01-18",
+                        start="1988-01-05",
                         threads=False,
                         progress=False,
                         auto_adjust=True)
@@ -17,16 +17,7 @@ def get_data(ticker: list) -> pd.DataFrame:
     
     return df
 
-def data_test(ticker:str):
-    raw_data = {"Time_Series": ["18-01-2025", "19-01-2025"],
-                ticker: [6743.09, 6873.25]}
-    df = pd.DataFrame(raw_data)
-    return df 
 
-    
-
-# ^GSPC
-# BND
 def fetch_data(
         tickers:list[str],
         verbose: bool = True

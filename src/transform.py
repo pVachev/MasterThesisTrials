@@ -67,5 +67,14 @@ def yld_to_lnr(y: pd.Series, periods_per_year: int) -> pd.Series:
     r = np.log1p(y.shift(1) / periods_per_year)
     return r
 
+def simple_to_log_m(y: pd.Series) -> pd.Series:
+    
+    y = y.astype(float)
+    r = np.log1p(y)
+    return r 
+
+
+
+
 
 

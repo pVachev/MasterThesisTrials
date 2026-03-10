@@ -157,86 +157,78 @@ def main():
     # comparison = pd.concat([regA, regB, regC], ignore_index=True)
     # print(comparison)
 
-    
-
-    # bear_dates = dfmC[dfmC["state"] == 0].index  # adjust which state is bear in your output
-    # print(bear_dates[:30])
-    # print(bear_dates[-30:])
-
-    # bull_dates = dfmC[dfmC["state"] == 3].index  # adjust which state is bear in your output
-    # print(bull_dates[:30])
 
 
 
-    output_file = "hmm_regime_results.xlsx"
+    # output_file = "hmm_regime_results.xlsx"
 
-    with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
-        # combined summary sheets per model
-        startrow = 0
-        regA.to_excel(writer, sheet_name="Summary_A", index=False, startrow=startrow)
-        startrow += len(regA) + 3
-        transA.to_excel(writer, sheet_name="Summary_A", startrow=startrow)
-        startrow += len(transA) + 3
-        durA.to_excel(writer, sheet_name="Summary_A", startrow=startrow)
-        startrow += len(durA) + 3
-        chatA.to_excel(writer, sheet_name="Summary_A", index=False, startrow=startrow)
+    # with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
+    #     # combined summary sheets per model
+    #     startrow = 0
+    #     regA.to_excel(writer, sheet_name="Summary_A", index=False, startrow=startrow)
+    #     startrow += len(regA) + 3
+    #     transA.to_excel(writer, sheet_name="Summary_A", startrow=startrow)
+    #     startrow += len(transA) + 3
+    #     durA.to_excel(writer, sheet_name="Summary_A", startrow=startrow)
+    #     startrow += len(durA) + 3
+    #     chatA.to_excel(writer, sheet_name="Summary_A", index=False, startrow=startrow)
 
-        startrow = 0
-        regB.to_excel(writer, sheet_name="Summary_B", index=False, startrow=startrow)
-        startrow += len(regB) + 3
-        transB.to_excel(writer, sheet_name="Summary_B", startrow=startrow)
-        startrow += len(transB) + 3
-        durB.to_excel(writer, sheet_name="Summary_B", startrow=startrow)
-        startrow += len(durB) + 3
-        chatB.to_excel(writer, sheet_name="Summary_B", index=False, startrow=startrow)
+    #     startrow = 0
+    #     regB.to_excel(writer, sheet_name="Summary_B", index=False, startrow=startrow)
+    #     startrow += len(regB) + 3
+    #     transB.to_excel(writer, sheet_name="Summary_B", startrow=startrow)
+    #     startrow += len(transB) + 3
+    #     durB.to_excel(writer, sheet_name="Summary_B", startrow=startrow)
+    #     startrow += len(durB) + 3
+    #     chatB.to_excel(writer, sheet_name="Summary_B", index=False, startrow=startrow)
 
-        startrow = 0
-        regC.to_excel(writer, sheet_name="Summary_C", index=False, startrow=startrow)
-        startrow += len(regC) + 3
-        transC.to_excel(writer, sheet_name="Summary_C", startrow=startrow)
-        startrow += len(transC) + 3
-        durC.to_excel(writer, sheet_name="Summary_C", startrow=startrow)
-        startrow += len(durC) + 3
-        chatC.to_excel(writer, sheet_name="Summary_C", index=False, startrow=startrow)
+    #     startrow = 0
+    #     regC.to_excel(writer, sheet_name="Summary_C", index=False, startrow=startrow)
+    #     startrow += len(regC) + 3
+    #     transC.to_excel(writer, sheet_name="Summary_C", startrow=startrow)
+    #     startrow += len(transC) + 3
+    #     durC.to_excel(writer, sheet_name="Summary_C", startrow=startrow)
+    #     startrow += len(durC) + 3
+    #     chatC.to_excel(writer, sheet_name="Summary_C", index=False, startrow=startrow)
 
-        # sweep summary tables
-        sumA.to_excel(writer, sheet_name="Sweep_A")
-        sumB.to_excel(writer, sheet_name="Sweep_B")
-        sumC.to_excel(writer, sheet_name="Sweep_C")
+    #     # sweep summary tables
+    #     sumA.to_excel(writer, sheet_name="Sweep_A")
+    #     sumB.to_excel(writer, sheet_name="Sweep_B")
+    #     sumC.to_excel(writer, sheet_name="Sweep_C")
 
-        # detailed monthly/state data if useful
-        dfmA.to_excel(writer, sheet_name="Detail_A")
-        dfmB.to_excel(writer, sheet_name="Detail_B")
-        dfmC.to_excel(writer, sheet_name="Detail_C")
+    #     # detailed monthly/state data if useful
+    #     dfmA.to_excel(writer, sheet_name="Detail_A")
+    #     dfmB.to_excel(writer, sheet_name="Detail_B")
+    #     dfmC.to_excel(writer, sheet_name="Detail_C")
 
-        # best seed info
-        best_seeds = pd.DataFrame({
-            "model": ["A", "B", "C"],
-            "best_seed": [best_seedA, best_seedB, best_seedC]
-        })
-        best_seeds.to_excel(writer, sheet_name="Best_Seeds", index=False)
+    #     # best seed info
+    #     best_seeds = pd.DataFrame({
+    #         "model": ["A", "B", "C"],
+    #         "best_seed": [best_seedA, best_seedB, best_seedC]
+    #     })
+    #     best_seeds.to_excel(writer, sheet_name="Best_Seeds", index=False)
 
-    print(f"Saved results to {output_file}")
-
-
-    plot_regime_dashboard_stack([
-        ("Model A (WFBIX)", ppA.df_m),
-        ("Model B (LBUSTRUU)", ppB.df_m),
-        ("Model C (LT09TRUU)", ppC.df_m),
-    ], figsize=(26, 18))
+    # print(f"Saved results to {output_file}")
 
 
-    plot_regime_distribution_grid([
-        ("Model A (WFBIX)", ppA.df_m),
-        ("Model B (LBUSTRUU)", ppB.df_m),
-        ("Model C (LT09TRUU)", ppC.df_m),
-    ], value_col="ExcessLogSPY", bins=70, figsize=(20, 14), add_kde=True)
+    # plot_regime_dashboard_stack([
+    #     ("Model A (WFBIX)", ppA.df_m),
+    #     ("Model B (LBUSTRUU)", ppB.df_m),
+    #     ("Model C (LT09TRUU)", ppC.df_m),
+    # ], figsize=(26, 18))
 
-    plot_regime_distribution_grid([
-        ("Model A (WFBIX)", ppA.df_m.rename(columns={"ExcessLogWFBIX": "_bond_col"})),
-        ("Model B (LBUSTRUU)", ppB.df_m.rename(columns={"ExcessLogLBUSTRUU": "_bond_col"})),
-        ("Model C (LT09TRUU)", ppC.df_m.rename(columns={"ExcessLogLT09TRUU": "_bond_col"})),
-    ], value_col="_bond_col", bins=70, figsize=(20, 14), add_kde=True)
+
+    # plot_regime_distribution_grid([
+    #     ("Model A (WFBIX)", ppA.df_m),
+    #     ("Model B (LBUSTRUU)", ppB.df_m),
+    #     ("Model C (LT09TRUU)", ppC.df_m),
+    # ], value_col="ExcessLogSPY", bins=70, figsize=(20, 14), add_kde=True)
+
+    # plot_regime_distribution_grid([
+    #     ("Model A (WFBIX)", ppA.df_m.rename(columns={"ExcessLogWFBIX": "_bond_col"})),
+    #     ("Model B (LBUSTRUU)", ppB.df_m.rename(columns={"ExcessLogLBUSTRUU": "_bond_col"})),
+    #     ("Model C (LT09TRUU)", ppC.df_m.rename(columns={"ExcessLogLT09TRUU": "_bond_col"})),
+    # ], value_col="_bond_col", bins=70, figsize=(20, 14), add_kde=True)
 
 
 

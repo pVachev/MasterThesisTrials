@@ -81,11 +81,12 @@ def yld_to_lnr(y: pd.Series, periods_per_year: int) -> pd.Series:
     return r
 
 def simple_to_log_m(y: pd.Series) -> pd.Series:
-    
+    """
+    Convert a SIMPLE MONTHLY return already expressed in DECIMAL form
+    into a MONTHLY LOG return.
+    """
     y = y.astype(float)
-    r = np.log1p(y)
-    return r 
-
+    return np.log1p(y)
 
 
 

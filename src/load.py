@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np 
 import matplotlib.ticker as mtick
 from scipy import stats
-from src.transform import yld_to_lnr
+from src.transform import yld_to_lnr, simple_to_log_m
 
 def diff_data(
     df: pd.DataFrame,
@@ -23,11 +23,11 @@ def diff_data(
        - monthly: log(1 + (y_{t-1}/100)/12)
        - daily:   log(1 + (y_{t-1}/100)/360)
 
-    2) rf_mode="simple_return_monthly_pct"
-       Use a MONTHLY simple return series already expressed in % for the same
+    2) rf_mode="simple_return_monthly_decimal"
+       Use a MONTHLY simple return series already expressed in decimal for the same
        month, such as the Fama-French monthly RF series.
        - monthly only
-       - monthly rf log return = log(1 + RF_t/100)
+       - monthly rf log return = log(1 + RF_t)
        - NO SHIFT is applied
 
     Why this split matters
@@ -75,13 +75,12 @@ def diff_data(
         if rf_mode == "yield_annualized":
             # Existing ^IRX logic kept intact.
             rf = yld_to_lnr(out[rf_col], periods_per_year=12)
-        elif rf_mode == "simple_return_monthly_pct":
-            # Monthly realized simple return in % -> monthly log return.
-            # No shift here because the RF value already belongs to the same month.
-            rf = simple_to_log_m(out[rf_col], in_percent=True)
+        elif rf_mode == "simple_return_monthly_decimal":
+            rf = simple_to_log_m(out[rf_col])
+            out[rf_col] = rf
         else:
             raise ValueError(
-                "rf_mode must be either 'yield_annualized' or 'simple_return_monthly_pct'"
+                "rf_mode must be either 'yield_annualized' or 'simple_return_monthly_decimal'"
             )
 
         ex_cols = []
@@ -104,8 +103,6 @@ def prepare_data(df: pd.DataFrame, cols: list[str], rf_col: str = "^IRX") -> pd.
         raise KeyError(f"Missing column(s) in df: {missing}")
 
     return df[ex_cols].dropna()
-
-
 
 
 

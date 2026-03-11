@@ -14,7 +14,7 @@ class RegimePostProcessor:
         self,
         model_name: str,
         n_states: int,
-        key_col: str = "ExcessLogSPY",
+        key_col: str = "ExcessLog^SP500TR",
         regime_names: list[str] | None = None,
     ):
         self.model_name = model_name

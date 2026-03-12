@@ -157,11 +157,14 @@ def main():
     print(outC)
     print(modelC)
 
-
-
-
     ppC = RegimePostProcessor("Model C (LT09TRUU)", n_states).fit(dfmC, outC)
     regC = ppC.regime_summary("ExcessLogLT09TRUU")
+    corrC = ppC.regime_correlation_table([
+    "ExcessLog^SP500TR",
+    "ExcessLogLT09TRUU",
+    "ExcessLogXAU",
+    ])
+    print(corrC)
     print(regC)
     transC, durC, chatC = diagnose_hmm(
         "Model C (LT09TRUU)",
@@ -230,11 +233,18 @@ def main():
     print(f"Saved results to {output_file}")
 
 
+    # plot_regime_dashboard_stack([
+    #     ("Model A (WFBIX)", ppA.df_m),
+    #     ("Model B (LBUSTRUU)", ppB.df_m),
+    #     ("Model C (LT09TRUU)", ppC.df_m),
+    # ], figsize=(26, 18))
+
     plot_regime_dashboard_stack([
-        ("Model A (WFBIX)", ppA.df_m),
-        ("Model B (LBUSTRUU)", ppB.df_m),
-        ("Model C (LT09TRUU)", ppC.df_m),
+        ("Model A (WFBIX + XAU)", ppA.df_m),
+        ("Model B (LBUSTRUU + XAU)", ppB.df_m),
+        ("Model C (LT09TRUU + XAU)", ppC.df_m),
     ], figsize=(26, 18))
+
 
 
     plot_regime_distribution_grid([
@@ -249,6 +259,12 @@ def main():
         ("Model C (LT09TRUU)", ppC.df_m.rename(columns={"ExcessLogLT09TRUU": "_bond_col"})),
     ], value_col="_bond_col", bins=70, figsize=(20, 14), add_kde=True)
 
+
+    plot_regime_distribution_grid([
+        ("Model A (WFBIX + XAU)", ppA.df_m),
+        ("Model B (LBUSTRUU + XAU)", ppB.df_m),
+        ("Model C (LT09TRUU + XAU)", ppC.df_m),
+    ], value_col="ExcessLogXAU", bins=70, figsize=(20, 14), add_kde=True)
 
 
     # df_mB.to_excel("df_mB.xlsx")

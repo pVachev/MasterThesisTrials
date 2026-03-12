@@ -108,6 +108,42 @@ class RegimePostProcessor:
             f"corr_{self.key_col}_{asset_col}": [float(corr.get(i, np.nan)) for i in range(self.n_states)],
         })
         return res
+    
+    def regime_correlation_table(self, asset_cols: list[str]) -> pd.DataFrame:
+        """
+        Build a lower-triangular correlation table per regime for up to 4 assets.
+        """
+        if self.df_m is None:
+            raise ValueError("Call .fit(df_m, out) first.")
+        if not asset_cols:
+            raise ValueError("asset_cols cannot be empty.")
+        if len(asset_cols) > 4:
+            raise ValueError("regime_correlation_table currently supports up to 4 assets.")
+
+        df_m = self.df_m
+        missing = [c for c in asset_cols if c not in df_m.columns]
+        if missing:
+            raise KeyError(f"Missing asset column(s) in df_m: {missing}")
+
+        blocks = []
+        for state in range(self.n_states):
+            d = df_m.loc[df_m["state"] == state, asset_cols].copy()
+            corr = d.corr()
+
+            rows = []
+            for i, row_name in enumerate(asset_cols):
+                row = {
+                    "model": self.model_name,
+                    "regime": self.regime_names[state],
+                    "matrix_row": row_name,
+                }
+                for j, col_name in enumerate(asset_cols):
+                    row[col_name] = float(corr.loc[row_name, col_name]) if j <= i else np.nan
+                rows.append(row)
+
+            blocks.append(pd.DataFrame(rows))
+
+        return pd.concat(blocks, ignore_index=True)
 
     def out_long(self) -> pd.DataFrame:
         """

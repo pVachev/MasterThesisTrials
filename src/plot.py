@@ -5,6 +5,7 @@ import numpy as np
 from scipy import stats 
 
 
+
 def plot_regime_dashboard_stack(
     models: list[tuple[str, "pd.DataFrame"]],
     *,
@@ -159,13 +160,9 @@ def plot_regime_distribution_grid(
 
             stats_text = (
                 f"n={len(s)}\n"
-
                 f"mean={100 * s.mean():.2f}%\n"
-
                 f"std={100 * s.std(ddof=1):.2f}%\n"
-
                 f"skew={s.skew():.2f}\n"
-
                 f"kurt={s.kurt() + 3:.2f}"
             )
             ax.text(
@@ -186,3 +183,25 @@ def plot_regime_distribution_grid(
 
     plt.show()
     return fig, axes
+
+
+def plot_results_dashboard(results) -> None:
+    panels = [(res.spec.label, res.pp.df_m) for res in results]
+    plot_regime_dashboard_stack(panels, figsize=(26, 6 * max(len(results), 1)))
+
+
+def plot_requested_distributions(results) -> None:
+    asset_to_panels = {}
+
+    for res in results:
+        for asset_col in res.spec.dist_assets:
+            asset_to_panels.setdefault(asset_col, []).append((res.spec.label, res.pp.df_m))
+
+    for asset_col, panels in asset_to_panels.items():
+        plot_regime_distribution_grid(
+            panels,
+            value_col=asset_col,
+            bins=70,
+            figsize=(20, 14),
+            add_kde=True,
+        )

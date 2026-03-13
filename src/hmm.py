@@ -18,7 +18,7 @@ def hmm_converge(
     cov_type: str,
     seed: int = 7,
     n_iter: int = 300,
-    rf_col: str = "USGG3M",
+    rf_col: str = "RF",
     verbose: bool = True,
     return_details: bool = False,
     diff_kwargs: dict | None = None,

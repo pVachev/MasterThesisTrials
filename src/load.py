@@ -91,9 +91,19 @@ def diff_data(
 
         return out.dropna(subset=ex_cols)
 
-def prepare_data(df: pd.DataFrame, cols: list[str], rf_col: str = "^IRX") -> pd.DataFrame:
+def prepare_data(
+    df: pd.DataFrame,
+    cols: list[str],
+    rf_col: str = "^IRX",
+    start_date: str | None = None,
+) -> pd.DataFrame:
     """
     Keeps only the ExcessLog{col} columns for col in `cols`, ignoring rf_col if present.
+
+    Optional comparability control:
+    - if start_date is provided, cut the prepared feature matrix from that date onward
+    - if start_date is earlier than the first available observation, pandas just keeps
+      the earliest available row, so nothing breaks
     """
     cols = [c for c in cols if c != rf_col]
     ex_cols = [f"ExcessLog{c}" for c in cols]
@@ -102,8 +112,13 @@ def prepare_data(df: pd.DataFrame, cols: list[str], rf_col: str = "^IRX") -> pd.
     if missing:
         raise KeyError(f"Missing column(s) in df: {missing}")
 
-    return df[ex_cols].dropna()
+    out = df[ex_cols].dropna().copy()
 
+    if start_date is not None:
+        start_ts = pd.to_datetime(start_date)
+        out = out.loc[out.index >= start_ts]
+
+    return out
 
 
 def plot_data(bnd, gspc): 

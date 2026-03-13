@@ -5,7 +5,6 @@ from src.load import diff_data, prepare_data
 from src.hmm import hmm_sweep_seeds
 from src.postprocess import RegimePostProcessor, diagnose_hmm
 
-
 @dataclass
 class GlobalRunConfig:
     n_states: int = 3
@@ -13,6 +12,7 @@ class GlobalRunConfig:
     seeds: range = range(1, 41)
     rf_col: str = "RF"
     rf_mode: str = "simple_return_monthly_decimal"
+    start_date: str | None = None
     make_dashboard: bool = True
     make_distribution_plots: bool = True
     export_excel: bool = True
@@ -84,6 +84,7 @@ def build_model_input(
     spec: ModelSpec,
     monthly_tickers: list[str],
     rf_mode: str,
+    start_date: str | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     df_model = diff_data(
         raw_df,
@@ -92,7 +93,12 @@ def build_model_input(
         monthly_cols=monthly_tickers,
         rf_mode=rf_mode,
     )
-    x_model = prepare_data(df_model, spec.tickers, rf_col=spec.rf_col)
+    x_model = prepare_data(
+    df_model,
+    spec.tickers,
+    rf_col=spec.rf_col,
+    start_date=start_date,
+)
     return df_model, x_model
 
 

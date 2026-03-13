@@ -21,16 +21,18 @@ def main():
 
     cfg = GlobalRunConfig(
         n_states=3,
-        rf_col="USGG3M",
-        rf_mode="yield_annualized",   # or whatever name you kept
+        rf_col="RF", # change in hmm.py too 
+        rf_mode="simple_return_monthly_decimal",   # "simple_return_monthly_decimal" "yield_annualized" 
+        start_date="1993-08-31",
         cov_type="full",
         output_file="hmm_regime_results.xlsx",
     )
 
+
     model_asset_sets = [
         ["^SP500TR", "WFBIX"],
         ["^SP500TR", "LBUSTRUU"],
-        ["^SP500TR", "LT09TRUU"],
+        ["^SP500TR", "LT09TRUU", "XAU"],
     ]
 
 
@@ -48,6 +50,7 @@ def main():
             spec=spec,
             monthly_tickers=m_tickers,
             rf_mode=cfg.rf_mode,
+            start_date=cfg.start_date,
         )
         prepared_inputs[spec.code] = (df_model, x_model)
 
@@ -77,8 +80,6 @@ def main():
 
 
   
-
-
 if __name__ == "__main__":
 
     main()

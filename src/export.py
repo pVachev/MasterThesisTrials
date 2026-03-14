@@ -16,6 +16,9 @@ def export_model_results_to_excel(results, output_file: str) -> None:
             if res.regime_summary is not None:
                 res.regime_summary.to_excel(writer, sheet_name=summary_sheet, index=False, startrow=startrow)
                 startrow += len(res.regime_summary) + 3
+            
+            res.moment_table.to_excel(writer, sheet_name=summary_sheet, startrow=startrow)
+            startrow += len(res.moment_table) + 3
 
             res.trans.to_excel(writer, sheet_name=summary_sheet, startrow=startrow)
             startrow += len(res.trans) + 3

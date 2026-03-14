@@ -65,6 +65,7 @@ class ModelRunResult:
     model: object
     pp: RegimePostProcessor
     regime_summary: pd.DataFrame | None
+    moment_table: pd.DataFrame
     trans: pd.DataFrame
     duration: pd.DataFrame
     chatter: pd.DataFrame
@@ -140,6 +141,7 @@ def run_one_model(
         sweep=sweep,
         best_seed=best_seed,
         out=out,
+        moment_table=out,
         df_m=df_m,
         model=model,
         pp=pp,

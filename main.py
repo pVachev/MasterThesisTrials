@@ -13,7 +13,6 @@ def main():
     tickers_all = ["SPY", "WFBIX","^IRX", "LBUSTRUU", "LT09TRUU", "^SP500TR","G1BM", "RF" ,"XAU", "USGG3M"]
     m_tickers = ["LBUSTRUU", "LT09TRUU", "XAU", "USGG3M", "RF"]
    
-
     """
     ModelA -> Bond ETF
     ModelB -> 10Y bonds 
@@ -23,14 +22,14 @@ def main():
         n_states=3,
         rf_col="RF", # change in hmm.py too 
         rf_mode="simple_return_monthly_decimal",   # "simple_return_monthly_decimal" "yield_annualized" 
-        start_date="1993-08-31",
+        start_date="1985-08-31",
         cov_type="full",
         output_file="hmm_regime_results.xlsx",
     )
 
 
     model_asset_sets = [
-        ["^SP500TR", "WFBIX"],
+        ["^SP500TR", "WFBIX", "XAU"],
         ["^SP500TR", "LBUSTRUU"],
         ["^SP500TR", "LT09TRUU", "XAU"],
     ]
@@ -64,6 +63,7 @@ def main():
         print(f"\n--- {spec.label} ---")
         if res.regime_summary is not None:
             print(res.regime_summary)
+        print(res.moment_table)
         if res.corr_table is not None:
             print(res.corr_table)
 

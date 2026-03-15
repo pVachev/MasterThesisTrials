@@ -10,8 +10,8 @@ from src.plot import plot_results_dashboard, plot_requested_distributions
 
 
 def main():
-    tickers_all = ["SPY", "WFBIX","^IRX", "LBUSTRUU", "LT09TRUU", "^SP500TR","G1BM", "RF" ,"XAU", "USGG3M"]
-    m_tickers = ["LBUSTRUU", "LT09TRUU", "XAU", "USGG3M", "RF"]
+    tickers_all = ["SPY", "WFBIX","^IRX", "LBUSTRUU", "LT09TRUU", "^SP500TR","G1BM", "RF" ,"XAU", "USGG3M","LT01TRUU","LT12TRUU" ]
+    m_tickers = ["LBUSTRUU", "LT09TRUU","LT01TRUU","LT12TRUU", "XAU", "USGG3M", "RF"]
    
     """
     ModelA -> Bond ETF
@@ -29,9 +29,9 @@ def main():
 
 
     model_asset_sets = [
-        ["^SP500TR", "WFBIX", "XAU"],
-        ["^SP500TR", "LBUSTRUU"],
-        ["^SP500TR", "LT09TRUU", "XAU"],
+        # ["^SP500TR", "LT01TRUU"],
+        # ["^SP500TR", "LT12TRUU"],
+        ["^SP500TR", "LT09TRUU","XAU"],
     ]
 
 

@@ -10,8 +10,8 @@ from src.plot import plot_results_dashboard, plot_requested_distributions
 
 
 def main():
-    tickers_all = ["SPY", "WFBIX","^IRX", "LBUSTRUU", "LT09TRUU", "^SP500TR","G1BM", "RF" ,"XAU", "USGG3M","LT01TRUU","LT12TRUU" ]
-    m_tickers = ["LBUSTRUU", "LT09TRUU","LT01TRUU","LT12TRUU", "XAU", "USGG3M", "RF"]
+    tickers_all = ["SPY", "WFBIX","^IRX", "LBUSTRUU", "LT09TRUU", "^SP500TR","G1BM", "RF" ,"XAU", "USGG3M","LT01TRUU","LT12TRUU","LT13TRUU", "DEMUSD"]
+    m_tickers = ["LBUSTRUU", "LT09TRUU","LT01TRUU","LT12TRUU", "XAU", "USGG3M", "RF", "LT13TRUU", "DEMUSD"]
    
     """
     ModelA -> Bond ETF
@@ -20,9 +20,10 @@ def main():
 
     cfg = GlobalRunConfig(
         n_states=3,
-        rf_col="RF", # change in hmm.py too 
-        rf_mode="simple_return_monthly_decimal",   # "simple_return_monthly_decimal" "yield_annualized" 
-        start_date="1985-08-31",
+        rf_col="^IRX", # change in hmm.py too 
+        rf_mode="yield_annualized",   # "simple_return_monthly_decimal" "yield_annualized" 
+        start_date="1985-12-31",
+        freq="W-FRI",
         cov_type="full",
         output_file="hmm_regime_results.xlsx",
     )
@@ -30,8 +31,13 @@ def main():
 
     model_asset_sets = [
         # ["^SP500TR", "LT01TRUU"],
-        # ["^SP500TR", "LT12TRUU"],
-        ["^SP500TR", "LT09TRUU","XAU"],
+        # ["^SP500TR", "LT13TRUU", "XAU"],
+        # ["^SP500TR", "LT09TRUU","XAU"],
+        # ["^SP500TR","DEMUSD"], 
+        # ["^SP500TR","DEMUSD", "LT13TRUU"],
+        # ["^SP500TR","DEMUSD","XAU"],
+        # ["^SP500TR","DEMUSD","LT13TRUU", "XAU"]
+        ["^SP500TR", "WFBIX"]
     ]
 
 
@@ -50,6 +56,7 @@ def main():
             monthly_tickers=m_tickers,
             rf_mode=cfg.rf_mode,
             start_date=cfg.start_date,
+            freq=cfg.freq
         )
         prepared_inputs[spec.code] = (df_model, x_model)
 

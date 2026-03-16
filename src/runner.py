@@ -12,6 +12,7 @@ class GlobalRunConfig:
     seeds: range = range(1, 41)
     rf_col: str = "RF"
     rf_mode: str = "simple_return_monthly_decimal"
+    freq: str = "ME"   # "ME" for monthly, "W-FRI" for weekly
     start_date: str | None = None
     make_dashboard: bool = True
     make_distribution_plots: bool = True
@@ -83,6 +84,7 @@ def build_model_specs(model_asset_sets: list[list[str]], rf_col: str) -> list[Mo
 def build_model_input(
     raw_df: pd.DataFrame,
     spec: ModelSpec,
+    freq: str,
     monthly_tickers: list[str],
     rf_mode: str,
     start_date: str | None = None,
@@ -91,6 +93,7 @@ def build_model_input(
         raw_df,
         spec.tickers,
         rf_col=spec.rf_col,
+        freq=freq,
         monthly_cols=monthly_tickers,
         rf_mode=rf_mode,
     )

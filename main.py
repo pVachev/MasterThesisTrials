@@ -10,8 +10,10 @@ from src.plot import plot_results_dashboard, plot_requested_distributions
 
 
 def main():
-    tickers_all = ["SPY", "WFBIX","^IRX", "LBUSTRUU", "LT09TRUU", "^SP500TR","G1BM", "RF" ,"XAU", "USGG3M","LT01TRUU","LT12TRUU","LT13TRUU", "DEMUSD"]
-    m_tickers = ["LBUSTRUU", "LT09TRUU","LT01TRUU","LT12TRUU", "XAU", "USGG3M", "RF", "LT13TRUU", "DEMUSD"]
+    tickers_all = ["SPY", "WFBIX","^IRX", "LBUSTRUU", "LT09TRUU", "^SP500TR","G1BM", "RF" ,
+                   "XAU", "USGG3M","LT01TRUU","LT12TRUU","LT13TRUU", "DEMUSD", "Oil COMP",
+                   "IYW", "XLE", "EEM"]
+    m_tickers = ["LBUSTRUU", "LT09TRUU","LT01TRUU","LT12TRUU", "XAU", "USGG3M", "RF", "LT13TRUU", "DEMUSD","Oil COMP"]
    
     """
     ModelA -> Bond ETF
@@ -20,10 +22,10 @@ def main():
 
     cfg = GlobalRunConfig(
         n_states=3,
-        rf_col="^IRX", # change in hmm.py too 
-        rf_mode="yield_annualized",   # "simple_return_monthly_decimal" "yield_annualized" 
+        rf_col="RF", # change in hmm.py too 
+        rf_mode="simple_return_monthly_decimal",   # "simple_return_monthly_decimal" "yield_annualized" 
         start_date="1985-12-31",
-        freq="W-FRI",
+        freq="ME",
         cov_type="full",
         output_file="hmm_regime_results.xlsx",
     )
@@ -36,8 +38,15 @@ def main():
         # ["^SP500TR","DEMUSD"], 
         # ["^SP500TR","DEMUSD", "LT13TRUU"],
         # ["^SP500TR","DEMUSD","XAU"],
-        # ["^SP500TR","DEMUSD","LT13TRUU", "XAU"]
-        ["^SP500TR", "WFBIX"]
+        # ["^SP500TR","DEMUSD","LT13TRUU", "XAU"],
+        # ["^SP500TR", "Oil COMP"],
+        # ["^SP500TR","Oil COMP", "XAU", "LT09TRUU"],
+        # ["^SP500TR", "Oil COMP", "DEMUSD"],
+        # ["^SP500TR", "Oil COMP", "DEMUSD", "XAU","LT09TRUU"],
+        ["^SP500TR", "EEM", "IYW", "XLE"], 
+        ["^SP500TR", "EEM", "IYW"],
+        ["^SP500TR", "EEM", "XLE"]
+
     ]
 
 

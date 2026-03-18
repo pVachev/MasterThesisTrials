@@ -21,7 +21,7 @@ def main():
     """
 
     cfg = GlobalRunConfig(
-        n_states=3,
+        n_states=1,
         rf_col="RF", # change in hmm.py too 
         rf_mode="simple_return_monthly_decimal",   # "simple_return_monthly_decimal" "yield_annualized" 
         start_date="1985-12-31",
@@ -33,19 +33,19 @@ def main():
 
     model_asset_sets = [
         # ["^SP500TR", "LT01TRUU"],
-        # ["^SP500TR", "LT13TRUU", "XAU"],
-        # ["^SP500TR", "LT09TRUU","XAU"],
+        ["^SP500TR", "LT09TRUU", "XAU"],
+        ["^SP500TR", "LT09TRUU","Oil COMP"],
         # ["^SP500TR","DEMUSD"], 
         # ["^SP500TR","DEMUSD", "LT13TRUU"],
         # ["^SP500TR","DEMUSD","XAU"],
-        # ["^SP500TR","DEMUSD","LT13TRUU", "XAU"],
+        # ["^SP500TR","DEMUSD","LT09TRUU", "XAU"],
         # ["^SP500TR", "Oil COMP"],
-        # ["^SP500TR","Oil COMP", "XAU", "LT09TRUU"],
+        ["^SP500TR", "LT09TRUU","XAU","Oil COMP"],
         # ["^SP500TR", "Oil COMP", "DEMUSD"],
         # ["^SP500TR", "Oil COMP", "DEMUSD", "XAU","LT09TRUU"],
-        ["^SP500TR", "EEM", "IYW", "XLE"], 
-        ["^SP500TR", "EEM", "IYW"],
-        ["^SP500TR", "EEM", "XLE"]
+        # ["^SP500TR", "EEM", "IYW", "XLE"], 
+        # ["^SP500TR", "EEM", "IYW"],
+        # ["^SP500TR", "EEM", "XLE"]
 
     ]
 

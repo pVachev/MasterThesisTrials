@@ -25,7 +25,10 @@ from src.allocation_regime import build_predictive_probability_panel
 from src.allocation_moments import evaluate_candidate_tilt_moments
 from src.allocation_scoring import select_best_tilt_at_date
 
+from src.allocation_backtest import run_regime_allocation_backtest
 
+from src.allocation_export import export_allocation_backtest_to_excel
+from src.allocation_plot import plot_allocation_dashboard, plot_distribution_comparison
 
 def main():
     tickers_all = ["SPY", "WFBIX","^IRX", "LBUSTRUU", "LT09TRUU", "^SP500TR","G1BM", "RF" ,
@@ -280,7 +283,7 @@ def main():
         res=res_core,
         allocation_df=allocation_df,
         alloc_cfg=alloc_cfg,
-        investor_cfg=mv_pref,
+        investor_cfg=mvk_pref,
         satellite_specs=satellite_specs,
         predictive_probability_panel=pred_probs,
         rebalance_date=test_date,
@@ -292,6 +295,53 @@ def main():
 
     print("\nTop candidate rows:")
     print(candidate_table.head(10))
+
+
+
+    print("\n=== STAGE 6 SMOKE TEST ===")
+
+    backtest_mv = run_regime_allocation_backtest(
+        res=res_core,
+        allocation_df=allocation_df,
+        alloc_cfg=alloc_cfg,
+        investor_cfg=mv_pref,
+        satellite_specs=[gold_sat],   # replace later with oil/fx/ETF satellites
+        benchmark_weights={"^SP500TR": 0.60, "LT09TRUU": 0.40, "XAU": 0.00},
+        signal_return_prefix="ExcessLog",
+        realized_return_prefix="Log",
+        periods_per_year=12,
+        store_candidate_scores=True,
+    )
+
+    print("\nPerformance summary:")
+    print(backtest_mv.performance_summary)
+
+    print("\nDecision log head:")
+    print(backtest_mv.decision_log.head())
+
+    print("\nWeights head:")
+    print(backtest_mv.weights.head())
+
+    print("\nStrategy returns head:")
+    print(backtest_mv.strategy_returns.head())
+    
+    print("\n=== STAGE 7 SMOKE TEST ===")
+
+    plot_allocation_dashboard(backtest_mv)
+    plot_distribution_comparison(backtest_mv)
+
+    export_allocation_backtest_to_excel(
+        backtest_res=backtest_mv,
+        alloc_cfg=alloc_cfg,
+        investor_cfg=mv_pref,
+        satellite_specs=[gold_sat],
+        res_core=res_core,
+        output_file="allocation_backtest_mv.xlsx",
+    )
+
+
+
+
 
 
   

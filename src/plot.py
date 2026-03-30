@@ -9,7 +9,7 @@ from scipy import stats
 def plot_regime_dashboard_stack(
     models: list[tuple[str, "pd.DataFrame"]],
     *,
-    figsize=(16, 13),
+    figsize=(9, 7),
 ):
     """
     2 rows per model:
@@ -55,7 +55,7 @@ def plot_regime_distribution_grid(
     panels: list[tuple[str, pd.DataFrame]],
     value_col: str = "ExcessLog^SP500TR",
     bins: int = 30,
-    figsize: tuple[int, int] = (16, 10),
+    figsize: tuple[int, int] = (9, 7),
     density: bool = True,
     sharex: bool | str = "col",
     sharey: bool = False,
@@ -187,7 +187,7 @@ def plot_regime_distribution_grid(
 
 def plot_results_dashboard(results) -> None:
     panels = [(res.spec.label, res.pp.df_m) for res in results]
-    plot_regime_dashboard_stack(panels, figsize=(26, 6 * max(len(results), 1)))
+    plot_regime_dashboard_stack(panels, figsize=(18, 4 * max(len(results), 1)))
 
 
 def plot_requested_distributions(results) -> None:
@@ -202,6 +202,6 @@ def plot_requested_distributions(results) -> None:
             panels,
             value_col=asset_col,
             bins=70,
-            figsize=(20, 14),
+            figsize=(14, 9),
             add_kde=True,
         )

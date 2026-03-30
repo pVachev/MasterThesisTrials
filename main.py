@@ -7,24 +7,23 @@ from src.runner import (
 )
 from src.export import export_model_results_to_excel
 from src.plot import plot_results_dashboard, plot_requested_distributions
-from src.allocation import (
+from src.allocation_config import (
     InvestorPreferenceConfig,
     SatelliteSpec,
     AllocationConfig,
 )
 
-from src.allocation import (
+from src.allocation_regime import (
     extract_filtered_probabilities,
     extract_reordered_transition_matrix,
     build_predictive_probability_panel,
 )
-
-from src.allocation import (
-    build_predictive_probability_panel,
-    evaluate_candidate_tilt_moments,
-)
 from src.load import diff_data
 
+
+from src.allocation_regime import build_predictive_probability_panel
+from src.allocation_moments import evaluate_candidate_tilt_moments
+from src.allocation_scoring import select_best_tilt_at_date
 
 
 
@@ -258,6 +257,41 @@ def main():
     print("\nState-conditional moments for Gold 10% candidate:")
     print(stage4_gold_10["state_moment_table"])
 
+    print("\n=== STAGE 5 SMOKE TEST ===")
+
+    # choose one core regime model result
+    # IMPORTANT:
+    # if gold is core, do not also include gold as a satellite candidate
+    res_core = next(r for r in results if r.spec.code == "C")   # example only
+
+    # build predictive probability panel
+    pred_probs = build_predictive_probability_panel(res_core, steps_ahead=1)
+
+    # choose one rebalance date
+    test_date = pred_probs.index[24]
+
+    # choose satellite candidates
+    # example if gold is NOT satellite in this specification:
+    # satellite_specs = [oil_sat, fx_sat]
+    # for a first smoke test, if you still want to tesßt gold in a non-gold-core spec:
+    satellite_specs = [gold_sat]
+
+    decision, candidate_table = select_best_tilt_at_date(
+        res=res_core,
+        allocation_df=allocation_df,
+        alloc_cfg=alloc_cfg,
+        investor_cfg=mv_pref,
+        satellite_specs=satellite_specs,
+        predictive_probability_panel=pred_probs,
+        rebalance_date=test_date,
+    )
+
+    print("Rebalance date:", test_date)
+    print("\nChosen decision:")
+    print(decision)
+
+    print("\nTop candidate rows:")
+    print(candidate_table.head(10))
 
 
   

@@ -21,7 +21,7 @@ def clean_data(
               continue
 
             df = pd.read_csv(
-                FILEPATH + file,
+                FILEPATH / file,
                 skiprows=lambda x: x in [0,1],
                 index_col=0,
                 usecols=[0,1],

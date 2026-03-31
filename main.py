@@ -1,3 +1,5 @@
+import pandas as pd 
+
 from src.transform import clean_data
 from src.runner import (
     GlobalRunConfig,
@@ -30,10 +32,13 @@ from src.allocation_backtest import run_regime_allocation_backtest
 from src.allocation_export import export_allocation_backtest_to_excel
 from src.allocation_plot import plot_allocation_dashboard, plot_distribution_comparison
 
+
+
+
 def main():
     tickers_all = ["SPY", "WFBIX","^IRX", "LBUSTRUU", "LT09TRUU", "^SP500TR","G1BM", "RF" ,
                    "XAU", "USGG3M","LT01TRUU","LT12TRUU","LT13TRUU", "DEMUSD", "Oil COMP",
-                   "IYW", "XLE", "EEM"]
+                   "XLB", "XLE", "XLF", "XLI", "XLK", "XLP", "XLU", "XLV", "XLY"]
     m_tickers = ["LBUSTRUU", "LT09TRUU","LT01TRUU","LT12TRUU", "XAU", "USGG3M", "RF", "LT13TRUU", "DEMUSD","Oil COMP"]
    
     """
@@ -45,7 +50,7 @@ def main():
         n_states=3,
         rf_col="RF", # change in hmm.py too 
         rf_mode="simple_return_monthly_decimal",   # "simple_return_monthly_decimal" "yield_annualized" 
-        start_date="1985-12-31",
+        start_date="1998-12-31",
         freq="ME",
         cov_type="full",
         output_file="hmm_regime_results.xlsx",
@@ -54,14 +59,15 @@ def main():
 
     model_asset_sets = [
         # ["^SP500TR", "LT01TRUU"],
-        ["^SP500TR", "LT13TRUU", "XAU"],
-        ["^SP500TR", "LT09TRUU","Oil COMP"],
+        ["^SP500TR", "LT09TRUU"],
+        # ["^SP500TR", "LT09TRUU","Oil COMP"],
         # ["^SP500TR","DEMUSD"], 
         # ["^SP500TR","DEMUSD", "LT13TRUU"],
         # ["^SP500TR","DEMUSD","XAU"],
         # ["^SP500TR","DEMUSD","LT09TRUU", "XAU"],
         # ["^SP500TR", "Oil COMP"],
-        ["^SP500TR", "LT09TRUU","XAU"],
+        # ["^SP500TR", "LT09TRUU", "XAU", "XLK", "XLP"],
+        # ["^SP500TR", "WFBIX", "XAU", "XLK", "XLP"],
         # ["^SP500TR", "Oil COMP", "DEMUSD"],
         # ["^SP500TR", "Oil COMP", "DEMUSD", "XAU","LT09TRUU"],
         # ["^SP500TR", "EEM", "IYW", "XLE"], 
@@ -116,50 +122,55 @@ def main():
         plot_requested_distributions(results)
 
 
-    # -------------------------------------------------------------
-    # SMOKE TEST STARTS HERE
-    #--------------------------------------------------------------
+    # ============================================================
+    # ALLOCATION PARAMETERS
+    # ============================================================
 
-    # pick one existing HMM model result as the future core regime engine
-    res_core = next(r for r in results if r.spec.code == "C")   # example: LT09TRUU core model
+    RUN_ALLOCATION = True
+    EXPORT_ALLOCATION = True
+    PLOT_ALLOCATION = True
+    STORE_CANDIDATE_SCORES = True
 
-    # investor types
-    mv_pref = InvestorPreferenceConfig(
-        name="MV Investor",
-        investor_type="MV",
-        lambda_=3.0,
-    )
+    CORE_MODEL_CODE = "A"                 # core HMM engine = SP500TR + LT09TRUU
+    ALLOCATION_START = "1998-12-31"       # first rebalance date; first realized return at next month-end
 
-    mvs_pref = InvestorPreferenceConfig(
-        name="MVS Investor",
-        investor_type="MVS",
-        lambda_=3.0,
-        gamma=0.5,
-    )
+    # Investor profiles
+    investor_configs = {
+        "MV": InvestorPreferenceConfig(
+            name="MV Investor",
+            investor_type="MV",
+            lambda_=3.0,
+        ),
+        "MVS": InvestorPreferenceConfig(
+            name="MVS Investor",
+            investor_type="MVS",
+            lambda_=3.0,
+            gamma=0.5,
+        ),
+        "MVK": InvestorPreferenceConfig(
+            name="MVK Investor",
+            investor_type="MVK",
+            lambda_=3.0,
+            delta=0.2,
+        ),
+    }
 
-    mvk_pref = InvestorPreferenceConfig(
-        name="MVK Investor",
-        investor_type="MVK",
-        lambda_=3.0,
-        delta=0.2,
-    )
+    # Sector ETF satellites
+    sector_specs = [
+        SatelliteSpec(ticker="XLB", label="Materials", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
+        SatelliteSpec(ticker="XLE", label="Energy", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
+        SatelliteSpec(ticker="XLF", label="Financials", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
+        SatelliteSpec(ticker="XLI", label="Industrials", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
+        SatelliteSpec(ticker="XLK", label="Technology", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
+        SatelliteSpec(ticker="XLP", label="Consumer Staples", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
+        SatelliteSpec(ticker="XLU", label="Utilities", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
+        SatelliteSpec(ticker="XLV", label="Health Care", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
+        SatelliteSpec(ticker="XLY", label="Consumer Discretionary", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
+    ]
 
-    # satellite candidates
-    gold_sat = SatelliteSpec(
-        ticker="XAU",
-        label="Gold",
-        allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20],
-        group="commodity",
-    )
-
-    # later you can add more:
-    # oil_sat = SatelliteSpec(...)
-    # fx_sat = SatelliteSpec(...)
-
-    # allocation-layer config
     alloc_cfg = AllocationConfig(
         rebalance_frequency="ME",
-        top_n_satellites=1,
+        top_n_satellites=1,                      # keep it simple first
         max_satellite_weight=0.20,
         fixed_core_weights={
             "^SP500TR": 0.60,
@@ -171,180 +182,75 @@ def main():
         turnover_limit=None,
         min_regime_obs=24,
         shrinkage_intensity=0.0,
-        score_improvement_floor=0.0,
+        score_improvement_floor=0.001,          # optional noise filter
         export_file="allocation_results.xlsx",
     )
 
     alloc_cfg.validate()
 
-    print("\n=== STAGE 2 SMOKE TEST ===")
-    print("Core regime engine:", res_core.spec.label)
-    print(mv_pref)
-    print(mvs_pref)
-    print(mvk_pref)
-    print(gold_sat)
-    print(alloc_cfg)
+    if RUN_ALLOCATION:
+        # 1) choose core regime engine
+        res_core = next(r for r in results if r.spec.code == CORE_MODEL_CODE)
 
+        # 2) build allocation universe
+        satellite_tickers = [s.ticker for s in sector_specs]
+        allocation_cols = ["^SP500TR", "LT09TRUU"] + satellite_tickers + [cfg.rf_col]
 
-    # -------------------------------------------------------------
-    # ENDS HERE
-    #--------------------------------------------------------------
+        allocation_df = diff_data(
+            df,
+            cols=allocation_cols,
+            rf_col=cfg.rf_col,
+            monthly_cols=m_tickers,
+            rf_mode=cfg.rf_mode,
+        )
 
-    print("\n=== STAGE 3 SMOKE TEST ===")
+        # 3) restrict allocation backtest start
+        allocation_df = allocation_df.loc[allocation_df.index >= pd.to_datetime(ALLOCATION_START)].copy()
 
-    filtered_probs = extract_filtered_probabilities(res_core)
-    print("\nFiltered probabilities:")
-    print(filtered_probs.head())
+        # 4) benchmark
+        benchmark_weights = {
+            "^SP500TR": 0.60,
+            "LT09TRUU": 0.40,
+        }
 
-    P = extract_reordered_transition_matrix(res_core)
-    print("\nReordered transition matrix:")
-    print(P)
+        allocation_results = {}
 
-    pred_probs = build_predictive_probability_panel(res_core, steps_ahead=1)
-    print("\nOne-step predictive probabilities:")
-    print(pred_probs.head())
+        for inv_key, investor_cfg in investor_configs.items():
+            bt = run_regime_allocation_backtest(
+                res=res_core,
+                allocation_df=allocation_df,
+                alloc_cfg=alloc_cfg,
+                investor_cfg=investor_cfg,
+                satellite_specs=sector_specs,
+                benchmark_weights=benchmark_weights,
+                signal_return_prefix="ExcessLog",
+                realized_return_prefix="Log",
+                periods_per_year=12,
+                store_candidate_scores=STORE_CANDIDATE_SCORES,
+            )
 
-    # optional checks
-    print("\nFiltered row sums:")
-    print(filtered_probs.sum(axis=1).head())
+            allocation_results[inv_key] = bt
 
-    print("\nPredictive row sums:")
-    print(pred_probs.sum(axis=1).head())
+            print(f"\n=== {investor_cfg.name} PERFORMANCE ===")
+            print(bt.performance_summary)
 
-    print(filtered_probs.idxmax(axis=1).head(10))
-    print(pred_probs.idxmax(axis=1).head(10))
+            if EXPORT_ALLOCATION:
+                export_allocation_backtest_to_excel(
+                    backtest_res=bt,
+                    alloc_cfg=alloc_cfg,
+                    investor_cfg=investor_cfg,
+                    satellite_specs=sector_specs,
+                    res_core=res_core,
+                    output_file=f"allocation_backtest_{inv_key}.xlsx",
+                )
 
-
-    allocation_df = diff_data(
-        df,
-        cols=["^SP500TR", "LT09TRUU", "XAU", cfg.rf_col],
-        rf_col=cfg.rf_col,
-        monthly_cols=m_tickers,
-        rf_mode=cfg.rf_mode,
-)
-    
-
-    test_date = pred_probs.index[24]
-
-    stage4_baseline = evaluate_candidate_tilt_moments(
-        res=res_core,
-        allocation_df=allocation_df,
-        alloc_cfg=alloc_cfg,
-        predictive_probability_panel=pred_probs,
-        rebalance_date=test_date,
-        satellite_weights={},
-    )
-
-    stage4_gold_10 = evaluate_candidate_tilt_moments(
-        res=res_core,
-        allocation_df=allocation_df,
-        alloc_cfg=alloc_cfg,
-        predictive_probability_panel=pred_probs,
-        rebalance_date=test_date,
-        satellite_weights={"XAU": 0.10},
-    )
-
-    print("\n=== STAGE 4 SMOKE TEST ===")
-    print("Rebalance date:", test_date)
-
-    print("\nBaseline weights:")
-    print(stage4_baseline["total_weights"])
-    print("Baseline aggregated moments:")
-    print(stage4_baseline["aggregated_moments"])
-
-    print("\nGold 10% weights:")
-    print(stage4_gold_10["total_weights"])
-    print("Gold 10% aggregated moments:")
-    print(stage4_gold_10["aggregated_moments"])
-
-    print("\nState-conditional moments for Gold 10% candidate:")
-    print(stage4_gold_10["state_moment_table"])
-
-    print("\n=== STAGE 5 SMOKE TEST ===")
-
-    # choose one core regime model result
-    # IMPORTANT:
-    # if gold is core, do not also include gold as a satellite candidate
-    res_core = next(r for r in results if r.spec.code == "C")   # example only
-
-    # build predictive probability panel
-    pred_probs = build_predictive_probability_panel(res_core, steps_ahead=1)
-
-    # choose one rebalance date
-    test_date = pred_probs.index[24]
-
-    # choose satellite candidates
-    # example if gold is NOT satellite in this specification:
-    # satellite_specs = [oil_sat, fx_sat]
-    # for a first smoke test, if you still want to tesßt gold in a non-gold-core spec:
-    satellite_specs = [gold_sat]
-
-    decision, candidate_table = select_best_tilt_at_date(
-        res=res_core,
-        allocation_df=allocation_df,
-        alloc_cfg=alloc_cfg,
-        investor_cfg=mvk_pref,
-        satellite_specs=satellite_specs,
-        predictive_probability_panel=pred_probs,
-        rebalance_date=test_date,
-    )
-
-    print("Rebalance date:", test_date)
-    print("\nChosen decision:")
-    print(decision)
-
-    print("\nTop candidate rows:")
-    print(candidate_table.head(10))
-
-
-
-    print("\n=== STAGE 6 SMOKE TEST ===")
-
-    backtest_mv = run_regime_allocation_backtest(
-        res=res_core,
-        allocation_df=allocation_df,
-        alloc_cfg=alloc_cfg,
-        investor_cfg=mv_pref,
-        satellite_specs=[gold_sat],   # replace later with oil/fx/ETF satellites
-        benchmark_weights={"^SP500TR": 0.60, "LT09TRUU": 0.40, "XAU": 0.00},
-        signal_return_prefix="ExcessLog",
-        realized_return_prefix="Log",
-        periods_per_year=12,
-        store_candidate_scores=True,
-    )
-
-    print("\nPerformance summary:")
-    print(backtest_mv.performance_summary)
-
-    print("\nDecision log head:")
-    print(backtest_mv.decision_log.head())
-
-    print("\nWeights head:")
-    print(backtest_mv.weights.head())
-
-    print("\nStrategy returns head:")
-    print(backtest_mv.strategy_returns.head())
-    
-    print("\n=== STAGE 7 SMOKE TEST ===")
-
-    plot_allocation_dashboard(backtest_mv)
-    plot_distribution_comparison(backtest_mv)
-
-    export_allocation_backtest_to_excel(
-        backtest_res=backtest_mv,
-        alloc_cfg=alloc_cfg,
-        investor_cfg=mv_pref,
-        satellite_specs=[gold_sat],
-        res_core=res_core,
-        output_file="allocation_backtest_mv.xlsx",
-    )
+            if PLOT_ALLOCATION:
+                plot_allocation_dashboard(bt)
+                plot_distribution_comparison(bt)
 
 
 
 
-
-
-  
 if __name__ == "__main__":
 
     main()

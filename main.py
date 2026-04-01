@@ -141,18 +141,18 @@ def main():
             investor_type="MV",
             lambda_=3.0,
         ),
-        "MVS": InvestorPreferenceConfig(
-            name="MVS Investor",
-            investor_type="MVS",
-            lambda_=3.0,
-            gamma=0.5,
-        ),
-        "MVK": InvestorPreferenceConfig(
-            name="MVK Investor",
-            investor_type="MVK",
-            lambda_=3.0,
-            delta=0.2,
-        ),
+        # "MVS": InvestorPreferenceConfig(
+        #     name="MVS Investor",
+        #     investor_type="MVS",
+        #     lambda_=3.0,
+        #     gamma=0.5,
+        # ),
+        # "MVK": InvestorPreferenceConfig(
+        #     name="MVK Investor",
+        #     investor_type="MVK",
+        #     lambda_=3.0,
+        #     delta=0.2,
+        # ),
     }
 
     # Sector ETF satellites
@@ -166,11 +166,12 @@ def main():
         SatelliteSpec(ticker="XLU", label="Utilities", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
         SatelliteSpec(ticker="XLV", label="Health Care", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
         SatelliteSpec(ticker="XLY", label="Consumer Discretionary", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
+        SatelliteSpec(ticker="XAU", label="Gold", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="commodity")
     ]
 
     alloc_cfg = AllocationConfig(
         rebalance_frequency="ME",
-        top_n_satellites=1,                      # keep it simple first
+        top_n_satellites=2,                      # keep it simple first
         max_satellite_weight=0.20,
         fixed_core_weights={
             "^SP500TR": 0.60,

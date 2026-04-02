@@ -1,10 +1,12 @@
 from itertools import combinations
-import numpy as np
 import pandas as pd
 
 from src.allocation_config import TiltDecision
-from src.allocation_moments import evaluate_candidate_tilt_moments
-
+from src.allocation_moments import (
+    build_total_portfolio_weights,
+    estimate_state_conditional_portfolio_moments_from_sample,
+    aggregate_predictive_portfolio_moments,
+)
 
 # ---------------------------------------------------------------------
 # 1) INVESTOR SCORE FUNCTIONS
@@ -17,42 +19,12 @@ def compute_investor_score(
     skewness: float,
     kurtosis: float,
 ) -> float:
-    """
-    Compute the investor-specific score for one candidate portfolio.
-
-    Supported types
-    ---------------
-    MV:
-        Score = mu_p - lambda * sigma_p^2
-
-    MVS:
-        Score = mu_p - lambda * sigma_p^2 + gamma * skew_p
-
-    MVK:
-        Score = mu_p - lambda * sigma_p^2 - delta * kurt_p
-
-    Notes
-    -----
-    - We use variance directly, not volatility.
-    - Kurtosis is regular kurtosis, not excess kurtosis.
-    """
     if investor_cfg.investor_type == "MV":
         return expected_return - investor_cfg.lambda_ * variance
-
     elif investor_cfg.investor_type == "MVS":
-        return (
-            expected_return
-            - investor_cfg.lambda_ * variance
-            + investor_cfg.gamma * skewness
-        )
-
+        return expected_return - investor_cfg.lambda_ * variance + investor_cfg.gamma * skewness
     elif investor_cfg.investor_type == "MVK":
-        return (
-            expected_return
-            - investor_cfg.lambda_ * variance
-            - investor_cfg.delta * kurtosis
-        )
-
+        return expected_return - investor_cfg.lambda_ * variance - investor_cfg.delta * kurtosis
     else:
         raise ValueError(f"Unsupported investor_type: {investor_cfg.investor_type}")
 
@@ -61,38 +33,9 @@ def compute_investor_score(
 # 2) CANDIDATE ENUMERATION
 # ---------------------------------------------------------------------
 
-def enumerate_candidate_tilts(
-    satellite_specs: list,
-    alloc_cfg,
-) -> list[dict[str, float]]:
-    """
-    Build the discrete set of candidate satellite sleeve weights.
-
-    Always includes:
-        {}
-
-    meaning:
-        no-satellite baseline
-
-    If top_n_satellites = 1:
-        generates:
-            {sat1: w}
-            {sat2: w}
-            ...
-
-    If top_n_satellites = 2:
-        also generates pair combinations:
-            {sat1: w1, sat2: w2}
-
-    Constraints enforced
-    --------------------
-    - long-only
-    - total satellite sleeve <= max_satellite_weight
-    - no empty duplicate candidates
-    """
+def enumerate_candidate_tilts(satellite_specs: list, alloc_cfg) -> list[dict[str, float]]:
     candidates = [{}]
 
-    # 1-satellite candidates
     for sat in satellite_specs:
         for w in sat.allowed_weights:
             if w <= 0:
@@ -100,22 +43,16 @@ def enumerate_candidate_tilts(
             if w <= alloc_cfg.max_satellite_weight + 1e-12:
                 candidates.append({sat.ticker: float(w)})
 
-    # 2-satellite candidates
     if alloc_cfg.top_n_satellites >= 2:
         for sat_a, sat_b in combinations(satellite_specs, 2):
             for w_a in sat_a.allowed_weights:
                 for w_b in sat_b.allowed_weights:
                     if w_a <= 0 or w_b <= 0:
                         continue
-
                     total = float(w_a + w_b)
                     if total <= alloc_cfg.max_satellite_weight + 1e-12:
-                        candidates.append({
-                            sat_a.ticker: float(w_a),
-                            sat_b.ticker: float(w_b),
-                        })
+                        candidates.append({sat_a.ticker: float(w_a), sat_b.ticker: float(w_b)})
 
-    # deduplicate
     seen = set()
     unique_candidates = []
     for c in candidates:
@@ -309,6 +246,140 @@ def select_best_tilt_at_date(
         predictive_probabilities=dict(
             predictive_probability_panel.loc[rebalance_date].to_dict()
         ),
+        baseline_score=float(chosen["baseline_score"]),
+        selected_satellites=selected_satellites,
+        selected_weights=selected_weights,
+        total_portfolio_weights=dict(chosen["total_portfolio_weights"]),
+        expected_return=float(chosen["expected_return"]),
+        variance=float(chosen["variance"]),
+        skewness=float(chosen["skewness"]),
+        kurtosis=float(chosen["kurtosis"]),
+        final_score=float(chosen["score"]),
+        score_improvement=float(chosen["score_improvement"]),
+        metadata={
+            "selected_satellites_str": chosen["selected_satellites"],
+            "candidate_id": int(chosen["candidate_id"]),
+        },
+    )
+
+    return decision, candidate_table
+
+
+def build_candidate_library_from_train(
+    state_series_train: pd.Series,
+    regime_names: list[str],
+    allocation_df_train: pd.DataFrame,
+    alloc_cfg,
+    satellite_specs: list,
+    return_prefix: str = "ExcessLog",
+) -> list[dict]:
+    """
+    Precompute state-conditional candidate moment tables from TRAIN sample only.
+
+    This is the key A1 efficiency and honesty feature:
+    - candidate moments are fixed once using train only
+    - test-time decisions only update predictive regime probabilities
+    """
+    candidates = enumerate_candidate_tilts(satellite_specs, alloc_cfg)
+    library = []
+
+    for i, sat_weights in enumerate(candidates):
+        total_weights = build_total_portfolio_weights(
+            alloc_cfg=alloc_cfg,
+            satellite_weights=sat_weights,
+        )
+
+        state_moment_table = estimate_state_conditional_portfolio_moments_from_sample(
+            state_series=state_series_train,
+            regime_names=regime_names,
+            allocation_df_sample=allocation_df_train,
+            total_weights=total_weights,
+            alloc_cfg=alloc_cfg,
+            return_prefix=return_prefix,
+        )
+
+        library.append({
+            "candidate_id": i,
+            "satellite_weights": sat_weights,
+            "selected_satellites_str": ", ".join(sat_weights.keys()) if sat_weights else "NONE",
+            "total_portfolio_weights": total_weights,
+            "state_moment_table": state_moment_table,
+        })
+
+    return library
+
+
+def select_best_tilt_at_date_from_library(
+    candidate_library: list[dict],
+    predictive_probabilities_row: pd.Series,
+    investor_cfg,
+    alloc_cfg,
+    rebalance_date: pd.Timestamp,
+) -> tuple[TiltDecision, pd.DataFrame]:
+    """
+    Honest A1 selector:
+    - uses precomputed TRAIN-only candidate moment tables
+    - uses time-t predictive probabilities only for score aggregation
+    """
+    rows = []
+
+    baseline_score = None
+
+    for candidate in candidate_library:
+        agg = aggregate_predictive_portfolio_moments(
+            state_moment_table=candidate["state_moment_table"],
+            predictive_probabilities_row=predictive_probabilities_row,
+        )
+
+        score = compute_investor_score(
+            investor_cfg=investor_cfg,
+            expected_return=agg["expected_return"],
+            variance=agg["variance"],
+            skewness=agg["skewness"],
+            kurtosis=agg["kurtosis"],
+        )
+
+        if candidate["selected_satellites_str"] == "NONE":
+            baseline_score = score
+
+        rows.append({
+            "rebalance_date": rebalance_date,
+            "investor_name": investor_cfg.name,
+            "candidate_id": candidate["candidate_id"],
+            "selected_satellites": candidate["selected_satellites_str"],
+            "satellite_weights": candidate["satellite_weights"],
+            "total_portfolio_weights": candidate["total_portfolio_weights"],
+            "expected_return": agg["expected_return"],
+            "variance": agg["variance"],
+            "skewness": agg["skewness"],
+            "kurtosis": agg["kurtosis"],
+            "score": score,
+        })
+
+    if baseline_score is None:
+        raise ValueError("Baseline candidate {} was not found in candidate_library.")
+
+    candidate_table = pd.DataFrame(rows)
+    candidate_table["baseline_score"] = baseline_score
+    candidate_table["score_improvement"] = candidate_table["score"] - baseline_score
+    candidate_table = candidate_table.sort_values(["score_improvement", "score"], ascending=False).reset_index(drop=True)
+
+    best_row = candidate_table.iloc[0].copy()
+
+    if best_row["score_improvement"] < alloc_cfg.score_improvement_floor:
+        chosen = candidate_table.loc[candidate_table["selected_satellites"] == "NONE"].iloc[0].copy()
+    else:
+        chosen = best_row
+
+    selected_satellites = [] if chosen["selected_satellites"] == "NONE" else [
+        s.strip() for s in chosen["selected_satellites"].split(",")
+    ]
+    selected_weights = {} if chosen["selected_satellites"] == "NONE" else dict(chosen["satellite_weights"])
+
+    decision = TiltDecision(
+        rebalance_date=pd.Timestamp(rebalance_date),
+        investor_name=investor_cfg.name,
+        predictive_probabilities=dict(predictive_probabilities_row.to_dict()),
         baseline_score=float(chosen["baseline_score"]),
         selected_satellites=selected_satellites,
         selected_weights=selected_weights,

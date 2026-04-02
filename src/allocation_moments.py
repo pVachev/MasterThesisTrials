@@ -20,56 +20,7 @@ def build_total_portfolio_weights(
     alloc_cfg,
     satellite_weights: dict[str, float] | None = None,
 ) -> dict[str, float]:
-    """
-    Combine fixed core weights with a satellite sleeve.
-
-    Logic
-    -----
-    Let the core weights sum to 1.0 in alloc_cfg.fixed_core_weights.
-
-    If the total satellite sleeve weight is s, then:
-        - the core is scaled down by (1 - s)
-        - satellite weights are inserted on top
-        - total portfolio weights sum to 1.0
-
-    This keeps the implementation simple, long-only, and no-leverage.
-
-    Parameters
-    ----------
-    alloc_cfg : AllocationConfig
-        Allocation configuration.
-
-    satellite_weights : dict[str, float] | None
-        Example:
-            {"XAU": 0.10}
-        or:
-            {"XAU": 0.10, "OIL": 0.10}
-
-    Returns
-    -------
-    dict[str, float]
-        Full portfolio weights across core + satellites.
-
-    Notes
-    -----
-    This function enforces:
-    - long-only
-    - no leverage
-    - max total satellite weight
-    - top_n_satellites limit
-    """
     satellite_weights = satellite_weights or {}
-
-    if alloc_cfg.top_n_satellites == 1 and len([w for w in satellite_weights.values() if w > 0]) > 1:
-        raise ValueError("top_n_satellites=1 but more than one satellite has positive weight.")
-
-    if alloc_cfg.top_n_satellites == 2 and len([w for w in satellite_weights.values() if w > 0]) > 2:
-        raise ValueError("top_n_satellites=2 but more than two satellites have positive weight.")
-
-    if alloc_cfg.long_only:
-        neg = {k: v for k, v in satellite_weights.items() if v < 0}
-        if neg:
-            raise ValueError(f"Negative satellite weights are not allowed: {neg}")
 
     sat_total = float(sum(satellite_weights.values()))
     if sat_total > alloc_cfg.max_satellite_weight + 1e-12:
@@ -77,10 +28,12 @@ def build_total_portfolio_weights(
             f"Total satellite weight {sat_total:.4f} exceeds max_satellite_weight={alloc_cfg.max_satellite_weight:.4f}"
         )
 
-    core_scale = 1.0 - sat_total
-    if core_scale < -1e-12:
-        raise ValueError("Satellite sleeve exceeds 100% of portfolio.")
+    if alloc_cfg.long_only:
+        neg = {k: v for k, v in satellite_weights.items() if v < 0}
+        if neg:
+            raise ValueError(f"Negative satellite weights are not allowed: {neg}")
 
+    core_scale = 1.0 - sat_total
     total_weights = {k: core_scale * v for k, v in alloc_cfg.fixed_core_weights.items()}
 
     for k, v in satellite_weights.items():
@@ -93,29 +46,12 @@ def build_total_portfolio_weights(
     return total_weights
 
 
+
 def _extract_asset_return_panel(
     allocation_df: pd.DataFrame,
     portfolio_assets: list[str],
     return_prefix: str = "ExcessLog",
 ) -> pd.DataFrame:
-    """
-    Extract the return panel needed for the allocation universe.
-
-    Expected columns
-    ----------------
-    For asset ticker T, we expect:
-        f"{return_prefix}{T}"
-
-    Example:
-        ExcessLog^SP500TR
-        ExcessLogLT09TRUU
-        ExcessLogXAU
-
-    Returns
-    -------
-    pd.DataFrame
-        Date-indexed return panel with columns renamed to the raw asset tickers.
-    """
     cols = [f"{return_prefix}{a}" for a in portfolio_assets]
     missing = [c for c in cols if c not in allocation_df.columns]
     if missing:
@@ -127,25 +63,6 @@ def _extract_asset_return_panel(
 
 
 def _compute_raw_and_central_moments(r: pd.Series) -> dict[str, float]:
-    """
-    Compute raw moments and derived central moments for one return series.
-
-    Returns
-    -------
-    dict with:
-        n_obs
-        m1, m2, m3, m4
-        mean
-        variance
-        skewness
-        kurtosis
-
-    Notes
-    -----
-    - We compute raw moments because regime aggregation across probabilities
-      is easiest and cleanest in raw-moment space.
-    - Kurtosis returned here is regular kurtosis, not excess kurtosis.
-    """
     r = pd.to_numeric(r, errors="coerce").dropna()
     n = len(r)
 
@@ -162,8 +79,7 @@ def _compute_raw_and_central_moments(r: pd.Series) -> dict[str, float]:
     m3 = np.mean(x**3)
     m4 = np.mean(x**4)
 
-    var = m2 - m1**2
-    var = max(var, 0.0)
+    var = max(m2 - m1**2, 0.0)
 
     if var <= 1e-16:
         skew = 0.0
@@ -185,6 +101,7 @@ def _compute_raw_and_central_moments(r: pd.Series) -> dict[str, float]:
         "skewness": float(skew),
         "kurtosis": float(kurt),
     }
+
 
 
 def estimate_state_conditional_portfolio_moments(
@@ -332,40 +249,6 @@ def aggregate_predictive_portfolio_moments(
     state_moment_table: pd.DataFrame,
     predictive_probabilities_row: pd.Series,
 ) -> dict[str, float]:
-    """
-    Aggregate state-conditional portfolio moments using predictive regime probabilities.
-
-    Parameters
-    ----------
-    state_moment_table : pd.DataFrame
-        Output of estimate_state_conditional_portfolio_moments(...)
-
-    predictive_probabilities_row : pd.Series
-        One row of predictive regime probabilities:
-            pi_{t+1|t}
-
-        Index must be regime names:
-            Regime 0, Regime 1, ...
-
-    Returns
-    -------
-    dict with:
-        expected_return
-        variance
-        skewness
-        kurtosis
-        plus raw moments M1..M4
-
-    Formula
-    -------
-    We first aggregate raw moments:
-        M_k = sum_s p_s m_{k,s}
-
-    Then convert to central moments.
-
-    This is the right practical way to combine regime-specific portfolio moments
-    without using co-skewness / co-kurtosis tensors.
-    """
     table = state_moment_table.set_index("regime").copy()
 
     if list(table.index) != list(predictive_probabilities_row.index):
@@ -378,8 +261,7 @@ def aggregate_predictive_portfolio_moments(
     M3 = float(np.dot(p, table["m3"].to_numpy(dtype=float)))
     M4 = float(np.dot(p, table["m4"].to_numpy(dtype=float)))
 
-    var = M2 - M1**2
-    var = max(var, 0.0)
+    var = max(M2 - M1**2, 0.0)
 
     if var <= 1e-16:
         skew = 0.0
@@ -400,6 +282,89 @@ def aggregate_predictive_portfolio_moments(
         "M3": float(M3),
         "M4": float(M4),
     }
+
+def estimate_state_conditional_portfolio_moments_from_sample(
+    state_series: pd.Series,
+    regime_names: list[str],
+    allocation_df_sample: pd.DataFrame,
+    total_weights: dict[str, float],
+    alloc_cfg,
+    return_prefix: str = "ExcessLog",
+) -> pd.DataFrame:
+    """
+    Honest A1 version:
+    estimate candidate portfolio moments using a SAMPLE you explicitly pass in
+    (for A1: the training sample only).
+    """
+    portfolio_assets = list(total_weights.keys())
+
+    asset_panel = _extract_asset_return_panel(
+        allocation_df=allocation_df_sample,
+        portfolio_assets=portfolio_assets,
+        return_prefix=return_prefix,
+    )
+
+    common_index = asset_panel.index.intersection(state_series.index)
+    asset_panel = asset_panel.loc[common_index].copy()
+    states = state_series.loc[common_index].copy()
+
+    if len(common_index) == 0:
+        raise ValueError("No overlap between state_series and allocation_df_sample.")
+
+    w = pd.Series(total_weights, dtype=float)
+    portfolio_r = (asset_panel * w.values).sum(axis=1)
+
+    uncond = _compute_raw_and_central_moments(portfolio_r)
+
+    rows = []
+    for state_id in range(len(regime_names)):
+        r_s = portfolio_r.loc[states == state_id]
+        raw = _compute_raw_and_central_moments(r_s)
+        n = raw["n_obs"]
+
+        alpha = 1.0
+        if n < alloc_cfg.min_regime_obs:
+            alpha = min(alpha, n / alloc_cfg.min_regime_obs if alloc_cfg.min_regime_obs > 0 else 1.0)
+
+        if alloc_cfg.shrinkage_intensity > 0:
+            alpha = min(alpha, n / (n + alloc_cfg.shrinkage_intensity) if n > 0 else 0.0)
+
+        shrunk = {}
+        for k in ["m1", "m2", "m3", "m4"]:
+            if np.isnan(raw[k]):
+                shrunk[k] = uncond[k]
+            else:
+                shrunk[k] = alpha * raw[k] + (1.0 - alpha) * uncond[k]
+
+        m1, m2, m3, m4 = shrunk["m1"], shrunk["m2"], shrunk["m3"], shrunk["m4"]
+
+        var = max(m2 - m1**2, 0.0)
+
+        if var <= 1e-16:
+            skew = 0.0
+            kurt = 3.0
+        else:
+            mu3 = m3 - 3*m1*m2 + 2*(m1**3)
+            mu4 = m4 - 4*m1*m3 + 6*(m1**2)*m2 - 3*(m1**4)
+            skew = mu3 / (var ** 1.5)
+            kurt = mu4 / (var ** 2)
+
+        rows.append({
+            "regime": regime_names[state_id],
+            "n_obs": n,
+            "shrinkage_alpha": float(alpha),
+            "m1": float(m1),
+            "m2": float(m2),
+            "m3": float(m3),
+            "m4": float(m4),
+            "mean": float(m1),
+            "variance": float(var),
+            "skewness": float(skew),
+            "kurtosis": float(kurt),
+        })
+
+    return pd.DataFrame(rows)
+
 
 
 def evaluate_candidate_tilt_moments(

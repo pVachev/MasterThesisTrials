@@ -368,3 +368,92 @@ class BacktestResult:
     performance_summary: pd.DataFrame | None = None
     candidate_scores: pd.DataFrame | None = None
 
+
+@dataclass
+class TrainTestConfig:
+    """
+    Fixed-parameter train/test configuration for the honest A1 allocation pipeline.
+
+    Philosophy
+    ----------
+    A1 = fit once on train, freeze HMM parameters and candidate moment estimates,
+    then filter sequentially through test and make next-period decisions.
+
+    Notes
+    -----
+    For satellite strategies, the training window must include the satellite
+    universe. So if sector ETFs begin in late 1998, test cannot honestly begin
+    before a meaningful post-1998 training window has been accumulated.
+    """
+    train_start: str | None = None
+    train_end: str = ""
+    test_start: str = ""
+    test_end: str | None = None
+
+    min_train_observations: int = 60
+    freeze_hmm: bool = True
+    freeze_candidate_moments: bool = True
+
+    def validate(self, index: pd.Index | None = None) -> None:
+        if not self.train_end:
+            raise ValueError("train_end must be provided.")
+        if not self.test_start:
+            raise ValueError("test_start must be provided.")
+
+        train_end_ts = pd.to_datetime(self.train_end)
+        test_start_ts = pd.to_datetime(self.test_start)
+
+        if not train_end_ts < test_start_ts:
+            raise ValueError("train_end must be strictly earlier than test_start.")
+
+        if self.test_end is not None:
+            test_end_ts = pd.to_datetime(self.test_end)
+            if not test_start_ts <= test_end_ts:
+                raise ValueError("test_end must be on or after test_start.")
+
+        if self.min_train_observations < 12:
+            raise ValueError("min_train_observations should be at least 12 for monthly work.")
+
+        if index is not None and len(index) > 0:
+            idx = pd.Index(index).sort_values()
+            lo = idx.min()
+            hi = idx.max()
+
+            train_start_ts = pd.to_datetime(self.train_start) if self.train_start is not None else lo
+            if train_start_ts < lo:
+                raise ValueError(f"train_start {train_start_ts} is earlier than data start {lo}.")
+            if train_end_ts > hi:
+                raise ValueError(f"train_end {train_end_ts} is later than data end {hi}.")
+            if test_start_ts > hi:
+                raise ValueError(f"test_start {test_start_ts} is later than data end {hi}.")
+
+
+@dataclass
+class FrozenHMMState:
+    """
+    Stores the train-only fitted HMM state for A1.
+
+    This object is the bridge between:
+    - your existing HMM training code
+    - the honest out-of-sample allocation engine
+    """
+    model_label: str
+    model_code: str
+    n_states: int
+    regime_names: list[str]
+    order_old: list[int]
+    covariance_type: str
+
+    startprob: np.ndarray
+    transmat: np.ndarray
+    means: np.ndarray
+    covars: np.ndarray
+
+    train_x: pd.DataFrame
+    test_x: pd.DataFrame
+
+    train_df_m: pd.DataFrame
+    train_out: pd.DataFrame
+
+    filtered_train: pd.DataFrame
+    filtered_test: pd.DataFrame | None = None

@@ -1,12 +1,14 @@
 import pandas as pd 
 
 from src.transform import clean_data
+from src.load import diff_data
 from src.runner import (
     GlobalRunConfig,
     build_model_specs,
     build_model_input,
     run_one_model,
 )
+
 from src.export import export_model_results_to_excel
 from src.plot import plot_results_dashboard, plot_requested_distributions
 from src.allocation_config import (
@@ -15,20 +17,13 @@ from src.allocation_config import (
     AllocationConfig,
 )
 
-from src.allocation_regime import (
-    extract_filtered_probabilities,
-    extract_reordered_transition_matrix,
-    build_predictive_probability_panel,
+from src.allocation_config import (
+    InvestorPreferenceConfig,
+    SatelliteSpec,
+    AllocationConfig,
+    TrainTestConfig,
 )
-from src.load import diff_data
-
-
-from src.allocation_regime import build_predictive_probability_panel
-from src.allocation_moments import evaluate_candidate_tilt_moments
-from src.allocation_scoring import select_best_tilt_at_date
-
-from src.allocation_backtest import run_regime_allocation_backtest
-
+from src.allocation_backtest import run_fixed_parameter_train_test_backtest
 from src.allocation_export import export_allocation_backtest_to_excel
 from src.allocation_plot import plot_allocation_dashboard, plot_distribution_comparison
 
@@ -126,36 +121,26 @@ def main():
     # ALLOCATION PARAMETERS
     # ============================================================
 
-    RUN_ALLOCATION = True
-    EXPORT_ALLOCATION = True
-    PLOT_ALLOCATION = True
-    STORE_CANDIDATE_SCORES = True
-
-    CORE_MODEL_CODE = "A"                 # core HMM engine = SP500TR + LT09TRUU
-    ALLOCATION_START = "1998-12-31"       # first rebalance date; first realized return at next month-end
-
-    # Investor profiles
     investor_configs = {
         "MV": InvestorPreferenceConfig(
             name="MV Investor",
             investor_type="MV",
             lambda_=3.0,
         ),
-        # "MVS": InvestorPreferenceConfig(
-        #     name="MVS Investor",
-        #     investor_type="MVS",
-        #     lambda_=3.0,
-        #     gamma=0.5,
-        # ),
-        # "MVK": InvestorPreferenceConfig(
-        #     name="MVK Investor",
-        #     investor_type="MVK",
-        #     lambda_=3.0,
-        #     delta=0.2,
-        # ),
+    #     "MVS": InvestorPreferenceConfig(
+    #         name="MVS Investor",
+    #         investor_type="MVS",
+    #         lambda_=3.0,
+    #         gamma=0.01,
+    #     ),
+    #     "MVK": InvestorPreferenceConfig(
+    #         name="MVK Investor",
+    #         investor_type="MVK",
+    #         lambda_=3.0,
+    #         delta=0.01,
+    #     ),
     }
 
-    # Sector ETF satellites
     sector_specs = [
         SatelliteSpec(ticker="XLB", label="Materials", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
         SatelliteSpec(ticker="XLE", label="Energy", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
@@ -166,12 +151,11 @@ def main():
         SatelliteSpec(ticker="XLU", label="Utilities", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
         SatelliteSpec(ticker="XLV", label="Health Care", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
         SatelliteSpec(ticker="XLY", label="Consumer Discretionary", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
-        SatelliteSpec(ticker="XAU", label="Gold", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="commodity")
     ]
 
     alloc_cfg = AllocationConfig(
         rebalance_frequency="ME",
-        top_n_satellites=2,                      # keep it simple first
+        top_n_satellites=1,
         max_satellite_weight=0.20,
         fixed_core_weights={
             "^SP500TR": 0.60,
@@ -183,17 +167,38 @@ def main():
         turnover_limit=None,
         min_regime_obs=24,
         shrinkage_intensity=0.0,
-        score_improvement_floor=0.001,          # optional noise filter
+        score_improvement_floor=0.001,
         export_file="allocation_results.xlsx",
     )
-
     alloc_cfg.validate()
 
+    tt_cfg = TrainTestConfig(
+        train_start="1999-01-31",
+        train_end="2009-12-31",
+        test_start="2010-01-31",
+        test_end=None,
+        min_train_observations=60,
+    )
+
+    benchmark_weights = {
+        "^SP500TR": 0.60,
+        "LT09TRUU": 0.40,
+    }
+
+    # ============================================================
+    # A1 HONEST TRAIN/TEST ALLOCATION BACKTEST
+    # ============================================================
+
+    RUN_ALLOCATION = True
+    EXPORT_ALLOCATION = True
+    PLOT_ALLOCATION = True
+    STORE_CANDIDATE_SCORES = True
+
+    CORE_MODEL_CODE = "A"
+
     if RUN_ALLOCATION:
-        # 1) choose core regime engine
         res_core = next(r for r in results if r.spec.code == CORE_MODEL_CODE)
 
-        # 2) build allocation universe
         satellite_tickers = [s.ticker for s in sector_specs]
         allocation_cols = ["^SP500TR", "LT09TRUU"] + satellite_tickers + [cfg.rf_col]
 
@@ -203,23 +208,17 @@ def main():
             rf_col=cfg.rf_col,
             monthly_cols=m_tickers,
             rf_mode=cfg.rf_mode,
+            freq=cfg.freq,
         )
-
-        # 3) restrict allocation backtest start
-        allocation_df = allocation_df.loc[allocation_df.index >= pd.to_datetime(ALLOCATION_START)].copy()
-
-        # 4) benchmark
-        benchmark_weights = {
-            "^SP500TR": 0.60,
-            "LT09TRUU": 0.40,
-        }
 
         allocation_results = {}
 
         for inv_key, investor_cfg in investor_configs.items():
-            bt = run_regime_allocation_backtest(
-                res=res_core,
+            bt, frozen_state = run_fixed_parameter_train_test_backtest(
+                res_core=res_core,
                 allocation_df=allocation_df,
+                hmm_cfg=cfg,
+                tt_cfg=tt_cfg,
                 alloc_cfg=alloc_cfg,
                 investor_cfg=investor_cfg,
                 satellite_specs=sector_specs,
@@ -232,7 +231,7 @@ def main():
 
             allocation_results[inv_key] = bt
 
-            print(f"\n=== {investor_cfg.name} PERFORMANCE ===")
+            print(f"\n=== A1 HONEST BACKTEST | {investor_cfg.name} ===")
             print(bt.performance_summary)
 
             if EXPORT_ALLOCATION:
@@ -242,7 +241,7 @@ def main():
                     investor_cfg=investor_cfg,
                     satellite_specs=sector_specs,
                     res_core=res_core,
-                    output_file=f"allocation_backtest_{inv_key}.xlsx",
+                    output_file=f"allocation_backtest_A1_{inv_key}.xlsx",
                 )
 
             if PLOT_ALLOCATION:

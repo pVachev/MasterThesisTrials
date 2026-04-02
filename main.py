@@ -155,7 +155,7 @@ def main():
 
     alloc_cfg = AllocationConfig(
         rebalance_frequency="ME",
-        top_n_satellites=1,
+        top_n_satellites=2,
         max_satellite_weight=0.20,
         fixed_core_weights={
             "^SP500TR": 0.60,

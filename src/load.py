@@ -121,14 +121,21 @@ def prepare_data(
     cols: list[str],
     rf_col: str = "^IRX",
     start_date: str | None = None,
+    end_date: str | None = None,
 ) -> pd.DataFrame:
     """
     Keeps only the ExcessLog{col} columns for col in `cols`, ignoring rf_col if present.
 
-    Optional comparability control:
-    - if start_date is provided, cut the prepared feature matrix from that date onward
-    - if start_date is earlier than the first available observation, pandas just keeps
-      the earliest available row, so nothing breaks
+    Optional comparability control
+    ------------------------------
+    `start_date` and `end_date` let you force all models to live inside the same
+    sample window from main.py.
+
+    Behavior
+    --------
+    - if start_date is earlier than the first available observation, nothing breaks
+    - if end_date is later than the last available observation, nothing breaks
+    - if both are provided, the output is sliced to [start_date, end_date]
     """
     cols = [c for c in cols if c != rf_col]
     ex_cols = [f"ExcessLog{c}" for c in cols]
@@ -142,6 +149,10 @@ def prepare_data(
     if start_date is not None:
         start_ts = pd.to_datetime(start_date)
         out = out.loc[out.index >= start_ts]
+
+    if end_date is not None:
+        end_ts = pd.to_datetime(end_date)
+        out = out.loc[out.index <= end_ts]
 
     return out
 

@@ -12,8 +12,9 @@ class GlobalRunConfig:
     seeds: range = range(1, 41)
     rf_col: str = "RF"
     rf_mode: str = "simple_return_monthly_decimal"
-    freq: str = "ME"   # "ME" for monthly, "W-FRI" for weekly
+    freq: str = "ME"
     start_date: str | None = None
+    end_date: str | None = None
     make_dashboard: bool = True
     make_distribution_plots: bool = True
     export_excel: bool = True
@@ -80,29 +81,31 @@ def build_model_specs(model_asset_sets: list[list[str]], rf_col: str) -> list[Mo
         specs.append(ModelSpec(code=code, risky_assets=risky_assets, rf_col=rf_col))
     return specs
 
-
 def build_model_input(
     raw_df: pd.DataFrame,
     spec: ModelSpec,
-    freq: str,
     monthly_tickers: list[str],
     rf_mode: str,
     start_date: str | None = None,
+    end_date: str | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Build the post-diff dataframe and the model feature matrix for one spec.
+    """
     df_model = diff_data(
         raw_df,
         spec.tickers,
         rf_col=spec.rf_col,
-        freq=freq,
         monthly_cols=monthly_tickers,
         rf_mode=rf_mode,
     )
     x_model = prepare_data(
-    df_model,
-    spec.tickers,
-    rf_col=spec.rf_col,
-    start_date=start_date,
-)
+        df_model,
+        spec.tickers,
+        rf_col=spec.rf_col,
+        start_date=start_date,
+        end_date=end_date,
+    )
     return df_model, x_model
 
 

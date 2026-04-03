@@ -43,11 +43,12 @@ def main():
 
     cfg = GlobalRunConfig(
         n_states=3,
-        rf_col="RF", # change in hmm.py too 
-        rf_mode="simple_return_monthly_decimal",   # "simple_return_monthly_decimal" "yield_annualized" 
-        start_date="1998-12-31",
-        freq="ME",
         cov_type="full",
+        seeds=range(1, 41),
+        rf_col="RF",
+        rf_mode="simple_return_monthly_decimal",
+        start_date="1998-12-31",
+        end_date="2026-03-31",
         output_file="hmm_regime_results.xlsx",
     )
 
@@ -59,7 +60,7 @@ def main():
         # ["^SP500TR","DEMUSD"], 
         # ["^SP500TR","DEMUSD", "LT13TRUU"],
         # ["^SP500TR","DEMUSD","XAU"],
-        # ["^SP500TR","DEMUSD","LT09TRUU", "XAU"],
+        ["^SP500TR","LT09TRUU", "XAU"],
         # ["^SP500TR", "Oil COMP"],
         # ["^SP500TR", "LT09TRUU", "XAU", "XLK", "XLP"],
         # ["^SP500TR", "WFBIX", "XAU", "XLK", "XLP"],
@@ -68,7 +69,6 @@ def main():
         # ["^SP500TR", "EEM", "IYW", "XLE"], 
         # ["^SP500TR", "EEM", "IYW"],
         # ["^SP500TR", "EEM", "XLE"]
-
     ]
 
 
@@ -82,12 +82,12 @@ def main():
     prepared_inputs = {}
     for spec in model_specs:
         df_model, x_model = build_model_input(
-            raw_df=df,
-            spec=spec,
-            monthly_tickers=m_tickers,
-            rf_mode=cfg.rf_mode,
+            df,
+            spec,
+            m_tickers,
+            cfg.rf_mode,
             start_date=cfg.start_date,
-            freq=cfg.freq
+            end_date=cfg.end_date,
         )
         prepared_inputs[spec.code] = (df_model, x_model)
 
@@ -189,10 +189,10 @@ def main():
     # A1 HONEST TRAIN/TEST ALLOCATION BACKTEST
     # ============================================================
 
-    RUN_ALLOCATION = True
-    EXPORT_ALLOCATION = True
-    PLOT_ALLOCATION = True
-    STORE_CANDIDATE_SCORES = True
+    RUN_ALLOCATION = False
+    EXPORT_ALLOCATION = False
+    PLOT_ALLOCATION = False
+    STORE_CANDIDATE_SCORES = False
 
     CORE_MODEL_CODE = "A"
 

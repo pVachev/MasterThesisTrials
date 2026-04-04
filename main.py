@@ -49,7 +49,7 @@ def main():
         rf_mode="simple_return_weekly_decimal",
         freq="W-FRI",
         start_date="1998-12-31",
-        end_date=None,
+        end_date="2009-12-31",
         output_file="hmm_regime_results_weekly.xlsx",
     )
 

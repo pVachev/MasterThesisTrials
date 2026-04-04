@@ -56,30 +56,24 @@ def clean_data(
 
         try:
             if ticker == "RF":
-                # Monthly Fama-French-style compact dates: YYYYMM
                 df.index = pd.to_datetime(raw_idx, format="%Y%m", errors="raise")
 
             elif ticker == "RFW":
-                # Weekly Fama-French-style compact dates: YYYYMMDD
                 df.index = pd.to_datetime(raw_idx, format="%Y%m%d", errors="raise")
 
-            elif ticker in monthly_set:
-                try:
-                    df.index = pd.to_datetime(raw_idx, format="%Y-%m-%d", errors="raise")
-                except Exception:
-                    df.index = pd.to_datetime(raw_idx, format="%d/%m/%Y", errors="raise")
-
-            elif ticker in weekly_set:
-                try:
-                    df.index = pd.to_datetime(raw_idx, format="%Y-%m-%d", errors="raise")
-                except Exception:
-                    df.index = pd.to_datetime(raw_idx, format="%d/%m/%Y", errors="raise")
-
             else:
-                try:
-                    df.index = pd.to_datetime(raw_idx, format="%Y-%m-%d", errors="raise")
-                except Exception:
-                    df.index = pd.to_datetime(raw_idx, format="%d/%m/%Y", errors="raise")
+                parsed = None
+                for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d.%m.%Y"):
+                    try:
+                        parsed = pd.to_datetime(raw_idx, format=fmt, errors="raise")
+                        break
+                    except ValueError:
+                        pass
+
+                if parsed is None:
+                    raise ValueError(f"Unsupported date format in ticker {ticker}")
+
+                df.index = parsed
 
         except Exception as e:
             raise ValueError(f"Could not parse dates for ticker {ticker}") from e

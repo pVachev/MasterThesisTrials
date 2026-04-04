@@ -110,7 +110,7 @@ def diff_data(
         if rf_mode == "yield_annualized":
             rf = yld_to_lnr(out[rf_col], periods_per_year=52)
 
-        elif rf_mode == "simple_return_weekly_pct":
+        elif rf_mode == "simple_return_weekly_decimal":
             rf = simple_to_log_w(out[rf_col], in_percent=True)
 
         else:

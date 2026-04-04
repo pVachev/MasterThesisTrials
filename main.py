@@ -33,9 +33,9 @@ from src.allocation_plot import plot_allocation_dashboard, plot_distribution_com
 def main():
     tickers_all = ["SPY", "WFBIX","^IRX", "LBUSTRUU", "LT09TRUU", "^SP500TR","G1BM", "RF" ,
                    "XAU", "USGG3M","LT01TRUU","LT12TRUU","LT13TRUU", "DEMUSD", "Oil COMP",
-                   "XLB", "XLE", "XLF", "XLI", "XLK", "XLP", "XLU", "XLV", "XLY"]
+                   "XLB", "XLE", "XLF", "XLI", "XLK", "XLP", "XLU", "XLV", "XLY", "LT09TRUUW", "RFW"]
     m_tickers = ["LBUSTRUU", "LT09TRUU","LT01TRUU","LT12TRUU", "XAU", "USGG3M", "RF", "LT13TRUU", "DEMUSD","Oil COMP"]
-   
+    w_tickers = ["LT09TRUUW", "RFW"]
     """
     ModelA -> Bond ETF
     ModelB -> 10Y bonds 
@@ -45,22 +45,23 @@ def main():
         n_states=3,
         cov_type="full",
         seeds=range(1, 41),
-        rf_col="RF",
-        rf_mode="simple_return_monthly_decimal",
+        rf_col="RFW",
+        rf_mode="simple_return_weekly_decimal",
+        freq="W-FRI",
         start_date="1998-12-31",
-        end_date="2026-03-31",
-        output_file="hmm_regime_results.xlsx",
+        end_date=None,
+        output_file="hmm_regime_results_weekly.xlsx",
     )
-
 
     model_asset_sets = [
         # ["^SP500TR", "LT01TRUU"],
-        ["^SP500TR", "LT09TRUU"],
+        ["^SP500TR", "LT09TRUUW"],
+        # ["^SP500TR", "WFBIX"],
         # ["^SP500TR", "LT09TRUU","Oil COMP"],
         # ["^SP500TR","DEMUSD"], 
         # ["^SP500TR","DEMUSD", "LT13TRUU"],
         # ["^SP500TR","DEMUSD","XAU"],
-        ["^SP500TR","LT09TRUU", "XAU"],
+        # ["^SP500TR","LT09TRUU", "XAU"],
         # ["^SP500TR", "Oil COMP"],
         # ["^SP500TR", "LT09TRUU", "XAU", "XLK", "XLP"],
         # ["^SP500TR", "WFBIX", "XAU", "XLK", "XLP"],
@@ -76,16 +77,18 @@ def main():
     model_specs = build_model_specs(model_asset_sets, rf_col=cfg.rf_col)
 
     # Load / clean once
-    df = clean_data(tickers_all, m_tickers)
+    df = clean_data(tickers_all, m_tickers, w_tickers)
 
     # Build features up to prepare_data()
     prepared_inputs = {}
     for spec in model_specs:
         df_model, x_model = build_model_input(
-            df,
-            spec,
-            m_tickers,
-            cfg.rf_mode,
+            raw_df=df,
+            spec=spec,
+            monthly_tickers=m_tickers,
+            weekly_tickers=w_tickers,
+            rf_mode=cfg.rf_mode,
+            freq=cfg.freq,
             start_date=cfg.start_date,
             end_date=cfg.end_date,
         )
@@ -151,6 +154,7 @@ def main():
         SatelliteSpec(ticker="XLU", label="Utilities", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
         SatelliteSpec(ticker="XLV", label="Health Care", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
         SatelliteSpec(ticker="XLY", label="Consumer Discretionary", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector"),
+        # SatelliteSpec(ticker="XAU", label="Gold", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="commodity"),
     ]
 
     alloc_cfg = AllocationConfig(

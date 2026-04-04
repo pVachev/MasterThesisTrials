@@ -19,8 +19,6 @@ class GlobalRunConfig:
     make_distribution_plots: bool = True
     export_excel: bool = True
     output_file: str = "hmm_regime_results.xlsx"
-
-
 @dataclass
 class ModelSpec:
     code: str
@@ -85,7 +83,9 @@ def build_model_input(
     raw_df: pd.DataFrame,
     spec: ModelSpec,
     monthly_tickers: list[str],
+    weekly_tickers: list[str],
     rf_mode: str,
+    freq: str = "ME",
     start_date: str | None = None,
     end_date: str | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -96,9 +96,12 @@ def build_model_input(
         raw_df,
         spec.tickers,
         rf_col=spec.rf_col,
+        freq=freq,
         monthly_cols=monthly_tickers,
+        weekly_cols=weekly_tickers,
         rf_mode=rf_mode,
     )
+
     x_model = prepare_data(
         df_model,
         spec.tickers,
@@ -106,8 +109,8 @@ def build_model_input(
         start_date=start_date,
         end_date=end_date,
     )
-    return df_model, x_model
 
+    return df_model, x_model
 
 def run_one_model(
     spec: ModelSpec,

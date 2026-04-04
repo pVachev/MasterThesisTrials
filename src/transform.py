@@ -3,71 +3,104 @@ import numpy as np
 import os 
 from data.getData import FILEPATH, fetch_data
 
+import pandas as pd
+import numpy as np
+import os
+from data.getData import FILEPATH, fetch_data
+
+
 def clean_data(
     tickers: list[str],
-    monthly_tickers: list[str] | None = None,  # e.g. ["LBUSTRUU"]
+    monthly_tickers: list[str] | None = None,
+    weekly_tickers: list[str] | None = None,
 ) -> pd.DataFrame:
+    """
+    Load raw files and standardize date indices.
 
+    Supported raw frequencies
+    -------------------------
+    - daily raw series
+    - weekly raw series
+    - monthly raw series
+    - special Fama-French-style RF files:
+        * RF  = monthly compact dates YYYYMM
+        * RFW = weekly  compact dates YYYYMMDD
+
+    Weekly convention
+    -----------------
+    Weekly raw series are relabeled to week-ending Friday using:
+        to_period("W-FRI").to_timestamp("W-FRI")
+    """
     fetch_data(tickers)
 
     monthly_set = set(monthly_tickers or [])
+    weekly_set = set(weekly_tickers or [])
     dfs: list[pd.DataFrame] = []
 
     for file in os.listdir(FILEPATH):
-        if file.endswith(".csv"):
-            ticker = file.removesuffix(".csv")
+        if not file.endswith(".csv"):
+            continue
 
-            if ticker not in tickers:
-              continue
+        ticker = file.removesuffix(".csv")
+        if ticker not in tickers:
+            continue
 
-            df = pd.read_csv(
-                FILEPATH / file,
-                skiprows=lambda x: x in [0,1],
-                index_col=0,
-                usecols=[0,1],
-            )
-            raw_idx = df.index.astype(str)
+        df = pd.read_csv(
+            FILEPATH / file,
+            skiprows=lambda x: x in [0, 1],
+            index_col=0,
+            usecols=[0, 1],
+        )
 
-            try:
-                if ticker == "RF":
-                    # Fama-French style monthly RF file: dates come as YYYYMM
-                    # like 192607, 192608, ... and must be parsed explicitly.
-                    # We do this BEFORE the generic monthly parsing because
-                    # dayfirst-based parsing is not reliable for this compact format.
-                    df.index = pd.to_datetime(raw_idx.str.strip(), format="%Y%m", errors="raise")
-                elif ticker in monthly_set:
-                    # Monthly series that already come with normal calendar dates
-                    # (for example Bloomberg monthly exports) keep the existing logic.
-                    df.index = pd.to_datetime(raw_idx, dayfirst=True, errors="raise")
-                else:
-                    # Daily series keep the existing daily parsing path.
-                    df.index = pd.to_datetime(raw_idx, dayfirst=False, errors="raise")
-            except Exception:
-                # Last resort fallback.
-                # Keep RF explicit here as well so we do not accidentally send a
-                # YYYYMM monthly code through generic dayfirst parsing.
-                if ticker == "RF":
-                    df.index = pd.to_datetime(raw_idx.str.strip(), format="%Y%m", errors="raise")
-                else:
-                    df.index = pd.to_datetime(raw_idx, dayfirst=(ticker not in monthly_set), errors="raise")
+        raw_idx = df.index.astype(str).str.strip()
 
-            # rename the single value column to the ticker
-            df.rename(columns={df.columns[0]: ticker}, inplace=True)
+        try:
+            if ticker == "RF":
+                # Monthly Fama-French-style compact dates: YYYYMM
+                df.index = pd.to_datetime(raw_idx, format="%Y%m", errors="raise")
 
-            # --- NEW: if this ticker is monthly, keep one obs per month and label at month-end
-            if ticker in monthly_set:
-                df = df.sort_index()
-                # label each row by month-end (no aggregation if already monthly)
-                df.index = df.index.to_period("M").to_timestamp("M")
-                # if duplicates arise after relabeling, keep last
-                df = df[~df.index.duplicated(keep="last")]
+            elif ticker == "RFW":
+                # Weekly Fama-French-style compact dates: YYYYMMDD
+                df.index = pd.to_datetime(raw_idx, format="%Y%m%d", errors="raise")
 
-            dfs.append(df)
+            elif ticker in monthly_set:
+                try:
+                    df.index = pd.to_datetime(raw_idx, format="%Y-%m-%d", errors="raise")
+                except Exception:
+                    df.index = pd.to_datetime(raw_idx, format="%d/%m/%Y", errors="raise")
+
+            elif ticker in weekly_set:
+                try:
+                    df.index = pd.to_datetime(raw_idx, format="%Y-%m-%d", errors="raise")
+                except Exception:
+                    df.index = pd.to_datetime(raw_idx, format="%d/%m/%Y", errors="raise")
+
+            else:
+                try:
+                    df.index = pd.to_datetime(raw_idx, format="%Y-%m-%d", errors="raise")
+                except Exception:
+                    df.index = pd.to_datetime(raw_idx, format="%d/%m/%Y", errors="raise")
+
+        except Exception as e:
+            raise ValueError(f"Could not parse dates for ticker {ticker}") from e
+
+        df.rename(columns={df.columns[0]: ticker}, inplace=True)
+
+        # monthly raw series -> month-end labels
+        if ticker in monthly_set or ticker == "RF":
+            df = df.sort_index()
+            df.index = df.index.to_period("M").to_timestamp("M")
+            df = df[~df.index.duplicated(keep="last")]
+
+        # weekly raw series -> week-ending Friday labels
+        elif ticker in weekly_set or ticker == "RFW":
+            df = df.sort_index()
+            df.index = df.index.to_period("W-FRI").to_timestamp("W-FRI")
+            df = df[~df.index.duplicated(keep="last")]
+
+        dfs.append(df)
 
     final_data = pd.concat(dfs, axis=1).sort_index()
-
-
-
     return final_data
 
 
@@ -87,6 +120,24 @@ def simple_to_log_m(y: pd.Series) -> pd.Series:
     """
     y = y.astype(float)
     return np.log1p(y)
+
+def simple_to_log_w(y: pd.Series, in_percent: bool = True) -> pd.Series:
+    """
+    Convert a SIMPLE WEEKLY return into a WEEKLY LOG return.
+
+    This is meant for a Fama-French-style weekly RF series where each observation
+    is already the realized one-week return for that SAME week.
+
+    Important
+    ---------
+    - NO SHIFT is applied
+    - the weekly RF value already belongs to the same week
+    """
+    y = y.astype(float)
+    if in_percent:
+        y = y / 100.0
+    r = np.log1p(y)
+    return r
 
 
 

@@ -3,16 +3,38 @@ import pandas as pd
 import numpy as np 
 import matplotlib.ticker as mtick
 from scipy import stats
-from src.transform import yld_to_lnr, simple_to_log_m
+from src.transform import yld_to_lnr, simple_to_log_m, simple_to_log_w
 
 def diff_data(
     df: pd.DataFrame,
     cols: list[str],
     rf_col: str = "^IRX",
-    freq: str = "ME",                      # "D", "ME", or "W-FRI"
+    freq: str = "ME",                       # "ME", "W-FRI", or daily fallback
     monthly_cols: list[str] | None = None,
-    rf_mode: str = "yield_annualized",
+    weekly_cols: list[str] | None = None,
+    rf_mode: str = "yield_annualized",      # "yield_annualized", "simple_return_monthly_pct", "simple_return_weekly_pct"
 ) -> pd.DataFrame:
+    """
+    Compute Log{col} and ExcessLog{col} at the requested frequency.
+
+    Supported RF conventions
+    ------------------------
+    1) rf_mode="yield_annualized"
+       For annualized yield RF series like ^IRX:
+         - monthly: log(1 + y_{t-1}/12)
+         - weekly:  log(1 + y_{t-1}/52)
+         - daily:   log(1 + y_{t-1}/360)
+
+    2) rf_mode="simple_return_monthly_pct"
+       For monthly realized simple-return RF series in percent (same-month).
+       - monthly only
+       - NO SHIFT
+
+    3) rf_mode="simple_return_weekly_pct"
+       For weekly realized simple-return RF series in percent (same-week).
+       - weekly only
+       - NO SHIFT
+    """
     if rf_col not in df.columns:
         raise KeyError(f"Missing risk-free column in df: {rf_col}")
 
@@ -23,10 +45,11 @@ def diff_data(
 
     df = df.sort_index().copy()
     monthly_set = set(monthly_cols or [])
+    weekly_set = set(weekly_cols or [])
 
-    # ----------------------------
+    # =========================================================
     # MONTHLY
-    # ----------------------------
+    # =========================================================
     if freq.upper() in {"ME", "M"}:
         needed = [rf_col] + cols
         out = pd.DataFrame(index=df.index.to_period("M").to_timestamp("M").unique()).sort_index()
@@ -34,7 +57,7 @@ def diff_data(
         for c in needed:
             s = df[c].dropna().sort_index()
 
-            if c in monthly_set:
+            if c in monthly_set or c == "RF":
                 s.index = s.index.to_period("M").to_timestamp("M")
                 s = s[~s.index.duplicated(keep="last")]
                 out[c] = s
@@ -43,10 +66,15 @@ def diff_data(
 
         if rf_mode == "yield_annualized":
             rf = yld_to_lnr(out[rf_col], periods_per_year=12)
+
         elif rf_mode == "simple_return_monthly_decimal":
             rf = simple_to_log_m(out[rf_col])
+
         else:
-            raise ValueError("Unsupported rf_mode for monthly frequency.")
+            raise ValueError(
+                "Monthly mode supports only rf_mode='yield_annualized' or "
+                "'simple_return_monthly_decimal'."
+)
 
         ex_cols = []
         for c in cols:
@@ -56,36 +84,40 @@ def diff_data(
 
         return out.dropna(subset=ex_cols)
 
-    # ----------------------------
+    # =========================================================
     # WEEKLY
-    # ----------------------------
+    # =========================================================
     elif freq.upper().startswith("W"):
-        # reject monthly-only assets in weekly models
-        weekly_ineligible = [c for c in cols if c in monthly_set]
-        if weekly_ineligible:
-            raise ValueError(
-                f"Weekly models cannot include monthly-only assets: {weekly_ineligible}"
-            )
-
-        if rf_col in monthly_set:
-            raise ValueError(
-                f"Weekly models require a daily RF source, but rf_col='{rf_col}' is monthly."
-            )
-
         needed = [rf_col] + cols
-        out = pd.DataFrame()
+        out = pd.DataFrame(index=df.index.to_period("W-FRI").to_timestamp("W-FRI").unique()).sort_index()
 
         for c in needed:
             s = df[c].dropna().sort_index()
-            out[c] = s.resample("W-FRI").last()
 
-        if rf_mode != "yield_annualized":
+            if c in monthly_set or c == "RF":
+                raise ValueError(
+                    f"Ticker {c} is monthly raw data and cannot be used directly in weekly diff_data."
+                )
+
+            elif c in weekly_set or c == "RFW":
+                s.index = s.index.to_period("W-FRI").to_timestamp("W-FRI")
+                s = s[~s.index.duplicated(keep="last")]
+                out[c] = s
+
+            else:
+                out[c] = s.resample("W-FRI").last()
+
+        if rf_mode == "yield_annualized":
+            rf = yld_to_lnr(out[rf_col], periods_per_year=52)
+
+        elif rf_mode == "simple_return_weekly_pct":
+            rf = simple_to_log_w(out[rf_col], in_percent=True)
+
+        else:
             raise ValueError(
-                "Weekly models currently support only yield-based RF logic "
-                "(e.g. ^IRX with rf_mode='yield_annualized')."
+                "Weekly mode supports only rf_mode='yield_annualized' or "
+                "'simple_return_weekly_decimal'."
             )
-
-        rf = yld_to_lnr(out[rf_col], periods_per_year=52)
 
         ex_cols = []
         for c in cols:
@@ -95,14 +127,13 @@ def diff_data(
 
         return out.dropna(subset=ex_cols)
 
-    # ----------------------------
+    # =========================================================
     # DAILY
-    # ----------------------------
+    # =========================================================
     else:
         if rf_mode != "yield_annualized":
             raise ValueError(
-                "Daily models currently support only yield-based RF logic "
-                "(e.g. ^IRX with rf_mode='yield_annualized')."
+                "Daily mode currently supports only rf_mode='yield_annualized'."
             )
 
         rf = yld_to_lnr(df[rf_col], periods_per_year=360).reindex(df.index).ffill()
@@ -114,8 +145,7 @@ def diff_data(
             ex_cols.append(f"ExcessLog{c}")
 
         return df.dropna(subset=ex_cols)
-    
-    
+
 def prepare_data(
     df: pd.DataFrame,
     cols: list[str],
@@ -125,17 +155,6 @@ def prepare_data(
 ) -> pd.DataFrame:
     """
     Keeps only the ExcessLog{col} columns for col in `cols`, ignoring rf_col if present.
-
-    Optional comparability control
-    ------------------------------
-    `start_date` and `end_date` let you force all models to live inside the same
-    sample window from main.py.
-
-    Behavior
-    --------
-    - if start_date is earlier than the first available observation, nothing breaks
-    - if end_date is later than the last available observation, nothing breaks
-    - if both are provided, the output is sliced to [start_date, end_date]
     """
     cols = [c for c in cols if c != rf_col]
     ex_cols = [f"ExcessLog{c}" for c in cols]
@@ -155,6 +174,7 @@ def prepare_data(
         out = out.loc[out.index <= end_ts]
 
     return out
+
 
 
 def plot_data(bnd, gspc): 
@@ -216,3 +236,5 @@ def qq_normal(data):
     stats.probplot(x, dist="norm", plot=ax)
     ax.set_title("Normal Q–Q plot")
     return fig, ax
+
+

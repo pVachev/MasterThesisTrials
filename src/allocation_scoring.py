@@ -452,6 +452,55 @@ def compute_regime_conviction_weights(
  
     return scaled_weights, conviction_scalars
 
+
+def apply_cash_sleeve(
+    portfolio_weights: dict[str, float],
+    cash_sleeve_cfg,
+    predictive_probabilities_row: pd.Series,
+) -> tuple[dict[str, float], float]:
+    """
+    Post-scoring risk-management: move weight to cash when bear conviction is high.
+
+    Parameters
+    ----------
+    portfolio_weights : dict[str, float]
+        Final portfolio weights AFTER conviction scaling (core + satellites).
+        These should sum to 1.0.
+
+    cash_sleeve_cfg : CashSleeveConfig
+        Cash sleeve configuration.
+
+    predictive_probabilities_row : pd.Series
+        One-step-ahead predictive probabilities indexed by regime name.
+        The first index entry is treated as the bear regime (lowest mean return).
+
+    Returns
+    -------
+    final_weights : dict[str, float]
+        Portfolio weights after applying the cash sleeve.
+        Includes the rf_ticker key if cash_weight > 0.
+
+    cash_weight : float
+        The cash allocation applied (0.0 if sleeve is inactive).
+    """
+    if cash_sleeve_cfg is None or not cash_sleeve_cfg.enabled:
+        return portfolio_weights, 0.0
+
+    p_bear = float(predictive_probabilities_row.iloc[0])
+    cash_weight = cash_sleeve_cfg.compute_cash_weight(p_bear)
+
+    if cash_weight <= 0.0:
+        return portfolio_weights, 0.0
+
+    scale = 1.0 - cash_weight
+    final_weights = {asset: w * scale for asset, w in portfolio_weights.items()}
+    final_weights[cash_sleeve_cfg.rf_ticker] = (
+        final_weights.get(cash_sleeve_cfg.rf_ticker, 0.0) + cash_weight
+    )
+
+    return final_weights, cash_weight
+
+
 def select_best_tilt_at_date_from_library(
     candidate_library: list[dict],
     predictive_probabilities_row: pd.Series,

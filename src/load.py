@@ -82,6 +82,9 @@ def diff_data(
             out[f"ExcessLog{c}"] = out[f"Log{c}"] - rf
             ex_cols.append(f"ExcessLog{c}")
 
+        # Store log risk-free return so the cash sleeve can use it
+        out[f"Log{rf_col}"] = rf
+
         return out.dropna(subset=ex_cols)
 
     # =========================================================
@@ -236,5 +239,3 @@ def qq_normal(data):
     stats.probplot(x, dist="norm", plot=ax)
     ax.set_title("Normal Q–Q plot")
     return fig, ax
-
-

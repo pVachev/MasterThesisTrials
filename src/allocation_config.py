@@ -253,6 +253,82 @@ class AllocationConfig:
 
 
 # ---------------------------------------------------------------------
+# 3b) CASH SLEEVE CONFIG
+# ---------------------------------------------------------------------
+
+@dataclass
+class CashSleeveConfig:
+    """
+    Post-scoring risk-management layer that moves portfolio weight to
+    cash (the risk-free asset) when bear-regime conviction is high.
+
+    Activation logic
+    ----------------
+    At each rebalance date, after the scoring engine has selected
+    satellites and conviction scaling has been applied:
+
+        if p_bear > activation_threshold:
+            cash_weight = max_cash_weight
+                          × (p_bear - activation_threshold)
+                          / (1.0 - activation_threshold)
+        else:
+            cash_weight = 0.0
+
+    All other portfolio weights (core + satellites) are scaled down
+    proportionally:
+        w_i_final = w_i × (1 - cash_weight)
+
+    This ensures weights always sum to 1.0 and no leverage is introduced.
+
+    When p_bear is below the threshold, the cash sleeve is inactive and
+    the portfolio behaves exactly as before.
+
+    Parameters
+    ----------
+    enabled : bool
+        Master switch. If False, the cash sleeve is skipped entirely
+        regardless of regime probabilities.
+
+    activation_threshold : float
+        Minimum p_bear required to trigger the cash sleeve.
+        Recommended range: 0.50–0.65.
+        Below 0.5 the model is not even majority-bear.
+
+    max_cash_weight : float
+        Maximum cash allocation when p_bear = 1.0.
+        Recommended range: 0.15–0.30.
+
+    rf_ticker : str
+        Ticker name of the risk-free asset in the allocation dataframe.
+        Must match the rf_col used in diff_data().
+
+    Theoretical justification
+    -------------------------
+    Guidolin & Timmermann (2008) show that regime-aware investors
+    optimally increase cash-equivalent holdings when the probability
+    of transitioning into a high-volatility regime rises. The cash
+    sleeve implements this as a linear function of bear probability,
+    which is the simplest monotonic mapping consistent with their
+    framework.
+    """
+    enabled: bool = True
+    activation_threshold: float = 0.55
+    max_cash_weight: float = 0.25
+    rf_ticker: str = "RF"
+
+    def compute_cash_weight(self, p_bear: float) -> float:
+        """Return the cash allocation given the bear-regime probability."""
+        if not self.enabled:
+            return 0.0
+        if p_bear <= self.activation_threshold:
+            return 0.0
+        return self.max_cash_weight * (
+            (p_bear - self.activation_threshold)
+            / (1.0 - self.activation_threshold)
+        )
+
+
+# ---------------------------------------------------------------------
 # 4) TILT DECISION
 # ---------------------------------------------------------------------
 

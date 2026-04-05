@@ -9,6 +9,7 @@ from src.allocation_regime import (
 from src.allocation_scoring import (
     build_candidate_library_from_train,
     select_best_tilt_at_date_from_library,
+    apply_cash_sleeve,
 )
 from src.allocation_config import BacktestResult
 
@@ -373,6 +374,7 @@ def run_fixed_parameter_train_test_backtest(
     realized_return_prefix: str = "Log",
     periods_per_year: int = 12,
     store_candidate_scores: bool = True,
+    cash_sleeve_cfg=None,
 ) -> tuple[BacktestResult, object]:
     """
     Honest A1 regime-allocation backtest.
@@ -408,7 +410,13 @@ def run_fixed_parameter_train_test_backtest(
     core_assets = list(alloc_cfg.fixed_core_weights.keys())
     sat_assets = [s.ticker for s in satellite_specs]
     all_assets = list(dict.fromkeys(core_assets + sat_assets))
- 
+
+    # include RF in realized returns if cash sleeve is active
+    if cash_sleeve_cfg is not None and cash_sleeve_cfg.enabled:
+        rf_tk = cash_sleeve_cfg.rf_ticker
+        if rf_tk not in all_assets:
+            all_assets.append(rf_tk)
+
     allocation_df_train = allocation_df.loc[frozen_state.train_x.index].copy()
  
     # 4) precompute candidate library using TRAIN only
@@ -454,10 +462,17 @@ def run_fixed_parameter_train_test_backtest(
             rebalance_date=rebalance_date,
             satellite_specs=satellite_specs,
         )
- 
+
+        # ── cash sleeve ──────────────────────────────────────────
+        cash_weights, cash_weight = apply_cash_sleeve(
+            portfolio_weights=decision.total_portfolio_weights,
+            cash_sleeve_cfg=cash_sleeve_cfg,
+            predictive_probabilities_row=pred_row,
+        )
+
         applied_weights, realized_turnover = _apply_turnover_limit(
             prev_weights=prev_applied_weights,
-            target_weights=decision.total_portfolio_weights,
+            target_weights=cash_weights,
             assets=all_assets,
             turnover_limit=alloc_cfg.turnover_limit,
         )
@@ -482,6 +497,7 @@ def run_fixed_parameter_train_test_backtest(
             "transaction_cost": transaction_cost,
             "gross_simple_return": gross_simple_return,
             "net_simple_return": net_simple_return,
+            "cash_weight": cash_weight,
         }
         decisions.append(decision)
  
@@ -640,6 +656,7 @@ def run_expanding_window_backtest(
     realized_return_prefix: str = "Log",
     periods_per_year: int = 12,
     store_candidate_scores: bool = False,
+    cash_sleeve_cfg=None,
 ) -> "BacktestResult":
     """
     Expanding-window in-sample backtest.
@@ -737,7 +754,13 @@ def run_expanding_window_backtest(
     core_assets = list(alloc_cfg.fixed_core_weights.keys())
     sat_assets  = [s.ticker for s in satellite_specs]
     all_assets  = list(dict.fromkeys(core_assets + sat_assets))
- 
+
+    # include RF in realized returns if cash sleeve is active
+    if cash_sleeve_cfg is not None and cash_sleeve_cfg.enabled:
+        rf_tk = cash_sleeve_cfg.rf_ticker
+        if rf_tk not in all_assets:
+            all_assets.append(rf_tk)
+
     realized_asset_returns = _extract_return_panel(
         allocation_df=allocation_df,
         assets=all_assets,
@@ -894,11 +917,18 @@ def run_expanding_window_backtest(
             rebalance_date=rebalance_date,
             satellite_specs=satellite_specs,
         )
- 
+
+        # ── cash sleeve ──────────────────────────────────────────
+        cash_weights, cash_weight = apply_cash_sleeve(
+            portfolio_weights=decision.total_portfolio_weights,
+            cash_sleeve_cfg=cash_sleeve_cfg,
+            predictive_probabilities_row=pred_row,
+        )
+
         # ── apply turnover limit and compute realized return ──────────
         applied_weights, realized_turnover = _apply_turnover_limit(
             prev_weights=prev_weights,
-            target_weights=decision.total_portfolio_weights,
+            target_weights=cash_weights,
             assets=all_assets,
             turnover_limit=alloc_cfg.turnover_limit,
         )
@@ -924,9 +954,10 @@ def run_expanding_window_backtest(
             "gross_simple_return":                 gross_simple_return,
             "net_simple_return":                   net_simple_return,
             "window_size":                         window_end_idx + 1,
+            "cash_weight":                         cash_weight,
         }
         decisions.append(decision)
- 
+
         weights_rows.append(pd.Series(applied_weights, name=realized_date))
         realized_rows.append(pd.Series({
             "rebalance_date":     rebalance_date,

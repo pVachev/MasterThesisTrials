@@ -17,6 +17,7 @@ from src.allocation_config import (
     SatelliteSpec,
     AllocationConfig,
     TrainTestConfig,
+    CashSleeveConfig,
 )
 from src.allocation_backtest import (
     run_fixed_parameter_train_test_backtest,
@@ -211,6 +212,13 @@ def main():
         "LT09TRUU": 0.40,
     }
 
+    cash_sleeve = CashSleeveConfig(
+        enabled=True,
+        activation_threshold=0.55,   # only activate when p_bear > 55%
+        max_cash_weight=0.25,        # up to 25% cash at p_bear = 1.0
+        rf_ticker="RF",
+    )
+
     # ============================================================
     # A1 HONEST TRAIN/TEST ALLOCATION BACKTEST
     # ============================================================
@@ -254,6 +262,7 @@ def main():
                 realized_return_prefix="Log",
                 periods_per_year=12,
                 store_candidate_scores=STORE_CANDIDATE_SCORES,
+                cash_sleeve_cfg=cash_sleeve,
             )
  
             allocation_results[inv_key] = bt
@@ -342,6 +351,7 @@ def main():
                 realized_return_prefix="Log",
                 periods_per_year=12,
                 store_candidate_scores=False,
+                cash_sleeve_cfg=cash_sleeve,
             )
  
             ew_results[inv_key] = bt_ew

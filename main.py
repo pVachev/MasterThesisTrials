@@ -159,7 +159,7 @@ def main():
     }
 
 
-    sector_specs_weights = [0.00, 0.05, 0.10, 0.15, 0.20]
+    sector_specs_weights = [0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.4]
 
 
     sector_specs = [
@@ -182,7 +182,7 @@ def main():
     alloc_cfg = AllocationConfig(
         rebalance_frequency="ME",
         top_n_satellites=2,
-        max_satellite_weight=0.20,
+        max_satellite_weight=0.40,
         fixed_core_weights={
             "^SP500TR": 0.60,
             "LT09TRUU": 0.40,

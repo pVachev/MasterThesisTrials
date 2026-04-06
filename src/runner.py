@@ -11,8 +11,8 @@ class GlobalRunConfig:
     cov_type: str = "full"
     seeds: range = range(1, 41)
     rf_col: str = "RFW"
-    rf_mode: str = "simple_return_weekly_decimal"
-    freq: str = "W-FRI"
+    rf_mode: str = "simple_return_monthly_decimal"
+    freq: str = "ME"
     start_date: str | None = None
     end_date: str | None = None
     make_dashboard: bool = True
@@ -51,7 +51,7 @@ class ModelSpec:
 
     @property
     def corr_assets(self) -> list[str]:
-        return [f"ExcessLog{t}" for t in self.risky_assets[:4]]
+        return [f"ExcessLog{t}" for t in self.risky_assets]
 
 
 @dataclass

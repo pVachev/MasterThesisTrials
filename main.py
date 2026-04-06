@@ -31,9 +31,9 @@ from src.allocation_plot import plot_allocation_dashboard, plot_distribution_com
 
 
 def main():
-    tickers_all = ["SPY", "WFBIX","^IRX", "LBUSTRUU", "LT09TRUU", "^SP500TR","G1BM", "RF" ,
+    tickers_all = ["SPY", "WFBIX","^IRX", "LBUSTRUU", "LT09TRUU", "^SP500TR","G1BM", "RF",
                    "XAU", "USGG3M","LT01TRUU","LT12TRUU","LT13TRUU", "DEMUSD", "Oil COMP",
-                   "XLB", "XLE", "XLF", "XLI", "XLK", "XLP", "XLU", "XLV", "XLY", "LT09TRUUW", "RFW"]
+                   "XLB", "XLE", "XLF", "XLI", "XLK", "XLP", "XLU", "XLV", "XLY", "LT09TRUUW", "RFW", "EEM"]
     m_tickers = ["LBUSTRUU", "LT09TRUU","LT01TRUU","LT12TRUU", "XAU", "USGG3M", "RF", "LT13TRUU", "DEMUSD","Oil COMP"]
     w_tickers = ["LT09TRUUW", "RFW"]
     """
@@ -48,14 +48,15 @@ def main():
         rf_col="RF",
         rf_mode="simple_return_monthly_decimal",
         freq="ME",
-        start_date="1998-12-31",
+        start_date="1999-01-31",
         end_date="2026-03-31",
         output_file="hmm_regime_results_monthly.xlsx",
     )
 
     model_asset_sets = [
-        # ["^SP500TR", "LT01TRUU"],
         ["^SP500TR", "LT09TRUU"],
+        # ["^SP500TR", "LT09TRUU", "XLB", "XLE", "XLF", "XLI", "XLK", "XLP", "XLU", "XLV", "XLY", "XAU"],
+        # ["^SP500TR", "EEM"],
         # ["^SP500TR", "WFBIX"],
         # ["^SP500TR", "LT09TRUU","Oil COMP"],
         # ["^SP500TR","DEMUSD"], 
@@ -68,7 +69,6 @@ def main():
         # ["^SP500TR", "Oil COMP", "DEMUSD"],
         # ["^SP500TR", "Oil COMP", "DEMUSD", "XAU","LT09TRUU"],
         # ["^SP500TR", "EEM", "IYW", "XLE"], 
-        # ["^SP500TR", "EEM", "IYW"],
         # ["^SP500TR", "EEM", "XLE"]
     ]
 
@@ -158,21 +158,25 @@ def main():
         # ),
     }
 
+
+    sector_specs_weights = [0.00, 0.05, 0.10, 0.15, 0.20]
+
+
     sector_specs = [
         # ── Cyclical sectors: scale with (1 - p_bear) ──────────────────
         # These benefit from bull markets and should shrink in bear regimes.
-        SatelliteSpec(ticker="XLB", label="Materials",             allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector", style="cyclical"),
-        SatelliteSpec(ticker="XLE", label="Energy",                allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector", style="cyclical"),
-        SatelliteSpec(ticker="XLF", label="Financials",            allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector", style="cyclical"),
-        SatelliteSpec(ticker="XLI", label="Industrials",           allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector", style="cyclical"),
-        SatelliteSpec(ticker="XLK", label="Technology",            allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector", style="cyclical"),
-        SatelliteSpec(ticker="XLY", label="Consumer Discretionary",allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector", style="cyclical"),
+        SatelliteSpec(ticker="XLB", label="Materials",             allowed_weights=sector_specs_weights, group="sector", style="cyclical"),
+        SatelliteSpec(ticker="XLE", label="Energy",                allowed_weights=sector_specs_weights, group="sector", style="cyclical"),
+        SatelliteSpec(ticker="XLF", label="Financials",            allowed_weights=sector_specs_weights, group="sector", style="cyclical"),
+        SatelliteSpec(ticker="XLI", label="Industrials",           allowed_weights=sector_specs_weights, group="sector", style="cyclical"),
+        SatelliteSpec(ticker="XLK", label="Technology",            allowed_weights=sector_specs_weights, group="sector", style="cyclical"),
+        SatelliteSpec(ticker="XLY", label="Consumer Discretionary",allowed_weights=sector_specs_weights, group="sector", style="cyclical"),
         # ── Defensive sectors: scale with p_bear ───────────────────────
         # These preserve capital in stress and should grow in bear regimes.
-        SatelliteSpec(ticker="XLP", label="Consumer Staples",      allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector", style="defensive"),
-        SatelliteSpec(ticker="XLU", label="Utilities",             allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector", style="defensive"),
-        SatelliteSpec(ticker="XLV", label="Health Care",           allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="sector", style="defensive"),
-        # SatelliteSpec(ticker="XAU", label="Gold", allowed_weights=[0.00, 0.05, 0.10, 0.15, 0.20], group="commodity", style="defensive"),
+        SatelliteSpec(ticker="XLP", label="Consumer Staples",      allowed_weights=sector_specs_weights, group="sector", style="defensive"),
+        SatelliteSpec(ticker="XLU", label="Utilities",             allowed_weights=sector_specs_weights, group="sector", style="defensive"),
+        SatelliteSpec(ticker="XLV", label="Health Care",           allowed_weights=sector_specs_weights, group="sector", style="defensive"),
+        # SatelliteSpec(ticker="XAU", label="Gold",                  allowed_weights=sector_specs_weights, group="commodity", style="defensive"),
     ]
 
     alloc_cfg = AllocationConfig(
@@ -189,20 +193,19 @@ def main():
         turnover_limit=None,
         min_regime_obs=24,
         shrinkage_intensity=0.0,
-        # Floor lowered from 0.001 → 0.0001.
-        # At 0.001 only 2.1% of candidates ever cleared the bar,
-        # effectively disabling the satellite overlay.
-        # At 0.0001 the regime signal can actually influence allocations
-        # while still filtering out near-zero noise.
         score_improvement_floor=0.0001,
         export_file="allocation_results.xlsx",
+        # Satellites displace SP500 only; LT09TRUU stays fixed at 40%.
+        # A 20% max sleeve reduces SP500 from 60% → min 40% at full tilt.
+        equity_only_displacement=True,
+        equity_ticker="^SP500TR",
     )
     alloc_cfg.validate()
 
     tt_cfg = TrainTestConfig(
-        train_start="1998-12-31",
-        train_end="2009-12-31",
-        test_start="2010-01-31",
+        train_start="1999-01-31",
+        train_end="2016-12-31",
+        test_start="2017-01-31",
         test_end=None,
         min_train_observations=60,
     )
@@ -213,9 +216,9 @@ def main():
     }
 
     cash_sleeve = CashSleeveConfig(
-        enabled=True,
+        enabled=False,
         activation_threshold=0.55,   # only activate when p_bear > 55%
-        max_cash_weight=0.25,        # up to 25% cash at p_bear = 1.0
+        max_cash_weight=0.4,        # up to 25% cash at p_bear = 1.0
         rf_ticker="RF",
     )
 
@@ -310,12 +313,13 @@ def main():
  
     RUN_EXPANDING_WINDOW = True
     EXPORT_EXPANDING_WINDOW = True
- 
     ew_cfg = ExpandingWindowConfig(
-        burn_in_periods=60,       # 5 years of data before first decision
-        refit_every_n_periods=1,  # re-fit monthly (set to 3 for quarterly)
+        burn_in_periods=60,
+        refit_every_n_periods=1,
         verbose=True,
-        verbose_every=12,         # print progress every 12 months
+        verbose_every=12,
+        rolling_window=60,    # 5-year rolling window — prevents stale moments
+                              # from dominating. Set to None for expanding window.
     )
  
     if RUN_EXPANDING_WINDOW:
@@ -366,9 +370,6 @@ def main():
                     res_core=res_core,
                     output_file=f"allocation_backtest_EW_{inv_key}.xlsx",
                 )
-
-
-
 
 if __name__ == "__main__":
 

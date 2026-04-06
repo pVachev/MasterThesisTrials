@@ -144,7 +144,7 @@ class SatelliteSpec:
 class AllocationConfig:
     """
     Global configuration for the regime-aware core-plus-satellite allocation layer.
-
+ 
     Philosophy
     ----------
     Keep the first version simple and thesis-friendly:
@@ -154,7 +154,7 @@ class AllocationConfig:
     - no leverage
     - optional transaction costs
     - monthly rebalancing initially
-
+ 
     Main idea
     ---------
     At each rebalance date:
@@ -163,95 +163,121 @@ class AllocationConfig:
     3) evaluate candidate satellite tilts
     4) compare against no-satellite baseline
     5) pick the best conditional score improvement
-
+ 
     Fields
     ------
     rebalance_frequency:
         "ME" for monthly end, later extensible to "W-FRI"
-
+ 
     top_n_satellites:
         Number of satellites allowed in the sleeve:
         - 1 = top one only
         - 2 = top two allowed
-
+ 
     max_satellite_weight:
         Maximum total sleeve allocation to satellites.
-
+ 
     fixed_core_weights:
         Core portfolio weights before adding satellites.
         Example:
             {"^SP500TR": 0.60, "LT09TRUU": 0.40}
-
+ 
         These should sum to 1.0 before the satellite sleeve adjustment logic.
-
+ 
     transaction_cost_bps:
         Optional linear transaction cost in basis points.
-
+ 
     turnover_limit:
         Optional cap on turnover per rebalance period.
-
+ 
     min_regime_obs:
         Minimum number of observations required inside a regime before trusting
         raw higher-moment estimates. Later logic can shrink / fallback if not met.
-
+ 
     shrinkage_intensity:
         A placeholder parameter for later moment shrinkage.
         0.0 means no shrinkage.
         Higher values pull regime moments toward unconditional moments.
-
+ 
     score_improvement_floor:
         Minimum score gain required to activate a satellite tilt.
         This helps avoid tiny noisy tilts.
-
+ 
     export_file:
         Separate Excel output for allocation results.
     """
-
+ 
     rebalance_frequency: str = "ME"
     top_n_satellites: int = 1
     max_satellite_weight: float = 0.20
-
+ 
     fixed_core_weights: dict[str, float] = field(default_factory=dict)
-
+ 
     long_only: bool = True
     no_leverage: bool = True
-
+ 
     transaction_cost_bps: float = 0.0
     turnover_limit: float | None = None
-
+ 
     min_regime_obs: int = 24
     shrinkage_intensity: float = 0.0
-
+ 
     score_improvement_floor: float = 0.0
-
+ 
     export_file: str = "allocation_results.xlsx"
-
+ 
+    # Equity-only displacement mode
+    # ---------------------------------------------------------------
+    # When True, satellites displace ONLY the equity ticker (e.g. SP500),
+    # leaving bond weights fixed. This isolates sector rotation within
+    # the equity sleeve, keeping the bond allocation constant.
+    #
+    # Example with equity_ticker="^SP500TR", fixed_core={SP500:0.6, Bond:0.4}
+    # and satellite={XLE:0.15}:
+    #   Default (False): SP500=0.51, Bond=0.34, XLE=0.15  (both scaled down)
+    #   Equity-only (True): SP500=0.45, Bond=0.40, XLE=0.15  (bond unchanged)
+    equity_only_displacement: bool = False
+    equity_ticker: str = "^SP500TR"
+ 
     def validate(self) -> None:
         """
         Basic guardrails so bad configs fail early.
         """
         if not self.fixed_core_weights:
             raise ValueError("fixed_core_weights cannot be empty.")
-
+ 
         total = sum(self.fixed_core_weights.values())
         if not np.isclose(total, 1.0):
             raise ValueError(
                 f"fixed_core_weights must sum to 1.0, got {total:.6f}"
             )
-
+ 
         if self.top_n_satellites not in (1, 2):
             raise ValueError("top_n_satellites must be 1 or 2.")
-
+ 
         if not (0.0 <= self.max_satellite_weight <= 1.0):
             raise ValueError("max_satellite_weight must be between 0 and 1.")
-
+ 
         if self.turnover_limit is not None and self.turnover_limit < 0:
             raise ValueError("turnover_limit must be non-negative or None.")
-
+ 
         if self.min_regime_obs < 1:
             raise ValueError("min_regime_obs must be at least 1.")
-
-
+ 
+        if self.equity_only_displacement:
+            if self.equity_ticker not in self.fixed_core_weights:
+                raise ValueError(
+                    f"equity_ticker '{self.equity_ticker}' not found in fixed_core_weights."
+                )
+            equity_w = self.fixed_core_weights[self.equity_ticker]
+            if self.max_satellite_weight > equity_w + 1e-9:
+                raise ValueError(
+                    f"max_satellite_weight={self.max_satellite_weight:.2f} exceeds "
+                    f"equity_ticker weight={equity_w:.2f}. Satellites cannot exceed "
+                    f"the equity sleeve they are displacing."
+                )
+ 
+ 
 # ---------------------------------------------------------------------
 # 3b) CASH SLEEVE CONFIG
 # ---------------------------------------------------------------------

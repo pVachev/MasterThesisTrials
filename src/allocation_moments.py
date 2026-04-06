@@ -21,28 +21,41 @@ def build_total_portfolio_weights(
     satellite_weights: dict[str, float] | None = None,
 ) -> dict[str, float]:
     satellite_weights = satellite_weights or {}
-
+ 
     sat_total = float(sum(satellite_weights.values()))
     if sat_total > alloc_cfg.max_satellite_weight + 1e-12:
         raise ValueError(
             f"Total satellite weight {sat_total:.4f} exceeds max_satellite_weight={alloc_cfg.max_satellite_weight:.4f}"
         )
-
+ 
     if alloc_cfg.long_only:
         neg = {k: v for k, v in satellite_weights.items() if v < 0}
         if neg:
             raise ValueError(f"Negative satellite weights are not allowed: {neg}")
-
-    core_scale = 1.0 - sat_total
-    total_weights = {k: core_scale * v for k, v in alloc_cfg.fixed_core_weights.items()}
-
+ 
+    if getattr(alloc_cfg, 'equity_only_displacement', False):
+        # Satellites displace ONLY the equity ticker; bond weights stay fixed.
+        equity_tk = alloc_cfg.equity_ticker
+        equity_w = alloc_cfg.fixed_core_weights[equity_tk] - sat_total
+        if equity_w < -1e-9:
+            raise ValueError(
+                f"Satellite total {sat_total:.4f} exceeds equity weight "
+                f"{alloc_cfg.fixed_core_weights[equity_tk]:.4f} for '{equity_tk}'."
+            )
+        total_weights = dict(alloc_cfg.fixed_core_weights)
+        total_weights[equity_tk] = max(equity_w, 0.0)
+    else:
+        # Default: scale all core weights down proportionally.
+        core_scale = 1.0 - sat_total
+        total_weights = {k: core_scale * v for k, v in alloc_cfg.fixed_core_weights.items()}
+ 
     for k, v in satellite_weights.items():
         total_weights[k] = total_weights.get(k, 0.0) + v
-
+ 
     total_sum = sum(total_weights.values())
     if alloc_cfg.no_leverage and not np.isclose(total_sum, 1.0):
         raise ValueError(f"Total portfolio weights must sum to 1.0, got {total_sum:.6f}")
-
+ 
     return total_weights
 
 

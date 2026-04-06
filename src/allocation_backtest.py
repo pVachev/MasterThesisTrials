@@ -12,6 +12,10 @@ from src.allocation_scoring import (
     apply_cash_sleeve,
 )
 from src.allocation_config import BacktestResult
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.runner import ModelRunResult
 
 
 def _extract_return_panel(
@@ -640,9 +644,13 @@ class ExpandingWindowConfig:
     refit_every_n_periods: int = 1
     verbose: bool = True
     verbose_every: int = 12
+    # If None: expanding window (all history). If set to N: rolling window
+    # of last N months only. Recommended N=60 to allow the model to forget
+    # stale regime-sector relationships (e.g. XLE's 2003-2008 supercycle).
+    rolling_window: int | None = None
  
  
-
+ 
 def run_expanding_window_backtest(
     res_core,
     allocation_df: pd.DataFrame,
@@ -754,13 +762,13 @@ def run_expanding_window_backtest(
     core_assets = list(alloc_cfg.fixed_core_weights.keys())
     sat_assets  = [s.ticker for s in satellite_specs]
     all_assets  = list(dict.fromkeys(core_assets + sat_assets))
-
+ 
     # include RF in realized returns if cash sleeve is active
     if cash_sleeve_cfg is not None and cash_sleeve_cfg.enabled:
         rf_tk = cash_sleeve_cfg.rf_ticker
         if rf_tk not in all_assets:
             all_assets.append(rf_tk)
-
+ 
     realized_asset_returns = _extract_return_panel(
         allocation_df=allocation_df,
         assets=all_assets,
@@ -800,7 +808,14 @@ def run_expanding_window_backtest(
         needs_refit = (step - last_refit_idx) >= ew_cfg.refit_every_n_periods
  
         if needs_refit:
-            train_x = x_full.iloc[: window_end_idx + 1].copy()   # up to t-1 inclusive
+            # Rolling vs expanding window for HMM fit and moment estimation.
+            # Rolling window allows the model to forget stale regime-sector
+            # relationships (e.g. XLE's 2003-2008 commodity supercycle).
+            if ew_cfg.rolling_window is not None:
+                start_idx = max(0, window_end_idx + 1 - ew_cfg.rolling_window)
+                train_x = x_full.iloc[start_idx: window_end_idx + 1].copy()
+            else:
+                train_x = x_full.iloc[: window_end_idx + 1].copy()
  
             if ew_cfg.verbose and step % ew_cfg.verbose_every == 0:
                 print(
@@ -917,14 +932,14 @@ def run_expanding_window_backtest(
             rebalance_date=rebalance_date,
             satellite_specs=satellite_specs,
         )
-
+ 
         # ── cash sleeve ──────────────────────────────────────────
         cash_weights, cash_weight = apply_cash_sleeve(
             portfolio_weights=decision.total_portfolio_weights,
             cash_sleeve_cfg=cash_sleeve_cfg,
             predictive_probabilities_row=pred_row,
         )
-
+ 
         # ── apply turnover limit and compute realized return ──────────
         applied_weights, realized_turnover = _apply_turnover_limit(
             prev_weights=prev_weights,
@@ -957,7 +972,7 @@ def run_expanding_window_backtest(
             "cash_weight":                         cash_weight,
         }
         decisions.append(decision)
-
+ 
         weights_rows.append(pd.Series(applied_weights, name=realized_date))
         realized_rows.append(pd.Series({
             "rebalance_date":     rebalance_date,

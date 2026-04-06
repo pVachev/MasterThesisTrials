@@ -165,8 +165,8 @@ class RegimePostProcessor:
             raise ValueError("Call .fit(df_m, out) first.")
         if not asset_cols:
             raise ValueError("asset_cols cannot be empty.")
-        if len(asset_cols) > 4:
-            raise ValueError("regime_correlation_table currently supports up to 4 assets.")
+        # if len(asset_cols) > 4:
+        #     raise ValueError("regime_correlation_table currently supports up to 4 assets.")
 
         df_m = self.df_m
         missing = [c for c in asset_cols if c not in df_m.columns]

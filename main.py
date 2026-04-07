@@ -227,10 +227,10 @@ def main():
     # ============================================================
 
  
-    RUN_ALLOCATION = True
-    EXPORT_ALLOCATION = True
-    PLOT_ALLOCATION = True
-    STORE_CANDIDATE_SCORES = True
+    RUN_ALLOCATION = False
+    EXPORT_ALLOCATION = False
+    PLOT_ALLOCATION = False
+    STORE_CANDIDATE_SCORES = False
  
     CORE_MODEL_CODE = "A"
  
@@ -311,8 +311,8 @@ def main():
     #   several minutes. Set seeds=range(1,11) for faster development.
     # ============================================================
  
-    RUN_EXPANDING_WINDOW = False
-    EXPORT_EXPANDING_WINDOW = False
+    RUN_EXPANDING_WINDOW = True
+    EXPORT_EXPANDING_WINDOW = True
     ew_cfg = ExpandingWindowConfig(
         burn_in_periods=60,
         refit_every_n_periods=1,

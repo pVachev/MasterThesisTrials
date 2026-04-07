@@ -159,7 +159,7 @@ def main():
     }
 
 
-    sector_specs_weights = [0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.4]
+    sector_specs_weights = [0.00, 0.05, 0.10, 0.15, 0.20]
 
 
     sector_specs = [
@@ -182,7 +182,7 @@ def main():
     alloc_cfg = AllocationConfig(
         rebalance_frequency="ME",
         top_n_satellites=2,
-        max_satellite_weight=0.40,
+        max_satellite_weight=0.20,
         fixed_core_weights={
             "^SP500TR": 0.60,
             "LT09TRUU": 0.40,
@@ -193,7 +193,7 @@ def main():
         turnover_limit=None,
         min_regime_obs=24,
         shrinkage_intensity=0.0,
-        score_improvement_floor=0.0001,
+        score_improvement_floor=0.0002,
         export_file="allocation_results.xlsx",
         # Satellites displace SP500 only; LT09TRUU stays fixed at 40%.
         # A 20% max sleeve reduces SP500 from 60% → min 40% at full tilt.

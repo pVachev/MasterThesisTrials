@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backtest Performance & Ratio Table</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 2rem; background: #fff; color: #1a1a1a; }
+  h1 { font-size: 16px; font-weight: 500; margin-bottom: 0.25rem; }
+  p.sub { font-size: 12px; color: #666; margin-bottom: 1.5rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { font-weight: 500; font-size: 11px; color: #666; text-align: right; padding: 6px 6px 6px 3px; border-bottom: 1px solid #ddd; white-space: nowrap; }
+  th:first-child { text-align: left; }
+  td { padding: 4px 6px 4px 3px; text-align: right; border-bottom: 0.5px solid #eee; white-space: nowrap; }
+  td:first-child { text-align: left; font-size: 11px; color: #555; }
+  tr.primary td:first-child { color: #1a1a1a; }
+  tr.sh td { font-size: 11px; font-weight: 500; color: #555; background: #f5f5f5; padding: 8px 6px 4px 6px; border-bottom: none; letter-spacing: .03em; }
+  tr.bench td { color: #666; }
+  .g { color: #1D9E75; font-weight: 500; }
+  .r { color: #D85A30; }
+  .star { color: #BA7517; font-weight: 500; }
+  .na { color: #bbb; font-size: 11px; }
+  .tag { display: inline-block; font-size: 10px; padding: 1px 4px; border-radius: 4px; margin-left: 2px; vertical-align: middle; }
+  .tp { background: #E6F1FB; color: #0C447C; }
+  .tr2 { background: #E1F5EE; color: #085041; }
+  .tc { background: #f0f0f0; color: #555; border: 0.5px solid #ccc; }
+  .note { font-size: 11px; color: #666; margin-top: 10px; }
+  @media print { body { padding: 1rem; } }
+</style>
+</head>
+<body>
+<h1>Backtest sensitivity — performance, ratio zoo &amp; selectivity</h1>
+<p class="sub">Rolling 60-month EW backtest · 60/40 core · equity-only displacement · sectors + gold · 2004–2026 · 5 bps transaction cost</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:24%;text-align:left;">configuration</th>
+      <th>CAGR</th><th>Sharpe</th><th>max DD</th><th>down dev</th>
+      <th>Sortino</th><th>Calmar</th><th>Sterling</th><th>Burke</th><th>Omega</th><th>NONE%</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="sh"><td colspan="11">benchmark · full series</td></tr>
+    <tr class="bench">
+      <td>60/40 static</td>
+      <td>7.71%</td><td>0.875</td><td>-30.61%</td><td>7.11%</td>
+      <td>1.104</td><td>0.252</td><td>0.377</td><td>0.205</td><td>1.935</td><td>—</td>
+    </tr>
+
+    <tr class="sh"><td colspan="11">20% sleeve · floor 0.001 · primary · full series</td></tr>
+    <tr class="primary"><td>MV <span class="tag tp">primary</span></td>
+      <td class="g">8.06%</td><td class="g">0.923</td><td class="g">-26.78%</td><td class="g">7.05%</td>
+      <td class="g">1.159</td><td class="g">0.301</td><td class="g">0.406</td><td class="g">0.223</td><td class="g">1.977</td><td class="g">33%</td></tr>
+    <tr class="primary"><td>MVS_cons</td>
+      <td class="g">8.16%</td><td class="g">0.932</td><td class="g">-26.78%</td><td class="g">7.06%</td>
+      <td class="g">1.171</td><td class="g">0.305</td><td class="g">0.411</td><td class="g">0.226</td><td class="g">1.989</td><td class="g">32%</td></tr>
+    <tr class="primary"><td>MVS</td>
+      <td class="g">8.14%</td><td class="g">0.932</td><td class="g">-26.89%</td><td class="g">7.02%</td>
+      <td class="g">1.175</td><td class="g">0.303</td><td class="g">0.410</td><td class="g">0.225</td><td class="g">1.989</td><td class="g">33%</td></tr>
+    <tr class="primary"><td>MVK</td>
+      <td class="g">8.13%</td><td class="g">0.931</td><td class="g">-27.00%</td><td class="g">6.98%</td>
+      <td class="g">1.180</td><td class="g">0.301</td><td class="g">0.412</td><td class="g">0.225</td><td class="g">1.983</td><td class="g">32%</td></tr>
+
+    <tr class="sh"><td colspan="11">30% sleeve · floor 0.001 · contrast · full series</td></tr>
+    <tr><td>MV <span class="tag tc">contrast</span></td>
+      <td class="g">8.33%</td><td class="g">0.935</td><td class="g">-25.39%</td><td class="r">7.30%</td>
+      <td class="g">1.156</td><td class="g">0.328</td><td class="g">0.421</td><td class="g">0.229</td><td class="g">1.996</td><td class="r">8%</td></tr>
+    <tr><td>MVS_cons</td>
+      <td class="g">8.35%</td><td class="g">0.937</td><td class="g">-25.39%</td><td class="r">7.28%</td>
+      <td class="g">1.161</td><td class="g">0.329</td><td class="g">0.422</td><td class="g">0.230</td><td class="g">2.000</td><td class="r">8%</td></tr>
+    <tr><td>MVS</td>
+      <td class="g">8.37%</td><td class="g">0.938</td><td class="g">-25.39%</td><td class="r">7.26%</td>
+      <td class="g">1.167</td><td class="g">0.330</td><td class="g">0.423</td><td class="g">0.230</td><td class="g">2.000</td><td class="r">8%</td></tr>
+    <tr><td>MVK</td>
+      <td class="g">8.30%</td><td class="g">0.933</td><td class="g">-25.62%</td><td class="r">7.27%</td>
+      <td class="g">1.157</td><td class="g">0.324</td><td class="g">0.418</td><td class="g">0.228</td><td class="g">1.994</td><td class="r">8%</td></tr>
+
+    <tr class="sh"><td colspan="11">30% sleeve · floor 0.002 · robustness · full series</td></tr>
+    <tr><td>MV <span class="tag tr2">robust</span></td>
+      <td class="g">8.02%</td><td class="g">0.921</td><td class="g">-25.39%</td><td class="g">7.10%</td>
+      <td class="g">1.145</td><td class="g">0.316</td><td class="g">0.415</td><td class="g">0.229</td><td class="g">1.973</td><td>59%</td></tr>
+    <tr><td>MVS_cons</td>
+      <td class="g">8.11%</td><td class="g">0.930</td><td class="g">-25.39%</td><td class="g">7.09%</td>
+      <td class="g">1.158</td><td class="g">0.319</td><td class="g">0.419</td><td class="g">0.231</td><td class="g">1.985</td><td>58%</td></tr>
+    <tr><td>MVS</td>
+      <td class="g">8.12%</td><td class="g">0.931</td><td class="g">-25.39%</td><td class="g">7.06%</td>
+      <td class="g">1.165</td><td class="g">0.320</td><td class="g">0.420</td><td class="g">0.232</td><td class="g">1.986</td><td>58%</td></tr>
+    <tr><td>MVK</td>
+      <td class="g">8.14%</td><td class="g">0.932</td><td class="g">-25.62%</td><td class="g">7.07%</td>
+      <td class="g">1.165</td><td class="g">0.318</td><td class="g">0.419</td><td class="g">0.231</td><td class="g">1.989</td><td>57%</td></tr>
+
+    <tr class="sh"><td colspan="11">35% sleeve · floor 0.001 · full series</td></tr>
+    <tr><td>MV</td>
+      <td class="g">8.55%</td><td class="g">0.944</td><td class="g">-25.82%</td><td class="r">7.42%</td>
+      <td class="g">1.167</td><td class="g">0.331</td><td class="g">0.429</td><td class="g">0.233</td><td class="g">2.012</td><td class="r">5%</td></tr>
+    <tr><td>MVS_cons</td>
+      <td class="g">8.48%</td><td class="g">0.938</td><td class="g">-25.82%</td><td class="r">7.41%</td>
+      <td class="g">1.159</td><td class="g">0.328</td><td class="g">0.425</td><td class="g">0.231</td><td class="g">2.003</td><td class="r">5%</td></tr>
+    <tr><td>MVS</td>
+      <td class="g">8.51%</td><td class="g">0.941</td><td class="g">-25.82%</td><td class="r">7.43%</td>
+      <td class="g">1.160</td><td class="g">0.330</td><td class="g">0.427</td><td class="g">0.232</td><td class="g">2.009</td><td class="r">6%</td></tr>
+    <tr><td>MVK</td>
+      <td class="g">8.51%</td><td class="g">0.942</td><td class="g">-25.82%</td><td class="r">7.41%</td>
+      <td class="g">1.162</td><td class="g">0.329</td><td class="g">0.427</td><td class="g">0.232</td><td class="g">2.009</td><td class="r">6%</td></tr>
+
+    <tr class="sh"><td colspan="11">35% sleeve · floor 0.002 · full series</td></tr>
+    <tr><td>MV</td>
+      <td class="g">8.22%</td><td class="g">0.933</td><td class="g">-25.28%</td><td class="r">7.22%</td>
+      <td class="g">1.153</td><td class="g">0.325</td><td class="g">0.421</td><td class="g">0.232</td><td class="g">1.991</td><td>48%</td></tr>
+    <tr><td>MVS_cons</td>
+      <td class="g">8.36%</td><td class="g">0.946</td><td class="g">-25.28%</td><td class="r">7.22%</td>
+      <td class="g">1.171</td><td class="g">0.331</td><td class="g">0.429</td><td class="g">0.236</td><td class="g">2.008</td><td>48%</td></tr>
+    <tr><td>MVS</td>
+      <td class="g">8.38%</td><td class="star">0.948</td><td class="g">-25.28%</td><td class="r">7.22%</td>
+      <td class="g">1.174</td><td class="g">0.332</td><td class="g">0.430</td><td class="g">0.236</td><td class="g">2.010</td><td>48%</td></tr>
+    <tr><td>MVK <span class="tag" style="background:#FAEEDA;color:#633806;">best Sharpe</span></td>
+      <td class="g">8.40%</td><td class="star">0.950</td><td class="g">-25.28%</td><td class="r">7.20%</td>
+      <td class="g">1.180</td><td class="g">0.333</td><td class="g">0.431</td><td class="g">0.237</td><td class="g">2.012</td><td>48%</td></tr>
+
+    <tr class="sh"><td colspan="11">40% sleeve · floor 0.001 · MV only</td></tr>
+    <tr><td>MV</td>
+      <td class="g">8.57%</td><td class="g">0.931</td><td class="g">-26.54%</td><td class="r">7.58%</td>
+      <td class="g">1.143</td><td class="g">0.323</td><td class="na">—</td><td class="na">—</td><td class="na">—</td><td class="r">3%</td></tr>
+  </tbody>
+</table>
+
+<p class="note">
+  Green = beats benchmark · Red = worse than benchmark · NONE% = months strategy holds passive 60/40 (higher = more selective)<br>
+  Sortino = (Sharpe×Vol) / DwnDev · Calmar = CAGR / |MaxDD| · Sterling = CAGR / avg(top-3 DD episodes) · Burke = (Sharpe×Vol) / √(Σ top-3 DD²) · Omega = Σgains / Σ|losses|, threshold = 0<br>
+  All ratios from full monthly series · Benchmark verified identical across all 12 uploaded files (PASS ✓) · 40%/0.001 Sterling/Burke/Omega not available (single investor run)
+</p>
+</body>
+</html>

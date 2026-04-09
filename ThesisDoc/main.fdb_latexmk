@@ -1,0 +1,18 @@
+# Fdb version 4
+["pdflatex"] 1775742734.60551 "c:/Users/PreslavVachev/Desktop/hmmvenv/MasterThesisTrials/ThesisDoc/main.tex" "main.pdf" "main" 1775742735.27227 0
+  "c:/Users/PreslavVachev/Desktop/hmmvenv/MasterThesisTrials/ThesisDoc/main.tex" 1775742733 216 2a9d0f16f60a2af0f71f99c81c89045b ""
+  "c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb" 1775732173 35752 024fb6c41858982481f6968b5fc26508 ""
+  "c:/texlive/2026/texmf-dist/tex/latex/base/article.cls" 1775734661 20144 b966087dda3b194755eb460d32e2ef75 ""
+  "c:/texlive/2026/texmf-dist/tex/latex/base/size10.clo" 1775734661 8448 686612a86f0e04f41ea577f5ec7e83d8 ""
+  "c:/texlive/2026/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def" 1775734627 30909 7dedb28cb21a1e79c47a35a35ae3c507 ""
+  "c:/texlive/2026/texmf-dist/web2c/texmf.cnf" 1775732058 43630 e9fa012910491fe5ae08a72c3c2997a7 ""
+  "c:/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1775738111 5619402 045890036aad9b52b154ef5568e59d3a ""
+  "c:/texlive/2026/texmf-var/web2c/pdftex/pdflatex.fmt" 1775738195 3648456 e104a2f8040172836ecf26d23ef5d5b6 ""
+  "c:/texlive/2026/texmf.cnf" 1775738081 713 e69b156964470283e0530f5060668171 ""
+  "main.aux" 1775742735 32 3985256e7290058c681f74d7a3565a19 "pdflatex"
+  "main.tex" 1775742733 216 2a9d0f16f60a2af0f71f99c81c89045b ""
+  (generated)
+  "main.aux"
+  "main.log"
+  "main.pdf"
+  (rewritten before read)

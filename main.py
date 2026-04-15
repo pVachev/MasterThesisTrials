@@ -51,10 +51,12 @@ def main():
         start_date="1999-01-31",
         end_date="2026-03-31",
         output_file="hmm_regime_results_monthly.xlsx",
+
     )
 
     model_asset_sets = [
         ["^SP500TR", "LT09TRUU"],
+        ["^SP500TR", "LT09TRUU","XAU"],
         # ["^SP500TR", "LT09TRUU", "XLB", "XLE", "XLF", "XLI", "XLK", "XLP", "XLU", "XLV", "XLY", "XAU"],
         # ["^SP500TR", "EEM"],
         # ["^SP500TR", "WFBIX"],
@@ -311,8 +313,8 @@ def main():
     #   several minutes. Set seeds=range(1,11) for faster development.
     # ============================================================
  
-    RUN_EXPANDING_WINDOW = True
-    EXPORT_EXPANDING_WINDOW = True
+    RUN_EXPANDING_WINDOW = False
+    EXPORT_EXPANDING_WINDOW = False
     ew_cfg = ExpandingWindowConfig(
         burn_in_periods=60,
         refit_every_n_periods=1,

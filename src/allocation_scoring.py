@@ -81,23 +81,23 @@ def compute_investor_score(
             expected_return
             - investor_cfg.lambda_ * variance
         )
- 
+
     elif investor_cfg.investor_type == "MVS":
         return (
             expected_return
             - investor_cfg.lambda_ * variance
-            + (1.0 / 6.0) * investor_cfg.lambda_**2 * skewness
+            + investor_cfg.gamma * skewness
         )
- 
+
     elif investor_cfg.investor_type == "MVK":
         excess_kurt = kurtosis - 3.0
         return (
             expected_return
             - investor_cfg.lambda_ * variance
-            + (1.0 / 6.0) * investor_cfg.lambda_**2 * skewness
-            - (1.0 / 24.0) * investor_cfg.lambda_**3 * excess_kurt
+            + investor_cfg.gamma * skewness
+            - investor_cfg.delta * excess_kurt
         )
- 
+
     else:
         raise ValueError(f"Unsupported investor_type: {investor_cfg.investor_type}")
 

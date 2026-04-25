@@ -135,12 +135,12 @@ def main():
         ),
  
         # ── Mean-Variance-Skewness  (conservative calibration) ────────
-        "MVS_cons": InvestorPreferenceConfig(
-            name="MVS Investor (conservative)",
-            investor_type="MVS",
-            lambda_=3.0,
-            gamma=0.0006,   # skewness term ≈ 10% of variance term
-        ),
+        # "MVS_cons": InvestorPreferenceConfig(
+        #     name="MVS Investor (conservative)",
+        #     investor_type="MVS",
+        #     lambda_=3.0,
+        #     gamma=0.0006,   # skewness term ≈ 10% of variance term
+        # ),
  
         # ── Mean-Variance-Skewness  (moderate calibration) ────────────
         "MVS": InvestorPreferenceConfig(
@@ -161,7 +161,7 @@ def main():
     }
 
 
-    sector_specs_weights = [0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]
+    sector_specs_weights = [0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35]
 
 
     sector_specs = [
@@ -184,7 +184,7 @@ def main():
     alloc_cfg = AllocationConfig(
         rebalance_frequency="ME",
         top_n_satellites=2,
-        max_satellite_weight=0.3,
+        max_satellite_weight=0.35,
         fixed_core_weights={
             "^SP500TR": 0.60,
             "LT09TRUU": 0.40,
@@ -313,8 +313,8 @@ def main():
     #   several minutes. Set seeds=range(1,11) for faster development.
     # ============================================================
  
-    RUN_EXPANDING_WINDOW = False
-    EXPORT_EXPANDING_WINDOW = False
+    RUN_EXPANDING_WINDOW = True
+    EXPORT_EXPANDING_WINDOW = True
     ew_cfg = ExpandingWindowConfig(
         burn_in_periods=60,
         refit_every_n_periods=1,

@@ -5,6 +5,7 @@ import numpy as np
 from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
+from scipy import stats 
 
 if TYPE_CHECKING:
     from src.runner import ModelRunResult
@@ -18,72 +19,116 @@ if TYPE_CHECKING:
 @dataclass
 class InvestorPreferenceConfig:
     """
-    Stores the utility / scoring preference of one investor type.
- 
-    All three types are nested truncations of the same Taylor-expanded
-    expected utility function (Jondeau & Rockinger, 2006):
- 
-        E[U(R)] ≈ μ_p - λ·σ²_p + (1/6)·γ·skew_p - (1/24)·δ·(kurt_p - 3)
- 
-    Supported investor types
-    ------------------------
-    MV  — Mean-Variance (2nd-order truncation):
+    Stores the preference profile of one investor type for candidate portfolio scoring.
+
+    Scoring specification
+    ---------------------
+    The functional form is motivated by the Taylor expansion of expected utility
+    around the portfolio mean (Jondeau & Rockinger, 2006), but applied here as a
+    preference-weighted scoring criterion rather than a structural utility
+    maximisation. Unlike the CARA/CRRA framework — where higher-moment coefficients
+    are mechanically derived from a single risk aversion parameter — gamma and delta
+    are treated as free preference weights that independently govern the investor's
+    sensitivity to skewness and tail risk. This is consistent with a scoring rather
+    than an optimisation context: the strategy selects from a discrete candidate
+    library by ranking portfolios, not by solving first-order conditions.
+
+    Investor types
+    --------------
+    MV  — Mean-Variance:
         Score = μ_p - λ · σ²_p
- 
-    MVS — Mean-Variance-Skewness (3rd-order truncation):
-        Score = μ_p - λ · σ²_p + (1/6) · γ · skew_p
- 
-    MVK — Mean-Variance-Kurtosis (4th-order truncation):
-        Score = μ_p - λ · σ²_p + (1/6) · γ · skew_p - (1/24) · δ · (kurt_p - 3)
- 
-    Parameter guidance (monthly log excess returns, 60/40 core)
-    -----------------------------------------------------------
+
+    MVS — Mean-Variance-Skewness:
+        Score = μ_p - λ · σ²_p + γ · skew_p
+
+    MVK — Mean-Variance-Skewness-Kurtosis:
+        Score = μ_p - λ · σ²_p + γ · skew_p - δ · (kurt_p - 3)
+
+    Note: the factorial denominators (1/6, 1/24) from the Taylor derivation are
+    omitted. Without them, γ and δ directly control the contribution of each
+    moment term relative to the variance term, making calibration transparent
+    and interpretable without reference to the Taylor structure.
+
+    Parameter calibration
+    ---------------------
+    Parameters are calibrated once from the unconditional moments of the 60/40
+    benchmark portfolio via calibrate_investor_params(), and held fixed for the
+    full backtest. This anchors preferences to a stable, exogenous reference
+    distribution rather than time-varying strategy moments — reflecting the view
+    that long-horizon investor preferences should not change with short-run
+    fluctuations in portfolio distributions.
+
+    Calibration targets (benchmark moments: σ²≈0.000672, skew≈-0.70, ekurt≈1.95):
+        Conservative (MVS_cons) : γ ≈ 0.000431   (skew term ≈ 15% of variance term)
+        Moderate     (MVS, MVK) : γ ≈ 0.000574   (skew term ≈ 20% of variance term)
+                                  δ ≈ 0.000207   (kurt term ≈ 20% of variance term)
+
+    Parameters
+    ----------
     λ (lambda_):
-        Risk aversion coefficient on variance.
-        Recommended range: 1–5. Default 3.0 is well-calibrated for this
-        dataset (variance term ≈ 114% of mean return at λ=3).
- 
+        Variance aversion coefficient. Recommended: 3.0, consistent with
+        moderate risk aversion in the asset allocation literature.
+
     γ (gamma):
-        Skewness preference coefficient. Enters with factorial scaling
-        (1/6) so it is directly comparable in magnitude to λ.
-        Recommended range: 0.0006–0.0015.
-        At γ=0.001 the skewness term is approximately 10–20% of the
-        variance term — a reasonable secondary preference.
-        Note: larger values make the investor increasingly a skewness
-        maximiser, overriding the variance signal.
- 
+        Skewness preference weight. Positive: investor prefers right-skewed
+        distributions. Calibrated so the skewness term is a secondary signal
+        (15–20% of the variance term at benchmark moment values).
+
     δ (delta):
-        Excess kurtosis aversion coefficient. Enters with factorial
-        scaling (1/24). Recommended range: 0.0007–0.0016.
-        Note: applied to (kurt - 3) so a normal portfolio receives
-        zero penalty. Only fat-tail risk above the normal baseline
-        is penalised.
- 
-    Sensitivity analysis
-    --------------------
-    Run three calibrations for robustness:
-        Conservative : γ=0.0006, δ=0.0007   (≈10% of variance term)
-        Moderate     : γ=0.0010, δ=0.0012   (≈17% of variance term)
-        Aggressive   : γ=0.0015, δ=0.0016   (≈25% of variance term)
-    Combined with λ ∈ {1, 3, 5} for a full 3×3 sensitivity grid.
- 
+        Excess kurtosis aversion weight. Applied to (kurt - 3), so a normally
+        distributed portfolio receives zero penalty. Only fat-tail risk above
+        the normal baseline is penalised. Calibrated symmetrically with gamma.
+
     References
     ----------
     Jondeau, E. & Rockinger, M. (2006). Optimal Portfolio Allocation Under
         Higher Moments. European Financial Management, 12(1), 29–55.
- 
+
     Guidolin, M. & Timmermann, A. (2008). International Asset Allocation
         under Regime Switching, Skew and Kurtosis Preferences.
         Review of Financial Studies, 21(2), 889–935.
     """
- 
+
     name: str
     investor_type: Literal["MV", "MVS", "MVK"]
- 
-    # Risk aversion / preference parameters — JR (2006) calibrated
+
+    # Preference parameters — calibrated from benchmark unconditional moments
+    # via calibrate_investor_params(). See docstring above.
     lambda_: float = 3.0
-    gamma: float   = 0.001   # was 0.01 — corrected for (1/6) factorial scaling
-    delta: float   = 0.001   # was 0.01 — corrected for (1/24) factorial scaling
+    gamma: float   = 0.000574
+    delta: float   = 0.000207
+
+
+# Add this function after the InvestorPreferenceConfig dataclass
+
+def calibrate_investor_params(
+    benchmark_returns: pd.Series,
+    lambda_: float = 3.0,
+    skewness_target_pct: float = 0.20,
+    kurtosis_target_pct: float = 0.20,
+) -> dict:
+    """
+    Calibrate gamma and delta from unconditional benchmark moments such that
+    skewness and kurtosis terms each contribute a target percentage of the
+    variance term at benchmark moment values.
+
+    Without factorial scalings:
+        gamma = target_pct * lambda * var_bm / |skew_bm|
+        delta = target_pct * lambda * var_bm / |ekurt_bm|
+
+    Parameters are fixed once from the benchmark and held constant —
+    they represent stable investor preferences, not time-varying estimates.
+    """
+    
+
+    var   = benchmark_returns.var()
+    skew  = abs(stats.skew(benchmark_returns))
+    ekurt = abs(stats.kurtosis(benchmark_returns, fisher=True))
+    return {
+        "lambda_": lambda_,
+        "gamma":   round(skewness_target_pct * lambda_ * var / skew, 6),
+        "delta":   round(kurtosis_target_pct * lambda_ * var / ekurt, 6),
+    }
 
 
 # ---------------------------------------------------------------------

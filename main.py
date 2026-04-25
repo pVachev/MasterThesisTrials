@@ -1,4 +1,5 @@
 import pandas as pd 
+import numpy as np
 
 from src.transform import clean_data
 from src.load import diff_data
@@ -18,12 +19,15 @@ from src.allocation_config import (
     AllocationConfig,
     TrainTestConfig,
     CashSleeveConfig,
+    calibrate_investor_params
 )
 from src.allocation_backtest import (
     run_fixed_parameter_train_test_backtest,
     run_expanding_window_backtest,
     ExpandingWindowConfig,
 )
+
+
 from src.allocation_export import export_allocation_backtest_to_excel
 from src.allocation_plot import plot_allocation_dashboard, plot_distribution_comparison
 
@@ -126,37 +130,49 @@ def main():
     # ALLOCATION PARAMETERS
     # ============================================================
 
+    
+
+    # ── Preference parameter calibration ──────────────────────────────────
+    # Parameters γ and δ are calibrated to the unconditional moments of the
+    # 60/40 benchmark portfolio over the full backtest period (2004–2026):
+    #
+    #   σ²_bm  = 0.000672,  |skew_bm| = 0.7014,  |ekurt_bm| = 1.9482
+    #
+    # Formula (no factorial scaling — direct score contribution targeting):
+    #
+    #   γ = target_pct × λ × σ²_bm / |skew_bm|
+    #   δ = target_pct × λ × σ²_bm / |ekurt_bm|
+    #
+    # Resulting score contribution hierarchy at benchmark moments:
+    #   mean return    100%  →  primary driver
+    #   variance term   31%  →  meaningful risk penalty   (λ·σ²  = 0.002016)
+    #   skewness term    6%  →  secondary tiebreaker      (γ·|skew| = 0.000403 at moderate)
+    #   kurtosis term    6%  →  secondary tiebreaker      (δ·|ekurt| = 0.000403 at moderate)
+
     investor_configs = {
-        # ── Mean-Variance ──────────────────────────────────────────────
         "MV": InvestorPreferenceConfig(
             name="MV Investor",
             investor_type="MV",
             lambda_=3.0,
         ),
- 
-        # ── Mean-Variance-Skewness  (conservative calibration) ────────
-        # "MVS_cons": InvestorPreferenceConfig(
-        #     name="MVS Investor (conservative)",
-        #     investor_type="MVS",
-        #     lambda_=3.0,
-        #     gamma=0.0006,   # skewness term ≈ 10% of variance term
-        # ),
- 
-        # ── Mean-Variance-Skewness  (moderate calibration) ────────────
+        "MVS_cons": InvestorPreferenceConfig(
+            name="MVS Investor (conservative)",
+            investor_type="MVS",
+            lambda_=3.0,
+            gamma=0.000431,  # 15% × 3.0 × 0.000672 / 0.7014
+        ),
         "MVS": InvestorPreferenceConfig(
             name="MVS Investor",
             investor_type="MVS",
             lambda_=3.0,
-            gamma=0.0010,   # skewness term ≈ 17% of variance term
+            gamma=0.000574,  # 20% × 3.0 × 0.000672 / 0.7014
         ),
- 
-        # ── Mean-Variance-Kurtosis  (moderate calibration) ────────────
         "MVK": InvestorPreferenceConfig(
             name="MVK Investor",
             investor_type="MVK",
             lambda_=3.0,
-            gamma=0.0010,
-            delta=0.0012,   # excess kurtosis term ≈ 17% of variance term
+            gamma=0.000574,  # 20% × 3.0 × 0.000672 / 0.7014
+            delta=0.000207,  # 20% × 3.0 × 0.000672 / 1.9482
         ),
     }
 

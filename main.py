@@ -177,7 +177,7 @@ def main():
     }
 
 
-    sector_specs_weights = [0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35]
+    sector_specs_weights = [0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.4, 0.45, 0.5]
 
 
     sector_specs = [
@@ -329,23 +329,53 @@ def main():
     #   several minutes. Set seeds=range(1,11) for faster development.
     # ============================================================
  
+# ============================================================
+    # SENSITIVITY GRID — sleeve % × floor × investor
+    # ============================================================
+    # Toggle entire grid on/off:
     RUN_EXPANDING_WINDOW = True
     EXPORT_EXPANDING_WINDOW = True
+
+    # ── Filter controls — set to None to run all ─────────────────
+    # To run a single combination, set e.g.:
+    #   ONLY_SLEEVE    = 0.30
+    #   ONLY_FLOOR     = 0.002
+    #   ONLY_INVESTORS = ["MV"]
+    ONLY_SLEEVE    = None   # e.g. 0.30
+    ONLY_FLOOR     = None   # e.g. 0.002
+    ONLY_INVESTORS = None   # e.g. ["MV", "MVS"]
+
+    # ── Full sensitivity grid ─────────────────────────────────────
+    sensitivity_grid = [
+        # {"sleeve": 0.20, "floor": 0.001},
+        # {"sleeve": 0.20, "floor": 0.002},
+        # {"sleeve": 0.30, "floor": 0.001},
+        # {"sleeve": 0.30, "floor": 0.002},
+        # {"sleeve": 0.35, "floor": 0.001},
+        # {"sleeve": 0.35, "floor": 0.002},
+        {"sleeve": 0.40, "floor": 0.001},
+        {"sleeve": 0.40, "floor": 0.002},
+        {"sleeve": 0.45, "floor": 0.001},
+        {"sleeve": 0.45, "floor": 0.002},
+        {"sleeve": 0.50, "floor": 0.001},
+        {"sleeve": 0.50, "floor": 0.002},
+        # {"sleeve": 0.40, "floor": 0.001},  # MV robustness — disabled for now
+    ]
+
     ew_cfg = ExpandingWindowConfig(
         burn_in_periods=60,
         refit_every_n_periods=1,
         verbose=True,
         verbose_every=12,
-        rolling_window=60,    # 5-year rolling window — prevents stale moments
-                              # from dominating. Set to None for expanding window.
+        rolling_window=60,
     )
- 
+
     if RUN_EXPANDING_WINDOW:
         res_core = next(r for r in results if r.spec.code == CORE_MODEL_CODE)
- 
+
         satellite_tickers = [s.ticker for s in sector_specs]
         allocation_cols   = ["^SP500TR", "LT09TRUU"] + satellite_tickers + [cfg.rf_col]
- 
+
         allocation_df = diff_data(
             df,
             cols=allocation_cols,
@@ -354,40 +384,79 @@ def main():
             rf_mode=cfg.rf_mode,
             freq=cfg.freq,
         )
- 
-        ew_results = {}
- 
-        for inv_key, investor_cfg in investor_configs.items():
-            print(f"\n=== EXPANDING WINDOW BACKTEST | {investor_cfg.name} ===")
- 
-            bt_ew = run_expanding_window_backtest(
-                res_core=res_core,
-                allocation_df=allocation_df,
-                hmm_cfg=cfg,
-                alloc_cfg=alloc_cfg,
-                investor_cfg=investor_cfg,
-                satellite_specs=sector_specs,
-                benchmark_weights=benchmark_weights,
-                ew_cfg=ew_cfg,
-                signal_return_prefix="ExcessLog",
-                realized_return_prefix="Log",
-                periods_per_year=12,
-                store_candidate_scores=False,
-                cash_sleeve_cfg=cash_sleeve,
+
+        # Apply filters
+        grid_to_run = [
+            g for g in sensitivity_grid
+            if (ONLY_SLEEVE is None or g["sleeve"] == ONLY_SLEEVE)
+            and (ONLY_FLOOR  is None or g["floor"]  == ONLY_FLOOR)
+        ]
+        investors_to_run = {
+            k: v for k, v in investor_configs.items()
+            if ONLY_INVESTORS is None or k in ONLY_INVESTORS
+        }
+
+        total = len(grid_to_run) * len(investors_to_run)
+        run_n = 0
+
+        for grid in grid_to_run:
+            sleeve = grid["sleeve"]
+            floor  = grid["floor"]
+
+            alloc_cfg_run = AllocationConfig(
+                rebalance_frequency="ME",
+                top_n_satellites=2,
+                max_satellite_weight=sleeve,
+                fixed_core_weights={"^SP500TR": 0.60, "LT09TRUU": 0.40},
+                long_only=True,
+                no_leverage=True,
+                transaction_cost_bps=5.0,
+                turnover_limit=None,
+                min_regime_obs=24,
+                shrinkage_intensity=0.0,
+                score_improvement_floor=floor,
+                export_file="allocation_results.xlsx",
+                equity_only_displacement=True,
+                equity_ticker="^SP500TR",
             )
- 
-            ew_results[inv_key] = bt_ew
-            print(bt_ew.performance_summary)
- 
-            if EXPORT_EXPANDING_WINDOW:
-                export_allocation_backtest_to_excel(
-                    backtest_res=bt_ew,
-                    alloc_cfg=alloc_cfg,
+            alloc_cfg_run.validate()
+
+            sleeve_tag = f"{int(sleeve*100)}pct"
+            floor_tag  = str(floor).replace("0.", "")
+
+            for inv_key, investor_cfg in investors_to_run.items():
+                run_n += 1
+                tag = f"{sleeve_tag}_floor{floor_tag}_{inv_key}"
+                print(f"\n[{run_n}/{total}] === {tag} ===")
+
+                bt_ew = run_expanding_window_backtest(
+                    res_core=res_core,
+                    allocation_df=allocation_df,
+                    hmm_cfg=cfg,
+                    alloc_cfg=alloc_cfg_run,
                     investor_cfg=investor_cfg,
                     satellite_specs=sector_specs,
-                    res_core=res_core,
-                    output_file=f"allocation_backtest_EW_{inv_key}.xlsx",
+                    benchmark_weights=benchmark_weights,
+                    ew_cfg=ew_cfg,
+                    signal_return_prefix="ExcessLog",
+                    realized_return_prefix="Log",
+                    periods_per_year=12,
+                    store_candidate_scores=False,
+                    cash_sleeve_cfg=cash_sleeve,
                 )
+
+                print(bt_ew.performance_summary)
+
+                if EXPORT_EXPANDING_WINDOW:
+                    export_allocation_backtest_to_excel(
+                        backtest_res=bt_ew,
+                        alloc_cfg=alloc_cfg_run,
+                        investor_cfg=investor_cfg,
+                        satellite_specs=sector_specs,
+                        res_core=res_core,
+                        output_file=f"allocation_backtest_EW_{tag}.xlsx",
+                    )
+
 
 if __name__ == "__main__":
 

@@ -241,6 +241,31 @@ def main():
     )
 
     # ============================================================
+    # A1 CONFIG — pinned to primary thesis result (20% sleeve / floor 0.001)
+    # This is separate from alloc_cfg which changes per sensitivity grid run.
+    # ============================================================
+    alloc_cfg_a1 = AllocationConfig(
+        rebalance_frequency="ME",
+        top_n_satellites=2,
+        max_satellite_weight=0.20,           # primary config
+        fixed_core_weights={"^SP500TR": 0.60, "LT09TRUU": 0.40},
+        long_only=True,
+        no_leverage=True,
+        transaction_cost_bps=5.0,
+        turnover_limit=None,
+        min_regime_obs=24,
+        shrinkage_intensity=0.0,
+        score_improvement_floor=0.001,       # primary config
+        export_file="allocation_results.xlsx",
+        equity_only_displacement=True,
+        equity_ticker="^SP500TR",
+    )
+    alloc_cfg_a1.validate()
+
+
+
+
+    # ============================================================
     # A1 HONEST TRAIN/TEST ALLOCATION BACKTEST
     # ============================================================
 
@@ -275,7 +300,7 @@ def main():
                 allocation_df=allocation_df,
                 hmm_cfg=cfg,
                 tt_cfg=tt_cfg,
-                alloc_cfg=alloc_cfg,
+                alloc_cfg=alloc_cfg_a1,   # pinned primary config,
                 investor_cfg=investor_cfg,
                 satellite_specs=sector_specs,
                 benchmark_weights=benchmark_weights,
@@ -333,8 +358,8 @@ def main():
     # SENSITIVITY GRID — sleeve % × floor × investor
     # ============================================================
     # Toggle entire grid on/off:
-    RUN_EXPANDING_WINDOW = True
-    EXPORT_EXPANDING_WINDOW = True
+    RUN_EXPANDING_WINDOW = False
+    EXPORT_EXPANDING_WINDOW = False
 
     # ── Filter controls — set to None to run all ─────────────────
     # To run a single combination, set e.g.:

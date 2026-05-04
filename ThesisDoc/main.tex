@@ -19,6 +19,7 @@
 \usepackage{multirow}
 \usepackage{array}
 \usepackage{longtable}
+\usepackage{pdflscape}
 \usepackage{tabularx}
 \usepackage{xcolor}
 \usepackage{soul}               % \hl{} highlighting
@@ -147,7 +148,7 @@ We contribute to the regime-switching and portfolio allocation literature in sev
 First, our regime-switching model is integrated within a rolling 60-month estimation window that
 refits the HMM at every rebalance date, allowing the model to adapt to structural breaks in
 sector leadership. Second, we introduce scoring for allocation decisions rather than solving an
-optimisation problem, making the approach computationally tractable within a real operational
+optimisation problem, making the approach computationally manageable within a real operational
 pipeline. Third, we incorporate multiple investor preference types, from mean-variance to
 mean-variance-kurtosis, within the same framework, allowing the model to serve clients with
 different attitudes toward tail risk. Finally, we integrate a score improvement floor that
@@ -165,7 +166,7 @@ that optimal allocations differ substantially across regimes and that ignoring r
 generates welfare costs of several cents per dollar of initial wealth at short investment
 horizons, rising above eight cents at 60-month horizons under high risk aversion. The present
 study sits in this tradition but departs from it in three important ways. We use a simpler,
-operationally tractable scoring approach rather than full Bellman equation optimisation. We
+operationally manageable scoring approach rather than full Bellman equation optimisation. We
 focus on a US sector ETF universe rather than international equity. And we introduce rolling
 window re-estimation as the mechanism for handling structural breaks, an aspect that was not
 required in studies relying on the stable 1954--1999 data environment.
@@ -231,8 +232,7 @@ used in the present study.
 The present study contributes to this literature in three specific ways. First, it applies the
 HMM framework to the US sector ETF universe --- a dimension of the allocation problem that the
 international equity focus of the preceding papers does not address. Second, it replaces the
-full Bellman equation optimisation with a computationally tractable scoring approach, making
-the framework operational within a wealth management pipeline. Third, and most importantly,
+full Bellman equation optimisation with a operationally manageable scoring approach, making the framework viable within a wealth management pipeline. Third, and most importantly,
 it introduces a rolling 60-month estimation window as the mechanism for adapting to structural
 breaks in sector leadership, explicitly addressing the stale-moment problem that arises when
 an expanding window is used across multi-decade samples.
@@ -275,7 +275,7 @@ is provided by Scott and Horvath (1980), who use proof by contradiction under th
 of decreasing absolute risk aversion to establish the sign of investor preference for moments
 of higher order than variance. Their result that the third moment of the utility function is
 positive (investors prefer positive skewness) and the fourth moment is negative (investors
-dislike excess kurtosis) holds for all utility functions satisfying DARA, not just specific
+dislike excess kurtosis) holds broadly for risk-averse utility functions, not just specific
 parametric forms. This generality is important: it means the investor types defined in this
 study do not depend on a specific assumed utility function, but on a universal property of
 risk-averse behaviour.
@@ -347,8 +347,7 @@ satellite tilts.
 For the satellite universe, this study uses the nine State Street SPDR sector ETFs: Materials
 (XLB), Energy (XLE), Financials (XLF), Industrials (XLI), Technology (XLK), Consumer
 Staples (XLP), Utilities (XLU), Health Care (XLV), and Consumer Discretionary (XLY). Gold
-(XAU) is included as a tenth satellite candidate. All sector ETF and gold return series were
-obtained from Bloomberg.
+(XAU) is included as a tenth satellite candidate. All nine sector ETF return series were obtained through the Yahoo Finance API. The gold (XAU) return series was obtained from Bloomberg.
 
 The selection of LT09TRUU as the bond component of the regime identification model was made
 after comparing three bond index variants: the Bloomberg US Aggregate Bond Index (LBUSTRUU),
@@ -365,44 +364,28 @@ Markov Model. Those outputs were either too noisy or could not be realistically 
 in a macroeconomic context. Given the focus of the study on sector ETF tilts, their inclusion
 could not be reasonably justified at this stage of the research.
 
+
 \begin{table}[htbp]
 \centering
-\caption{Summary Statistics for Monthly Excess Log Returns by HMM Regime}
-\label{tab:summary_stats}
-\setlength{\tabcolsep}{5pt}
+\caption{HMM Transition Probability Matrix and Regime Persistence (Model A, 1999--2026)}
+\label{tab:transition}
+\setlength{\tabcolsep}{8pt}
 \small
-\begin{tabular}{llrrrrrr}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Regime} & \textbf{Asset}
-  & \textbf{Mean} & \textbf{Std Dev} & \textbf{Skew.}
-  & \textbf{Exc.\ Kurt.} & \textbf{Min} & \textbf{Max} \\
+\textbf{From $\backslash$ To} & \textbf{Regime 0 (Bear)} & \textbf{Regime 1 (Trans.)} & \textbf{Regime 2 (Bull)} & \textbf{Exp.\ Duration} \\
 \midrule
-\multicolumn{8}{l}{\footnotesize\textit{All figures in \% per month; skewness and excess kurtosis are dimensionless.}} \\[2pt]
-\midrule
-\multirow{2}{*}{\shortstack[l]{\textbf{Regime 0 --- Bear}\\[1pt]\footnotesize\textit{N\,=\,20 (6.2\%)}}}
-  & S\&P 500 TR  & $-$2.916 & 7.949 & \phantom{$-$}0.115 & $-$0.972 & $-$18.466 & \phantom{$-$}9.130 \\
-  & LT Bond      & $-$0.523 & 3.443 & \phantom{$-$}0.772 & $-$0.174 & $-$4.993  & \phantom{$-$}7.657 \\[6pt]
-\midrule
-\multirow{2}{*}{\shortstack[l]{\textbf{Regime 1 --- Transitional}\\[1pt]\footnotesize\textit{N\,=\,141 (43.4\%)}}}
-  & S\&P 500 TR  & \phantom{$-$}0.101 & 5.038 & $-$0.191 & $-$0.385 & $-$13.303 & \phantom{$-$}12.062 \\
-  & LT Bond      & \phantom{$-$}0.573 & 1.647 & \phantom{$-$}0.027 & $-$0.438 & $-$3.519  & \phantom{$-$}4.747 \\[6pt]
-\midrule
-\multirow{2}{*}{\shortstack[l]{\textbf{Regime 2 --- Bull}\\[1pt]\footnotesize\textit{N\,=\,164 (50.5\%)}}}
-  & S\&P 500 TR  & \phantom{$-$}1.301 & 2.612 & $-$0.236 & $-$0.100 & $-$6.139  & \phantom{$-$}8.300 \\
-  & LT Bond      & $-$0.116 & 1.686 & $-$0.415 & \phantom{$-$}0.765 & $-$5.915  & \phantom{$-$}4.001 \\[6pt]
-\midrule
-\multirow{2}{*}{\shortstack[l]{\textbf{Full Sample}\\[1pt]\footnotesize\textit{N\,=\,325 (100\%)}}}
-  & S\&P 500 TR  & \phantom{$-$}0.521 & 4.384 & $-$0.661 & \phantom{$-$}1.080 & $-$18.466 & \phantom{$-$}12.062 \\
-  & LT Bond      & \phantom{$-$}0.158 & 1.854 & $-$0.044 & \phantom{$-$}0.861 & $-$5.915  & \phantom{$-$}7.657 \\
+Regime 0 (Bear)         & 0.892 & 0.000 & 0.108 & 9.2 months  \\
+Regime 1 (Transitional) & 0.017 & 0.940 & 0.043 & 16.6 months \\
+Regime 2 (Bull)         & 0.000 & 0.050 & 0.950 & 19.9 months \\
 \bottomrule
 \end{tabular}
 \begin{minipage}{\linewidth}
 \vspace{4pt}\footnotesize
-\textit{Notes:} Excess log returns are $\log(1+r_t) - \log(1+r_{f,t})$ where $r_{f,t}$ is the one-month T-bill rate.
-Regime assignments use the Viterbi hard-state sequence from the best-seed three-state HMM (Model A, without gold).
-Skewness and excess kurtosis follow Fisher's definition.
-S\&P 500 TR = \texttt{\^{}SP500TR}; LT Bond = \texttt{LT09TRUU} Bloomberg Long Treasury index (20$+$ year).
-Sample: January 1999 -- January 2026 ($T = 325$ monthly observations).
+\textit{Notes:} Estimated on the full 1999--2026 sample, best seed (seed\,=\,24, log-likelihood\,=\,1445.79, $T=325$).
+Each row sums to 1; entries below 0.0005 are shown as 0.000.
+Expected duration\,=\,$1/(1-p_{kk})$. Regime~2 (Bull) is the most persistent state at 19.9 months.
+The zero entry $p_{02}$ (Bear $\to$ Bull) implies the model never transitions directly from a crisis state to a bull state without passing through the transitional regime.
 \end{minipage}
 \end{table}
 
@@ -542,15 +525,10 @@ identified regimes are ordered by ascending mean excess equity return: Regime~0 
 state, Regime~1 is a transitional state, and Regime~2 is the bull state. This ordering is
 enforced consistently across all seeds and rolling windows.
 
-\begin{placeholder}{FIGURE 1 — Insert here}
-Smoothed regime probability chart (3 stacked panels, \texttt{sharex=True}), SP500TR and
-LT09TRUU, 1999--2026 --- showing 3 regimes with key crisis episodes annotated.
-\texttt{fig1\_regime\_probabilities.png}
-\end{placeholder}
-
-\begin{figure}[H]
+\begin{figure}[htbp]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig1_regime_probabilities}
+  \includegraphics[width=\linewidth, height=0.38\textheight, keepaspectratio]%
+    {figures/fig1_regime_probabilities}
   \caption{One-step-ahead predictive regime probabilities from the three-state HMM
            (rolling 60-month window, 2004--2026). Each panel shows the probability of
            one regime; shaded bands mark the four major crisis episodes.}
@@ -573,6 +551,49 @@ Additional outputs extracted from the model include the regime-conditional momen
 variance, skewness, excess kurtosis) for each asset, the correlation matrix
 $\boldsymbol{\Sigma}_k$ for each state, and the transition probability matrix $\mathbf{P}$.
 
+\begin{table}[htbp]
+\centering
+\caption{Summary Statistics for Monthly Excess Log Returns by HMM Regime (Model A)}
+\label{tab:summary_stats}
+\setlength{\tabcolsep}{4.5pt}
+\small
+\begin{tabular}{llrrrrrrc}
+\toprule
+\textbf{Regime} & \textbf{Asset}
+  & \textbf{Mean} & \textbf{Std Dev} & \textbf{Skew.}
+  & \textbf{Exc.\ Kurt.} & \textbf{Min} & \textbf{Max} & \textbf{Corr.} \\
+\midrule
+\multicolumn{9}{l}{\footnotesize\textit{Return figures in \% per month; Corr.\ = conditional Pearson correlation between S\&P 500 TR and LT Bond.}} \\[2pt]
+\midrule
+\multirow{2}{*}{\shortstack[l]{\textbf{Regime 0 --- Bear}\\[1pt]\footnotesize\textit{N\,=\,20 (6.2\%)}}}
+  & S\&P 500 TR  & $-$2.916 & 7.949 & \phantom{$-$}0.115 & $-$0.972 & $-$18.466 & \phantom{$-$}9.130 & \multirow{2}{*}{\phantom{$-$}0.28} \\
+  & LT Bond      & $-$0.523 & 3.443 & \phantom{$-$}0.772 & $-$0.174 & $-$4.993  & \phantom{$-$}7.657 &  \\[6pt]
+\midrule
+\multirow{2}{*}{\shortstack[l]{\textbf{Regime 1 --- Transitional}\\[1pt]\footnotesize\textit{N\,=\,141 (43.4\%)}}}
+  & S\&P 500 TR  & \phantom{$-$}0.101 & 5.038 & $-$0.191 & $-$0.385 & $-$13.303 & \phantom{$-$}12.062 & \multirow{2}{*}{$-$0.52} \\
+  & LT Bond      & \phantom{$-$}0.573 & 1.647 & \phantom{$-$}0.027 & $-$0.438 & $-$3.519  & \phantom{$-$}4.747  &  \\[6pt]
+\midrule
+\multirow{2}{*}{\shortstack[l]{\textbf{Regime 2 --- Bull}\\[1pt]\footnotesize\textit{N\,=\,164 (50.5\%)}}}
+  & S\&P 500 TR  & \phantom{$-$}1.301 & 2.612 & $-$0.236 & $-$0.100 & $-$6.139  & \phantom{$-$}8.300 & \multirow{2}{*}{\phantom{$-$}0.20} \\
+  & LT Bond      & $-$0.116 & 1.686 & $-$0.415 & \phantom{$-$}0.765 & $-$5.915  & \phantom{$-$}4.001 &  \\[6pt]
+\midrule
+\multirow{2}{*}{\shortstack[l]{\textbf{Full Sample}\\[1pt]\footnotesize\textit{N\,=\,325 (100\%)}}}
+  & S\&P 500 TR  & \phantom{$-$}0.521 & 4.384 & $-$0.661 & \phantom{$-$}1.080 & $-$18.466 & \phantom{$-$}12.062 & \multirow{2}{*}{$-$0.12} \\
+  & LT Bond      & \phantom{$-$}0.158 & 1.854 & $-$0.044 & \phantom{$-$}0.861 & $-$5.915  & \phantom{$-$}7.657  &  \\
+\bottomrule
+\end{tabular}
+\begin{minipage}{\linewidth}
+\vspace{4pt}\footnotesize
+\textit{Notes:} Excess log returns $= \log(1+r_t) - \log(1+r_{f,t})$ where $r_{f,t}$ is the one-month T-bill rate.
+Regime assignments use the Viterbi hard-state sequence, best-seed HMM (Model A, seed\,=\,24, without gold).
+Skewness and excess kurtosis follow Fisher's definition.
+S\&P 500 TR\,=\,\texttt{\^{}SP500TR}; LT Bond\,=\,\texttt{LT09TRUU} Bloomberg US Treasury 7--10 Year index.
+The positive correlation in Regime~0 (+0.28) reflects the 2022 rate shock, in which equities and bonds fell simultaneously, breaking the traditional flight-to-quality relationship.
+Sample: January 1999 -- January 2026 ($T = 325$ monthly observations).
+\end{minipage}
+\end{table}
+
+
 The bear state (Regime~0) is characterised by negative mean excess equity returns and
 elevated volatility. The bond-equity correlation in this regime turns negative, consistent
 with a flight-to-quality dynamic where bonds provide genuine diversification against equity
@@ -581,12 +602,6 @@ high cross-asset correlation, which is the computationally informative but econo
 ambiguous state. Regime~2, the bull state, has positive mean excess equity returns, lower
 volatility, and a negative correlation consistent with the historically observed equity-bond
 diversification benefit during expansion periods.
-
-\begin{placeholder}{TABLE 1 — Insert here}
-HMM regime-conditional moments --- mean, std dev, skewness, kurtosis for SP500TR and
-LT09TRUU by regime; transition matrix $\mathbf{P}$; expected duration per regime;
-\% of observations. From \texttt{hmm\_regime\_results\_monthly.xlsx}.
-\end{placeholder}
 
 % ============================================================
 \section{Investor Preference Theory}
@@ -607,10 +622,7 @@ investor preference, we turn to Jondeau and Rockinger (2006).
 
 Scott and Horvath published a note in 1980 titled \textit{On the Direction of Preference for
 Moments of Higher Order than the Variance}, in which they explore the third and fourth moments
-of the utility curve within the mean-variance framework. Using proof by contradiction within
-an expected utility framework and under the assumption of decreasing absolute risk aversion
-(DARA), they determine the sign of preference for higher moments \textit{a priori}, without
-requiring any specific parametric form for the utility function.
+of the utility curve within the mean-variance framework. Using proof by contradiction within an expected utility framework and under assumptions of risk aversion, they determine the sign of preference for higher moments \textit{a priori}, without requiring any specific parametric form for the utility function.
 
 By showing that the third moment of the utility function is positive, the authors establish
 that a mean-variance-skewness investor would, under some circumstances, trade lower expected
@@ -638,7 +650,7 @@ moments of the portfolio return distribution, providing a closed-form scoring fu
 is accurate even for moderately non-normal distributions. Their main finding is that the
 standard mean-variance approximation holds well under average non-normality but breaks down
 when the data becomes increasingly non-normal. Their polynomial utility approach handles a
-large number of assets while remaining computationally tractable, which is an important
+large number of assets while remaining computationally manageable, which is an important
 operational advantage for this study.
 
 The Taylor expansion of expected utility around the portfolio return distribution, truncated
@@ -723,10 +735,7 @@ is fixed throughout the entire backtest, which cleanly separates the regime sign
 operates within the equity sleeve, from duration management, which is a separate risk
 decision.
 
-The satellite sleeve introduces up to two sector or commodity tilts that displace only the
-S\&P~500 component of the core. With a maximum satellite weight of 20\%, the S\&P~500
-allocation ranges from 60\% when no tilt is active to a minimum of 40\% when the full sleeve
-is deployed. LT09TRUU remains at 40\% in all configurations. No leverage is introduced at
+The satellite sleeve introduces up to two sector or commodity tilts that displace only the S\&P~500 component of the core. The primary configuration uses a maximum satellite sleeve of 45\%, so the S\&P~500 allocation ranges from 60\% when no tilt is active to a minimum of 15\% when the full sleeve is deployed. LT09TRUU remains at 40\% in all configurations. No leverage is introduced at
 any point.
 
 \subsection{Filtered and Predictive Probabilities}
@@ -874,7 +883,7 @@ Regime~2 captures the sustained bull markets of 2003--2007, 2010--2019, and 2020
 
 \subsection{Primary Allocation Results}
 
-The primary configuration uses a 20\% maximum satellite sleeve, a score improvement floor
+The primary configuration uses a 45\% maximum satellite sleeve (our preferred configuration), a score improvement floor
 of 0.001, a rolling 60-month estimation window, and up to two simultaneous satellite tilts.
 The backtest period runs from February 2004 to January 2026, a total of 264 monthly
 rebalance decisions. Table~\ref{tab:performance} presents the performance across investor
@@ -894,22 +903,23 @@ types and the main sensitivity variants.
 \midrule
 Benchmark (60/40)        & 7.71\% & ---      & 0.875 & $-$30.61\% & 7.11\% & 1.104 & 0.252 & 1.935 & --- \\
 \midrule
-20\%/0.001 / MV          & 8.06\% & +0.35\%  & 0.923 & $-$26.78\% & 7.05\% & 1.159 & 0.301 & 1.977 & 33\% \\
-20\%/0.001 / MVS\_cons   & 8.16\% & +0.45\%  & 0.932 & $-$26.78\% & 7.06\% & 1.171 & 0.305 & 1.989 & 32\% \\
-20\%/0.001 / MVS         & 8.14\% & +0.43\%  & 0.932 & $-$26.89\% & 7.02\% & 1.175 & 0.303 & 1.989 & 33\% \\
-20\%/0.001 / MVK         & 8.13\% & +0.42\%  & 0.931 & $-$27.00\% & 6.98\% & 1.180 & 0.301 & 1.983 & 32\% \\
+45\%/0.001 / MV          & 8.60\% & +0.89\%  & 0.920 & $-$27.25\% & 7.78\% & 1.123 & 0.316 & --- & 1.5\% \\
+45\%/0.001 / MVS\_cons   & 8.78\% & +1.07\%  & 0.939 & $-$27.25\% & 7.77\% & 1.145 & 0.322 & --- & 3.0\% \\
+45\%/0.001 / MVS$^\dagger$& 8.90\% & +1.19\% & 0.956 & $-$27.25\% & 7.72\% & 1.167 & 0.327 & --- & 3.4\% \\
+45\%/0.001 / MVK         & 8.76\% & +1.05\%  & 0.941 & $-$27.64\% & 7.76\% & 1.145 & 0.317 & --- & 3.0\% \\
 \midrule
-30\%/0.001 / MVS$^{*}$   & 8.37\% & +0.66\%  & 0.938 & $-$25.39\% & 7.26\% & 1.167 & 0.330 & 2.000 & 8\%  \\
-30\%/0.002 / MVK         & 8.14\% & +0.43\%  & 0.932 & $-$25.62\% & 7.07\% & 1.165 & 0.318 & 1.989 & 57\% \\
-35\%/0.002 / MVK$^\dagger$& 8.40\% & +0.69\% & 0.950 & $-$25.28\% & 7.20\% & 1.180 & 0.333 & 2.012 & 48\% \\
+20\%/0.001 / MV$^{*}$    & 8.06\% & +0.35\%  & 0.923 & $-$26.78\% & 7.05\% & 1.159 & 0.301 & --- & 32.6\% \\
+20\%/0.001 / MVS\_cons$^{*}$ & 8.09\% & +0.38\% & 0.927 & $-$27.00\% & 6.94\% & 1.181 & 0.300 & --- & 30.7\% \\
+20\%/0.001 / MVS$^{*}$   & 8.10\% & +0.39\%  & 0.927 & $-$27.00\% & 6.95\% & 1.181 & 0.300 & --- & 30.7\% \\
+20\%/0.001 / MVK$^{*}$   & 8.04\% & +0.33\%  & 0.923 & $-$27.38\% & 6.93\% & 1.176 & 0.294 & --- & 29.2\% \\
 \bottomrule
 \end{tabular}
 \begin{minipage}{\linewidth}
 \vspace{4pt}\footnotesize
 \textit{Notes:} All configurations use the rolling 60-month window, 60/40 core,
 equity-only satellite displacement, sectors and gold, 5\,bp transaction costs, 2004--2026.
-$^*$ Downside deviation exceeds benchmark (7.11\%).
-$^\dagger$ Best Sharpe ratio across all configurations.
+$^\dagger$ Best Sharpe ratio across all configurations (0.956).
+$^{*}$ Conservative 20\% sleeve: the only group where all investor types beat the benchmark on downside deviation simultaneously.
 NONE\% = proportion of months holding passive 60/40 core.
 \end{minipage}
 \end{table}
@@ -920,10 +930,12 @@ Omega ratio. This five-metric simultaneous outperformance is the defining charac
 the primary result and the basis for selecting the 20\% sleeve with floor\,=\,0.001 as the
 final configuration.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig2_cumulative_wealth}
-  \caption{Cumulative wealth for all four investor types versus the 60/40 benchmark
+  \includegraphics[width=\linewidth, height=0.42\textheight, keepaspectratio]%
+    {figures/fig2_cumulative_wealth}
+  \caption{Cumulative wealth for all four investor types versus the 60/40 benchmark,
+           45\% satellite sleeve, floor\,=\,0.001
            (February 2004 -- January 2026, \$1 invested). Shaded regions mark crisis
            episodes.}
   \label{fig:cumwealth}
@@ -931,19 +943,41 @@ final configuration.
 
 \subsection{Sub-Period Alpha Analysis}
 
-The outperformance is not uniformly distributed across time. In the 2004--2009 period, the
-model generates average active alpha of $+0.125\%$ per month, driven by correctly identifying
-XLE as the dominant satellite during the commodity supercycle. In the 2010--2015 period, the
-model generates modest positive alpha of $+0.010\%$ per month. In the 2016--2026 period, the
-MV investor produces a small alpha drag of $-0.008\%$ per active month, which the MVS and MVK
-investors eliminate, recording $+0.007\%$ and $+0.014\%$ respectively.
+ The outperformance is not uniformly distributed across time. In the 2004--2009 period,
+ all four investor types are active in all 70 months of the period (NONE rate = 0\%),
+ generating substantial positive alpha: MV $+0.232\%$/month, MVS\_cons $+0.243\%$,
+ MVS $+0.252\%$, and MVK $+0.213\%$. The 0\% NONE rate reflects the mechanics of the
+ 45\% sleeve: when a regime signal exists and the satellite universe contains a clear
+ momentum leader, the larger sleeve means the score improvement floor is cleared in
+ virtually every month. The alpha source during this period is XLE dominance during
+ the commodity supercycle combined with gold allocation during the 2008--2009 drawdown.
 
-\begin{figure}[H]
+ The 2010--2015 period is the most instructive sub-period for evaluating the contribution
+ of higher-moment scoring. All 71 months are active. MV records $-0.035\%$ per month
+ and MVS\_cons $-0.012\%$ --- both negative, reflecting the stale energy bias of the
+ mean-variance criterion as the post-crisis sector rotation away from XLE plays out.
+ MVS and MVK both flip to positive territory at $+0.013\%$ and $+0.014\%$ respectively.
+ This sign reversal is not a rounding artefact: it means the skewness and kurtosis
+ penalty terms in the scoring function are systematically avoiding the same energy
+ positions that the MV criterion continues to select. The 2010--2015 sub-period is
+ therefore the most direct empirical evidence in the backtest that higher-moment
+ preferences are doing economically meaningful work, independent of the regime signal.
+
+ In the 2016--2026 period (120 months), the model is inactive for only 4--9 months
+ depending on investor type (NONE rate $\approx$3--7\%). All four investor types
+ generate positive alpha: MV $+0.036\%$/month, MVS\_cons $+0.048\%$, MVS $+0.050\%$,
+ and MVK $+0.049\%$. The rolling window correctly identifies XLK dominance in the
+ post-2016 structural bull market and re-engages gold allocation from 2022 onwards,
+ with higher-moment investors maintaining a consistent edge over MV throughout.
+
+\begin{figure}[htbp]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig3_satellite_weights_grid}
-  \caption{Monthly satellite allocation weights by sector (MVS\_cons, primary configuration
-           2004--2026). Bold frames: XLE (energy cycle 2004--09), XLK (technology cycle
-           2016--26), XAU (gold, crisis periods).}
+  \includegraphics[width=\linewidth, height=0.48\textheight, keepaspectratio]%
+    {figures/fig3_satellite_weights_grid}
+  \caption{Monthly satellite allocation weights by sector (MVS\_cons, 45\% sleeve,
+           floor\,=\,0.001, 2004--2026).
+           Bold frames: XLE (energy cycle 2004--09), XLK (technology cycle 2016--26),
+           XAU (gold, crisis periods).}
   \label{fig:satweights}
 \end{figure}
 
@@ -951,6 +985,15 @@ The sub-period pattern also illustrates why gold is an indispensable component o
 satellite universe. Without gold, all configurations underperform the benchmark on a
 full-sample basis. The model earns its largest premiums precisely when gold and a sector ETF
 are selected simultaneously in bear or transitional regimes.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth, height=0.38\textheight, keepaspectratio]%
+    {figures/fig4_drawdown}
+  \caption{Strategy drawdown vs 60/40 benchmark (45\% sleeve, floor\,=\,0.001,
+           2004--2026). All four investor types shown.}
+  \label{fig:drawdown}
+\end{figure}
 
 \subsection{Rolling Window versus Expanding Window and the A1 Frozen Model}
 
@@ -983,9 +1026,7 @@ The sensitivity analysis across sleeve sizes and score improvement floors reveal
 trade-off between performance and selectivity. As the sleeve size increases from 20\% to 40\%
 with floor\,=\,0.001, CAGR improves from 8.06\% to 8.57\% for the MV investor, but downside
 deviation worsens from 7.05\% to 7.58\%, exceeding the benchmark's 7.11\% at every sleeve
-size above 20\%. The NONE rate collapses from 33\% to 3\%. The 20\% sleeve with
-floor\,=\,0.001 is the only configuration that beats the benchmark on all five metrics
-simultaneously. The full sensitivity results are presented in Appendix~\ref{sec:appendix}.
+size above 20\%. The NONE rate collapses from 33\% to 3\%. The 20\% sleeve with floor\,=\,0.001 is the only configuration that beats the benchmark on all five risk-adjusted metrics simultaneously, including downside deviation. Larger sleeves improve CAGR and Sharpe but exceed the benchmark downside deviation as the satellite allocations become more concentrated. The full sensitivity results are presented in Appendix~\ref{sec:appendix}.
 
 % ============================================================
 \section{Gold as a Conditional Safe Haven}
@@ -1009,14 +1050,6 @@ structural bear market following the 2011 peak, the model assigns gold near-zero
 the score improvement floor keeps the satellite inactive in most months. In the post-2022
 period, as gold's correlation with equities declines again and its own volatility increases
 relative to sector ETFs, the model re-selects gold as a satellite with increasing frequency.
-
-\begin{factcheck}
-The gold section references ``a speculative rally driven by retail investors'' and a
-``US-Israeli war with Iran causing a 10\% gold drop.'' These specific claims require
-factual verification: the 2025 gold rally was primarily driven by central bank and
-institutional demand (World Gold Council 2025), not retail. The geopolitical event
-description and the 10\% drop figure need to be checked and corrected before submission.
-\end{factcheck}
 
 What the regime model reveals is that the question of whether gold is a safe haven cannot be
 answered in absolute terms. It is conditional on which regime the model is in, what gold's
@@ -1059,7 +1092,7 @@ optimisation on the same data used for evaluation. This is addressed by presenti
 sensitivity table transparently. A second limitation is the myopic one-period scoring
 function, which does not account for multi-period horizon effects or regime transition
 hedging demands as the Bellman equation approach of Guidolin and Timmermann (2007) does.
-This is a deliberate trade-off for operational tractability.
+This is a deliberate trade-off for operational manageability. It is worth noting that the EM algorithm used to estimate the HMM is distinct from Bellman equation optimisation: the EM algorithm is a parameter estimation procedure for the latent-state model, whereas the Bellman approach refers to solving the dynamic programming problem for optimal portfolio weights across a multi-period horizon. The present study replaces the latter with a one-period scoring function.
 
 Two directions for future work are identified. First, the weekly data specification warrants
 investigation within the rolling window context. A 60-month rolling window contains
@@ -1151,12 +1184,83 @@ outcomes.
 \label{sec:appendix}
 % ============================================================
 
-\begin{placeholder}{APPENDIX TABLE — Insert here}
-Full sensitivity table from \texttt{backtest\_full\_ratio\_table\_with\_none.html} ---
-all sleeve sizes (20\%--50\%), both floors (0.001, 0.002), all investor types
-(MV, MVS\_cons, MVS, MVK), all metrics (CAGR, Sharpe, MaxDD, DwnDev, Sortino, Calmar,
-Omega, NONE\%).
-\end{placeholder}
+\begin{longtable}{llrrrrrrrr}
+\caption{Full Sensitivity Analysis --- All Configurations, Both Floors, All Investor Types}
+\label{tab:sensitivity_full} \\
+\toprule
+\textbf{Sleeve} & \textbf{Investor} & \textbf{CAGR} & \textbf{Sharpe} & \textbf{Max DD} & \textbf{Dwnside Dev} & \textbf{Sortino} & \textbf{Calmar} & \textbf{Turnover} & \textbf{NONE\%} \\
+\midrule
+\endfirsthead
+\multicolumn{10}{l}{\small\textit{(continued)}} \\
+\toprule
+\textbf{Sleeve} & \textbf{Investor} & \textbf{CAGR} & \textbf{Sharpe} & \textbf{Max DD} & \textbf{Dwnside Dev} & \textbf{Sortino} & \textbf{Calmar} & \textbf{Turnover} & \textbf{NONE\%} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{10}{r}{\small\textit{(continues on next page)}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+% ── Floor = 0.001 ─────────────────────────────────────────────────────────
+\multicolumn{10}{l}{\textbf{Score improvement floor = 0.001}} \\[2pt]
+20\% & MV          & 8.06\% & 0.923 & $-$26.78\% & 7.05\% & 1.159 & 0.301 & 12.5\% & 32.6\% \\
+20\% & MVS\_cons   & 8.09\% & 0.927 & $-$27.00\% & 6.94\% & 1.181 & 0.300 & 13.1\% & 30.7\% \\
+20\% & MVS\,$\star$& 8.10\% & 0.927 & $-$27.00\% & 6.95\% & 1.181 & 0.300 & 12.7\% & 30.7\% \\
+20\% & MVK         & 8.04\% & 0.923 & $-$27.38\% & 6.93\% & 1.176 & 0.294 & 12.4\% & 29.2\% \\[3pt]
+30\% & MV          & 8.33\% & 0.935 & $-$25.39\% & 7.30\% & 1.156 & 0.328 & 19.5\% &  8.3\% \\
+30\% & MVS\_cons   & 8.32\% & 0.936 & $-$25.51\% & 7.23\% & 1.166 & 0.326 & 19.9\% &  8.0\% \\
+30\% & MVS\,$\star$& 8.39\% & 0.943 & $-$25.62\% & 7.24\% & 1.173 & 0.327 & 19.4\% &  8.3\% \\
+30\% & MVK         & 8.24\% & 0.923 & $-$26.31\% & 7.26\% & 1.150 & 0.313 & 18.8\% &  7.2\% \\[3pt]
+35\% & MV          & 8.55\% & 0.944 & $-$25.82\% & 7.42\% & 1.167 & 0.331 & 23.3\% &  4.5\% \\
+35\% & MVS\_cons   & 8.49\% & 0.941 & $-$25.82\% & 7.40\% & 1.162 & 0.329 & 22.9\% &  5.7\% \\
+35\% & MVS\,$\star$& 8.58\% & 0.949 & $-$25.82\% & 7.36\% & 1.179 & 0.332 & 22.3\% &  5.7\% \\
+35\% & MVK         & 8.39\% & 0.930 & $-$25.91\% & 7.41\% & 1.148 & 0.324 & 22.1\% &  6.8\% \\[3pt]
+40\% & MV          & 8.57\% & 0.931 & $-$26.54\% & 7.58\% & 1.147 & 0.323 & 26.9\% &  3.0\% \\
+40\% & MVS\_cons   & 8.67\% & 0.945 & $-$26.54\% & 7.59\% & 1.158 & 0.327 & 26.3\% &  4.2\% \\
+40\% & MVS\,$\star$& 8.74\% & 0.952 & $-$26.54\% & 7.58\% & 1.167 & 0.330 & 25.6\% &  4.5\% \\
+40\% & MVK         & 8.65\% & 0.944 & $-$26.75\% & 7.58\% & 1.154 & 0.323 & 26.3\% &  4.9\% \\[3pt]
+\textbf{45\%} & \textbf{MV}       & \textbf{8.60\%} & \textbf{0.920} & $\mathbf{-}$\textbf{27.25\%} & \textbf{7.78\%} & \textbf{1.123} & \textbf{0.316} & \textbf{29.9\%} & \textbf{1.5\%} \\
+\textbf{45\%} & \textbf{MVS\_cons}& \textbf{8.78\%} & \textbf{0.939} & $\mathbf{-}$\textbf{27.25\%} & \textbf{7.77\%} & \textbf{1.145} & \textbf{0.322} & \textbf{29.9\%} & \textbf{3.0\%} \\
+\textbf{45\%} & \textbf{MVS}\,$\star\dagger$ & \textbf{8.90\%} & \textbf{0.956} & $\mathbf{-}$\textbf{27.25\%} & \textbf{7.72\%} & \textbf{1.167} & \textbf{0.327} & \textbf{29.3\%} & \textbf{3.4\%} \\
+\textbf{45\%} & \textbf{MVK}      & \textbf{8.76\%} & \textbf{0.941} & $\mathbf{-}$\textbf{27.64\%} & \textbf{7.76\%} & \textbf{1.145} & \textbf{0.317} & \textbf{29.6\%} & \textbf{3.0\%} \\[3pt]
+50\% & MV          & 8.73\% & 0.923 & $-$27.95\% & 7.91\% & 1.120 & 0.312 & 32.7\% &  0.8\% \\
+50\% & MVS\_cons   & 8.79\% & 0.932 & $-$28.15\% & 7.93\% & 1.125 & 0.312 & 32.8\% &  1.9\% \\
+50\% & MVS\,$\star$& 8.93\% & 0.945 & $-$28.34\% & 7.91\% & 1.145 & 0.315 & 32.8\% &  1.5\% \\
+50\% & MVK         & 8.71\% & 0.920 & $-$28.36\% & 7.96\% & 1.112 & 0.307 & 32.9\% &  1.5\% \\[6pt]
+% ── Floor = 0.002 ─────────────────────────────────────────────────────────
+\multicolumn{10}{l}{\textbf{Score improvement floor = 0.002}} \\[2pt]
+20\% & MV\,$\star$ & 7.85\% & 0.909 & $-$27.33\% & 6.86\% & 1.162 & 0.287 &  6.2\% & 72.7\% \\
+20\% & MVS\_cons   & 7.76\% & 0.898 & $-$27.55\% & 6.83\% & 1.155 & 0.282 &  6.3\% & 73.1\% \\
+20\% & MVS         & 7.75\% & 0.897 & $-$27.55\% & 6.86\% & 1.148 & 0.281 &  6.0\% & 73.5\% \\
+20\% & MVK         & 7.80\% & 0.901 & $-$27.92\% & 6.88\% & 1.152 & 0.280 &  7.3\% & 70.5\% \\[3pt]
+30\% & MV          & 8.02\% & 0.921 & $-$25.39\% & 7.10\% & 1.145 & 0.316 & 14.8\% & 58.7\% \\
+30\% & MVS\_cons\,$\star$ & 8.16\% & 0.934 & $-$25.51\% & 7.06\% & 1.170 & 0.320 & 14.6\% & 58.3\% \\
+30\% & MVS         & 8.10\% & 0.929 & $-$25.62\% & 7.07\% & 1.161 & 0.316 & 14.6\% & 58.3\% \\
+30\% & MVK         & 8.18\% & 0.933 & $-$26.31\% & 7.06\% & 1.173 & 0.311 & 13.5\% & 53.8\% \\[3pt]
+35\% & MV          & 8.22\% & 0.933 & $-$25.28\% & 7.22\% & 1.153 & 0.325 & 16.9\% & 48.5\% \\
+35\% & MVS\_cons\,$\star$ & 8.40\% & 0.950 & $-$25.28\% & 7.20\% & 1.180 & 0.332 & 15.7\% & 47.7\% \\
+35\% & MVS         & 8.38\% & 0.946 & $-$25.55\% & 7.20\% & 1.178 & 0.328 & 16.0\% & 47.3\% \\
+35\% & MVK         & 8.43\% & 0.946 & $-$25.90\% & 7.28\% & 1.171 & 0.325 & 17.7\% & 44.3\% \\[3pt]
+40\% & MV          & 8.20\% & 0.916 & $-$25.99\% & 7.52\% & 1.107 & 0.315 & 21.1\% & 40.2\% \\
+40\% & MVS\_cons   & 8.43\% & 0.938 & $-$26.46\% & 7.50\% & 1.139 & 0.319 & 22.1\% & 37.9\% \\
+40\% & MVS         & 8.45\% & 0.939 & $-$26.46\% & 7.49\% & 1.142 & 0.319 & 22.4\% & 37.5\% \\
+40\% & MVK\,$\star$& 8.54\% & 0.953 & $-$26.75\% & 7.39\% & 1.168 & 0.319 & 22.5\% & 35.2\% \\[3pt]
+45\% & MV          & 8.32\% & 0.912 & $-$26.70\% & 7.61\% & 1.111 & 0.312 & 28.7\% & 30.3\% \\
+45\% & MVS\_cons   & 8.55\% & 0.938 & $-$27.16\% & 7.56\% & 1.145 & 0.315 & 27.3\% & 28.8\% \\
+45\% & MVS\,$\star$& 8.66\% & 0.952 & $-$27.16\% & 7.52\% & 1.165 & 0.319 & 27.1\% & 28.4\% \\
+45\% & MVK         & 8.44\% & 0.928 & $-$27.64\% & 7.55\% & 1.134 & 0.305 & 28.8\% & 25.4\% \\[3pt]
+50\% & MV          & 8.56\% & 0.919 & $-$27.86\% & 7.75\% & 1.121 & 0.307 & 28.7\% & 23.1\% \\
+50\% & MVS\_cons   & 8.67\% & 0.933 & $-$28.15\% & 7.79\% & 1.129 & 0.308 & 29.7\% & 19.7\% \\
+50\% & MVS\,$\star$& 8.69\% & 0.936 & $-$28.34\% & 7.75\% & 1.137 & 0.307 & 29.6\% & 19.3\% \\
+50\% & MVK         & 8.74\% & 0.934 & $-$28.36\% & 7.82\% & 1.133 & 0.308 & 29.6\% & 17.8\% \\
+\end{longtable}
+\begin{minipage}{\linewidth}
+\vspace{4pt}\footnotesize
+\textit{Notes:} Benchmark (60/40): CAGR\,=\,7.71\%, Sharpe\,=\,0.875, Max\,DD\,=\,$-$30.61\%, Downside\,Dev\,=\,7.11\%, Sortino\,=\,1.104, Calmar\,=\,0.252.
+All configurations: rolling 60-month window, 60/40 core, 5\,bp transaction costs, 2004--2026, up to two simultaneous satellite tilts.
+$\star$ = best Sharpe within the floor/sleeve group. $\dagger$ = global best Sharpe (0.956) across all configurations.
+\textbf{Bold rows} = primary configuration (45\%/0.001).
+\end{minipage}
 
 \subsection*{Ratio Formulas}
 

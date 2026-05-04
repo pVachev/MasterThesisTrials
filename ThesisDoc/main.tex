@@ -86,6 +86,7 @@
   {\normalsize Supervisor: Professor Bertrand Tavin \quad|\quad May 2026}
   \vfill
 \end{titlepage}
+\pagenumbering{roman}
 
 % ── Abstract ────────────────────────────────────────────────
 \begin{abstract}
@@ -103,15 +104,13 @@ the model to adapt to structural breaks in sector leadership, specifically the r
 energy sector dominance during the 2003--2008 commodity supercycle to technology sector
 dominance in the post-2016 period. A score improvement floor functions as a hurdle rate,
 returning the portfolio to the passive 60/40 core when regime conviction is insufficient.
-The primary configuration achieves a CAGR of 8.06--8.16\% against a benchmark of 7.71\%,
-Sharpe ratios of 0.923--0.932 versus 0.875, and maximum drawdown improvements of approximately
-380 basis points, while simultaneously beating the benchmark on downside deviation across all
-investor types.
+The primary configuration (45\% satellite sleeve, score improvement floor = 0.001) achieves a CAGR of 8.60--8.90\% against a benchmark of 7.71\%, Sharpe ratios of 0.920--0.956 versus 0.875, and maximum drawdown improvements of approximately 335 basis points. A conservative 20\% sleeve variant simultaneously beats the benchmark on all five risk-adjusted metrics including downside deviation.
 \end{abstract}
 
 \newpage
 \tableofcontents
 \newpage
+\pagenumbering{arabic}
 
 % ============================================================
 \section{Introduction}
@@ -144,7 +143,7 @@ The final version of the model developed here is designed for a wealth managemen
 though it should not be excluded from other domains in the study of regime switching models,
 portfolio allocation signals, and sector risk-return analysis.
 
-We contribute to the regime-switching and portfolio allocation literature in several ways.
+The main empirical results are reported in \textbf{Table~\ref{tab:performance}}. We contribute to the regime-switching and portfolio allocation literature in several ways.
 First, our regime-switching model is integrated within a rolling 60-month estimation window that
 refits the HMM at every rebalance date, allowing the model to adapt to structural breaks in
 sector leadership. Second, we introduce scoring for allocation decisions rather than solving an
@@ -371,6 +370,7 @@ could not be reasonably justified at this stage of the research.
 \label{tab:transition}
 \setlength{\tabcolsep}{8pt}
 \small
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccc}
 \toprule
 \textbf{From $\backslash$ To} & \textbf{Regime 0 (Bear)} & \textbf{Regime 1 (Trans.)} & \textbf{Regime 2 (Bull)} & \textbf{Exp.\ Duration} \\
@@ -379,7 +379,7 @@ Regime 0 (Bear)         & 0.892 & 0.000 & 0.108 & 9.2 months  \\
 Regime 1 (Transitional) & 0.017 & 0.940 & 0.043 & 16.6 months \\
 Regime 2 (Bull)         & 0.000 & 0.050 & 0.950 & 19.9 months \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \begin{minipage}{\linewidth}
 \vspace{4pt}\footnotesize
 \textit{Notes:} Estimated on the full 1999--2026 sample, best seed (seed\,=\,24, log-likelihood\,=\,1445.79, $T=325$).
@@ -525,19 +525,11 @@ identified regimes are ordered by ascending mean excess equity return: Regime~0 
 state, Regime~1 is a transitional state, and Regime~2 is the bull state. This ordering is
 enforced consistently across all seeds and rolling windows.
 
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=\linewidth, height=0.38\textheight, keepaspectratio]%
-    {figures/fig1_regime_probabilities}
-  \caption{One-step-ahead predictive regime probabilities from the three-state HMM
-           (rolling 60-month window, 2004--2026). Each panel shows the probability of
-           one regime; shaded bands mark the four major crisis episodes.}
-  \label{fig:regime_probs}
-\end{figure}
+\textbf{Figure~\ref{fig:regime_probs}} shows the one-step-ahead predictive regime probabilities over the full 2004--2026 backtest period. The bear regime (Regime~0, red) spikes sharply during the GFC, COVID-19, and the 2022 rate shock, confirming that the rolling window correctly identifies stress episodes. The transitional regime (Regime~1, orange) dominates the 2010--2016 recovery period, consistent with the sub-period alpha analysis in Section~\ref{sec:findings}.
 
 \subsection{Model Output and Economic Interpretation}
 
-The primary output of the HMM for allocation purposes is the one-step-ahead predictive
+\textbf{Table~\ref{tab:summary_stats}} reports the full regime-conditional moment structure, and \textbf{Table~\ref{tab:transition}} presents the estimated transition probability matrix. The primary output of the HMM for allocation purposes is the one-step-ahead predictive
 probability vector:
 \begin{equation}
   \boldsymbol{\pi}_{t+1|t} = \boldsymbol{\xi}_{t|t} \cdot \mathbf{P}
@@ -555,43 +547,45 @@ $\boldsymbol{\Sigma}_k$ for each state, and the transition probability matrix $\
 \centering
 \caption{Summary Statistics for Monthly Excess Log Returns by HMM Regime (Model A)}
 \label{tab:summary_stats}
-\setlength{\tabcolsep}{4.5pt}
-\small
+\setlength{\tabcolsep}{4pt}
+\footnotesize
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{llrrrrrrc}
 \toprule
 \textbf{Regime} & \textbf{Asset}
   & \textbf{Mean} & \textbf{Std Dev} & \textbf{Skew.}
   & \textbf{Exc.\ Kurt.} & \textbf{Min} & \textbf{Max} & \textbf{Corr.} \\
 \midrule
-\multicolumn{9}{l}{\footnotesize\textit{Return figures in \% per month; Corr.\ = conditional Pearson correlation between S\&P 500 TR and LT Bond.}} \\[2pt]
+\multicolumn{9}{l}{\textit{Return figures in \% per month; Corr.\ = conditional Pearson correlation between S\&P 500 TR and LT Bond.}} \\[2pt]
 \midrule
-\multirow{2}{*}{\shortstack[l]{\textbf{Regime 0 --- Bear}\\[1pt]\footnotesize\textit{N\,=\,20 (6.2\%)}}}
+\multirow{2}{*}{\shortstack[l]{\textbf{Regime 0 --- Bear}\\[1pt]\textit{N\,=\,20 (6.2\%)}}}
   & S\&P 500 TR  & $-$2.916 & 7.949 & \phantom{$-$}0.115 & $-$0.972 & $-$18.466 & \phantom{$-$}9.130 & \multirow{2}{*}{\phantom{$-$}0.28} \\
   & LT Bond      & $-$0.523 & 3.443 & \phantom{$-$}0.772 & $-$0.174 & $-$4.993  & \phantom{$-$}7.657 &  \\[6pt]
 \midrule
-\multirow{2}{*}{\shortstack[l]{\textbf{Regime 1 --- Transitional}\\[1pt]\footnotesize\textit{N\,=\,141 (43.4\%)}}}
+\multirow{2}{*}{\shortstack[l]{\textbf{Regime 1 --- Transitional}\\[1pt]\textit{N\,=\,141 (43.4\%)}}}
   & S\&P 500 TR  & \phantom{$-$}0.101 & 5.038 & $-$0.191 & $-$0.385 & $-$13.303 & \phantom{$-$}12.062 & \multirow{2}{*}{$-$0.52} \\
   & LT Bond      & \phantom{$-$}0.573 & 1.647 & \phantom{$-$}0.027 & $-$0.438 & $-$3.519  & \phantom{$-$}4.747  &  \\[6pt]
 \midrule
-\multirow{2}{*}{\shortstack[l]{\textbf{Regime 2 --- Bull}\\[1pt]\footnotesize\textit{N\,=\,164 (50.5\%)}}}
+\multirow{2}{*}{\shortstack[l]{\textbf{Regime 2 --- Bull}\\[1pt]\textit{N\,=\,164 (50.5\%)}}}
   & S\&P 500 TR  & \phantom{$-$}1.301 & 2.612 & $-$0.236 & $-$0.100 & $-$6.139  & \phantom{$-$}8.300 & \multirow{2}{*}{\phantom{$-$}0.20} \\
   & LT Bond      & $-$0.116 & 1.686 & $-$0.415 & \phantom{$-$}0.765 & $-$5.915  & \phantom{$-$}4.001 &  \\[6pt]
 \midrule
-\multirow{2}{*}{\shortstack[l]{\textbf{Full Sample}\\[1pt]\footnotesize\textit{N\,=\,325 (100\%)}}}
+\multirow{2}{*}{\shortstack[l]{\textbf{Full Sample}\\[1pt]\textit{N\,=\,325 (100\%)}}}
   & S\&P 500 TR  & \phantom{$-$}0.521 & 4.384 & $-$0.661 & \phantom{$-$}1.080 & $-$18.466 & \phantom{$-$}12.062 & \multirow{2}{*}{$-$0.12} \\
   & LT Bond      & \phantom{$-$}0.158 & 1.854 & $-$0.044 & \phantom{$-$}0.861 & $-$5.915  & \phantom{$-$}7.657  &  \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \begin{minipage}{\linewidth}
 \vspace{4pt}\footnotesize
-\textit{Notes:} Excess log returns $= \log(1+r_t) - \log(1+r_{f,t})$ where $r_{f,t}$ is the one-month T-bill rate.
-Regime assignments use the Viterbi hard-state sequence, best-seed HMM (Model A, seed\,=\,24, without gold).
+\textit{Notes:} Excess log returns $= \log(1+r_t) - \log(1+r_{f,t})$; $r_{f,t}$ = one-month T-bill rate.
+Regime assignments: Viterbi hard-state sequence, best-seed HMM (Model A, seed\,=\,24, without gold).
 Skewness and excess kurtosis follow Fisher's definition.
 S\&P 500 TR\,=\,\texttt{\^{}SP500TR}; LT Bond\,=\,\texttt{LT09TRUU} Bloomberg US Treasury 7--10 Year index.
-The positive correlation in Regime~0 (+0.28) reflects the 2022 rate shock, in which equities and bonds fell simultaneously, breaking the traditional flight-to-quality relationship.
+Positive correlation in Regime~0 (+0.28) reflects the 2022 rate shock: equities and bonds fell simultaneously.
 Sample: January 1999 -- January 2026 ($T = 325$ monthly observations).
 \end{minipage}
 \end{table}
+
 
 
 The bear state (Regime~0) is characterised by negative mean excess equity returns and
@@ -604,6 +598,58 @@ volatility, and a negative correlation consistent with the historically observed
 diversification benefit during expansion periods.
 
 % ============================================================
+
+%% ── Figure cluster: all four thesis figures ─────────────────────────────
+\FloatBarrier
+\clearpage
+
+\begin{landscape}
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig1_regime_probabilities}
+  \caption{One-step-ahead predictive regime probabilities from the three-state HMM
+           (rolling 60-month window, 2004--2026). Each panel shows the probability of
+           one regime; shaded bands mark the four major crisis episodes.}
+  \label{fig:regime_probs}
+\end{figure}
+\end{landscape}
+
+\begin{landscape}
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig2_cumulative_wealth}
+  \caption{Cumulative wealth for all four investor types versus the 60/40 benchmark,
+           45\% satellite sleeve, floor\,=\,0.001
+           (February 2004 -- January 2026, \$1 invested). Shaded regions mark crisis episodes.}
+  \label{fig:cumwealth}
+\end{figure}
+\end{landscape}
+
+\begin{landscape}
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig3_satellite_weights_grid}
+  \caption{Monthly satellite allocation weights by sector (MVS\_cons, 45\% sleeve,
+           floor\,=\,0.001, 2004--2026).
+           Bold frames: XLE (energy cycle 2004--09), XLK (technology cycle 2016--26),
+           XAU (gold, crisis periods).}
+  \label{fig:satweights}
+\end{figure}
+\end{landscape}
+
+\begin{landscape}
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig4_drawdown}
+  \caption{Strategy drawdown vs 60/40 benchmark (45\% sleeve, floor\,=\,0.001,
+           2004--2026). All four investor types shown.}
+  \label{fig:drawdown}
+\end{figure}
+\end{landscape}
+
+\clearpage
+%% ── End figure cluster ───────────────────────────────────────────────────
+
 \section{Investor Preference Theory}
 \label{sec:preferences}
 % ============================================================
@@ -690,7 +736,7 @@ $\gamma$ and $\delta$ such that the skewness and kurtosis terms represent a mean
 secondary contribution to the score, consistent with the Taylor expansion's role as a
 correction to the mean-variance baseline rather than a replacement for it.
 
-Specifically, at the unconditional moments of the benchmark 60/40 portfolio over the full
+The calibrated parameter values are reported in \textbf{Table~\ref{tab:calibration}}. Specifically, at the unconditional moments of the benchmark 60/40 portfolio over the full
 sample period ($\lambda=3.0$, $\sigma^2=0.000672$, skewness $= -0.70$, excess kurtosis $=
 1.95$, $\mu = 0.006543$), the variance penalty represents approximately 31\% of the mean
 return contribution. We calibrate $\gamma$ and $\delta$ so that the higher-moment terms each
@@ -886,60 +932,56 @@ Regime~2 captures the sustained bull markets of 2003--2007, 2010--2019, and 2020
 The primary configuration uses a 45\% maximum satellite sleeve (our preferred configuration), a score improvement floor
 of 0.001, a rolling 60-month estimation window, and up to two simultaneous satellite tilts.
 The backtest period runs from February 2004 to January 2026, a total of 264 monthly
-rebalance decisions. Table~\ref{tab:performance} presents the performance across investor
+rebalance decisions. \textbf{Table~\ref{tab:performance}} presents the performance summary across investor
 types and the main sensitivity variants.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Performance Summary --- Primary Configuration and Sensitivity Analysis}
 \label{tab:performance}
-\setlength{\tabcolsep}{4pt}
-\small
+\setlength{\tabcolsep}{3.5pt}
+\footnotesize
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lrrrrrrrrr}
 \toprule
-\textbf{Configuration} & \textbf{CAGR} & \textbf{vs BM}
-  & \textbf{Sharpe} & \textbf{Max DD} & \textbf{Down Dev}
-  & \textbf{Sortino} & \textbf{Calmar} & \textbf{Omega} & \textbf{NONE\%} \\
+\textbf{Config.} & \textbf{CAGR} & \textbf{vs BM}
+  & \textbf{Sharpe} & \textbf{Max DD} & \textbf{Dwnside Dev}
+  & \textbf{Sortino} & \textbf{Calmar} & \textbf{NONE\%} \\
 \midrule
-Benchmark (60/40)        & 7.71\% & ---      & 0.875 & $-$30.61\% & 7.11\% & 1.104 & 0.252 & 1.935 & --- \\
+Benchmark (60/40)     & 7.71\% & ---     & 0.875 & $-$30.61\% & 7.11\% & 1.104 & 0.252 & --- \\
 \midrule
-45\%/0.001 / MV          & 8.60\% & +0.89\%  & 0.920 & $-$27.25\% & 7.78\% & 1.123 & 0.316 & --- & 1.5\% \\
-45\%/0.001 / MVS\_cons   & 8.78\% & +1.07\%  & 0.939 & $-$27.25\% & 7.77\% & 1.145 & 0.322 & --- & 3.0\% \\
-45\%/0.001 / MVS$^\dagger$& 8.90\% & +1.19\% & 0.956 & $-$27.25\% & 7.72\% & 1.167 & 0.327 & --- & 3.4\% \\
-45\%/0.001 / MVK         & 8.76\% & +1.05\%  & 0.941 & $-$27.64\% & 7.76\% & 1.145 & 0.317 & --- & 3.0\% \\
+45\%/0.001 / MV       & 8.60\% & +0.89\% & 0.920 & $-$27.25\% & 7.78\% & 1.123 & 0.316 & 1.5\% \\
+45\%/0.001 / MVS\_cons & 8.78\% & +1.07\% & 0.939 & $-$27.25\% & 7.77\% & 1.145 & 0.322 & 3.0\% \\
+45\%/0.001 / MVS$^\dagger$ & 8.90\% & +1.19\% & 0.956 & $-$27.25\% & 7.72\% & 1.167 & 0.327 & 3.4\% \\
+45\%/0.001 / MVK      & 8.76\% & +1.05\% & 0.941 & $-$27.64\% & 7.76\% & 1.145 & 0.317 & 3.0\% \\
 \midrule
-20\%/0.001 / MV$^{*}$    & 8.06\% & +0.35\%  & 0.923 & $-$26.78\% & 7.05\% & 1.159 & 0.301 & --- & 32.6\% \\
-20\%/0.001 / MVS\_cons$^{*}$ & 8.09\% & +0.38\% & 0.927 & $-$27.00\% & 6.94\% & 1.181 & 0.300 & --- & 30.7\% \\
-20\%/0.001 / MVS$^{*}$   & 8.10\% & +0.39\%  & 0.927 & $-$27.00\% & 6.95\% & 1.181 & 0.300 & --- & 30.7\% \\
-20\%/0.001 / MVK$^{*}$   & 8.04\% & +0.33\%  & 0.923 & $-$27.38\% & 6.93\% & 1.176 & 0.294 & --- & 29.2\% \\
+20\%/0.001 / MV$^{*}$ & 8.06\% & +0.35\% & 0.923 & $-$26.78\% & 7.05\% & 1.159 & 0.301 & 32.6\% \\
+20\%/0.001 / MVS\_cons$^{*}$ & 8.09\% & +0.38\% & 0.927 & $-$27.00\% & 6.94\% & 1.181 & 0.300 & 30.7\% \\
+20\%/0.001 / MVS$^{*}$ & 8.10\% & +0.39\% & 0.927 & $-$27.00\% & 6.95\% & 1.181 & 0.300 & 30.7\% \\
+20\%/0.001 / MVK$^{*}$ & 8.04\% & +0.33\% & 0.923 & $-$27.38\% & 6.93\% & 1.176 & 0.294 & 29.2\% \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \begin{minipage}{\linewidth}
 \vspace{4pt}\footnotesize
-\textit{Notes:} All configurations use the rolling 60-month window, 60/40 core,
-equity-only satellite displacement, sectors and gold, 5\,bp transaction costs, 2004--2026.
+\textit{Notes:} All configurations: rolling 60-month window, 60/40 core, 5\,bp transaction costs, 2004--2026.
 $^\dagger$ Best Sharpe ratio across all configurations (0.956).
-$^{*}$ Conservative 20\% sleeve: the only group where all investor types beat the benchmark on downside deviation simultaneously.
-NONE\% = proportion of months holding passive 60/40 core.
+$^{*}$ Conservative 20\% sleeve: the only group where all investor types simultaneously beat the benchmark on downside deviation.
+NONE\% = proportion of months holding the passive 60/40 core.
 \end{minipage}
 \end{table}
 
-All four investor types in the primary configuration beat the benchmark simultaneously on
-CAGR, Sharpe ratio, maximum drawdown, downside deviation, Sortino ratio, Calmar ratio, and
-Omega ratio. This five-metric simultaneous outperformance is the defining characteristic of
-the primary result and the basis for selecting the 20\% sleeve with floor\,=\,0.001 as the
-final configuration.
 
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=\linewidth, height=0.42\textheight, keepaspectratio]%
-    {figures/fig2_cumulative_wealth}
-  \caption{Cumulative wealth for all four investor types versus the 60/40 benchmark,
-           45\% satellite sleeve, floor\,=\,0.001
-           (February 2004 -- January 2026, \$1 invested). Shaded regions mark crisis
-           episodes.}
-  \label{fig:cumwealth}
-\end{figure}
+ 
+ All four investor types in the primary configuration beat the benchmark on
+ CAGR, Sharpe ratio, maximum drawdown, Sortino ratio, and Calmar ratio. The 45\% primary
+ configuration accepts a modest increase in downside deviation (7.72--7.78\% versus the
+ benchmark 7.11\%) in exchange for substantially higher CAGR (+89--119 basis points) and
+ Sharpe ratio (+45--81 basis points). The 20\% sleeve variant, reported in the lower panel
+ of \textbf{Table~\ref{tab:performance}}, is the only configuration where all four investor
+ types simultaneously beat the benchmark on all five risk-adjusted metrics including downside deviation.
+ 
+\textbf{Figure~\ref{fig:cumwealth}} shows the cumulative wealth trajectories for all four investor types versus the 60/40 benchmark. The strategies track the benchmark closely through 2016 and then diverge materially in the post-2016 period as the rolling window locks onto XLK dominance.
+
 
 \subsection{Sub-Period Alpha Analysis}
 
@@ -970,30 +1012,16 @@ final configuration.
  post-2016 structural bull market and re-engages gold allocation from 2022 onwards,
  with higher-moment investors maintaining a consistent edge over MV throughout.
 
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=\linewidth, height=0.48\textheight, keepaspectratio]%
-    {figures/fig3_satellite_weights_grid}
-  \caption{Monthly satellite allocation weights by sector (MVS\_cons, 45\% sleeve,
-           floor\,=\,0.001, 2004--2026).
-           Bold frames: XLE (energy cycle 2004--09), XLK (technology cycle 2016--26),
-           XAU (gold, crisis periods).}
-  \label{fig:satweights}
-\end{figure}
+\textbf{Figure~\ref{fig:satweights}} shows the month-by-month satellite allocation weights for MVS\_cons. The three-phase structure of sector leadership is immediately visible: XLE (energy, orange) dominates 2004--2009, nearly all sectors go quiet through 2010--2015, and XLK (technology, purple) becomes the dominant satellite from 2016 onwards. XAU (gold, yellow) appears persistently at low weights throughout and spikes during crisis episodes.
+
 
 The sub-period pattern also illustrates why gold is an indispensable component of the
 satellite universe. Without gold, all configurations underperform the benchmark on a
 full-sample basis. The model earns its largest premiums precisely when gold and a sector ETF
 are selected simultaneously in bear or transitional regimes.
 
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=\linewidth, height=0.38\textheight, keepaspectratio]%
-    {figures/fig4_drawdown}
-  \caption{Strategy drawdown vs 60/40 benchmark (45\% sleeve, floor\,=\,0.001,
-           2004--2026). All four investor types shown.}
-  \label{fig:drawdown}
-\end{figure}
+\textbf{Figure~\ref{fig:drawdown}} shows the rolling drawdown for all four investor types. The strategies achieve materially smaller peak drawdowns during the GFC (all types: $-27.25\%$ versus benchmark $-30.61\%$) and recover faster, while the 2022 rate shock produces broadly similar drawdown profiles across strategies and benchmark.
+
 
 \subsection{Rolling Window versus Expanding Window and the A1 Frozen Model}
 
@@ -1026,7 +1054,7 @@ The sensitivity analysis across sleeve sizes and score improvement floors reveal
 trade-off between performance and selectivity. As the sleeve size increases from 20\% to 40\%
 with floor\,=\,0.001, CAGR improves from 8.06\% to 8.57\% for the MV investor, but downside
 deviation worsens from 7.05\% to 7.58\%, exceeding the benchmark's 7.11\% at every sleeve
-size above 20\%. The NONE rate collapses from 33\% to 3\%. The 20\% sleeve with floor\,=\,0.001 is the only configuration that beats the benchmark on all five risk-adjusted metrics simultaneously, including downside deviation. Larger sleeves improve CAGR and Sharpe but exceed the benchmark downside deviation as the satellite allocations become more concentrated. The full sensitivity results are presented in Appendix~\ref{sec:appendix}.
+size above 20\%. The NONE rate collapses from 33\% to 3\%. The 20\% sleeve with floor\,=\,0.001 is the only configuration that beats the benchmark on all five risk-adjusted metrics simultaneously, including downside deviation. Larger sleeves improve CAGR and Sharpe but exceed the benchmark downside deviation as the satellite allocations become more concentrated. The full sensitivity results across all 48 configurations are presented in \textbf{Table~\ref{tab:sensitivity_full}} in Appendix~\ref{sec:appendix}. The monotonic pattern --- increasing CAGR and Sharpe with sleeve size, deteriorating downside deviation --- is visible across both floor levels.
 
 % ============================================================
 \section{Gold as a Conditional Safe Haven}
@@ -1184,81 +1212,83 @@ outcomes.
 \label{sec:appendix}
 % ============================================================
 
-\begin{longtable}{llrrrrrrrr}
+\setlength{\tabcolsep}{4pt}
+\footnotesize
+\begin{longtable}{llrrrrrrr}
 \caption{Full Sensitivity Analysis --- All Configurations, Both Floors, All Investor Types}
 \label{tab:sensitivity_full} \\
 \toprule
-\textbf{Sleeve} & \textbf{Investor} & \textbf{CAGR} & \textbf{Sharpe} & \textbf{Max DD} & \textbf{Dwnside Dev} & \textbf{Sortino} & \textbf{Calmar} & \textbf{Turnover} & \textbf{NONE\%} \\
+\textbf{Sleeve} & \textbf{Investor} & \textbf{CAGR} & \textbf{Sharpe} & \textbf{Max DD} & \textbf{Dwnside Dev} & \textbf{Sortino} & \textbf{Calmar} & \textbf{NONE\%} \\
 \midrule
 \endfirsthead
-\multicolumn{10}{l}{\small\textit{(continued)}} \\
+\multicolumn{9}{l}{\footnotesize\textit{(continued from previous page)}} \\[2pt]
 \toprule
-\textbf{Sleeve} & \textbf{Investor} & \textbf{CAGR} & \textbf{Sharpe} & \textbf{Max DD} & \textbf{Dwnside Dev} & \textbf{Sortino} & \textbf{Calmar} & \textbf{Turnover} & \textbf{NONE\%} \\
+\textbf{Sleeve} & \textbf{Investor} & \textbf{CAGR} & \textbf{Sharpe} & \textbf{Max DD} & \textbf{Dwnside Dev} & \textbf{Sortino} & \textbf{Calmar} & \textbf{NONE\%} \\
 \midrule
 \endhead
 \midrule
-\multicolumn{10}{r}{\small\textit{(continues on next page)}} \\
+\multicolumn{9}{r}{\footnotesize\textit{(continues on next page)}} \\
 \endfoot
 \bottomrule
 \endlastfoot
 % ── Floor = 0.001 ─────────────────────────────────────────────────────────
-\multicolumn{10}{l}{\textbf{Score improvement floor = 0.001}} \\[2pt]
-20\% & MV          & 8.06\% & 0.923 & $-$26.78\% & 7.05\% & 1.159 & 0.301 & 12.5\% & 32.6\% \\
-20\% & MVS\_cons   & 8.09\% & 0.927 & $-$27.00\% & 6.94\% & 1.181 & 0.300 & 13.1\% & 30.7\% \\
-20\% & MVS\,$\star$& 8.10\% & 0.927 & $-$27.00\% & 6.95\% & 1.181 & 0.300 & 12.7\% & 30.7\% \\
-20\% & MVK         & 8.04\% & 0.923 & $-$27.38\% & 6.93\% & 1.176 & 0.294 & 12.4\% & 29.2\% \\[3pt]
-30\% & MV          & 8.33\% & 0.935 & $-$25.39\% & 7.30\% & 1.156 & 0.328 & 19.5\% &  8.3\% \\
-30\% & MVS\_cons   & 8.32\% & 0.936 & $-$25.51\% & 7.23\% & 1.166 & 0.326 & 19.9\% &  8.0\% \\
-30\% & MVS\,$\star$& 8.39\% & 0.943 & $-$25.62\% & 7.24\% & 1.173 & 0.327 & 19.4\% &  8.3\% \\
-30\% & MVK         & 8.24\% & 0.923 & $-$26.31\% & 7.26\% & 1.150 & 0.313 & 18.8\% &  7.2\% \\[3pt]
-35\% & MV          & 8.55\% & 0.944 & $-$25.82\% & 7.42\% & 1.167 & 0.331 & 23.3\% &  4.5\% \\
-35\% & MVS\_cons   & 8.49\% & 0.941 & $-$25.82\% & 7.40\% & 1.162 & 0.329 & 22.9\% &  5.7\% \\
-35\% & MVS\,$\star$& 8.58\% & 0.949 & $-$25.82\% & 7.36\% & 1.179 & 0.332 & 22.3\% &  5.7\% \\
-35\% & MVK         & 8.39\% & 0.930 & $-$25.91\% & 7.41\% & 1.148 & 0.324 & 22.1\% &  6.8\% \\[3pt]
-40\% & MV          & 8.57\% & 0.931 & $-$26.54\% & 7.58\% & 1.147 & 0.323 & 26.9\% &  3.0\% \\
-40\% & MVS\_cons   & 8.67\% & 0.945 & $-$26.54\% & 7.59\% & 1.158 & 0.327 & 26.3\% &  4.2\% \\
-40\% & MVS\,$\star$& 8.74\% & 0.952 & $-$26.54\% & 7.58\% & 1.167 & 0.330 & 25.6\% &  4.5\% \\
-40\% & MVK         & 8.65\% & 0.944 & $-$26.75\% & 7.58\% & 1.154 & 0.323 & 26.3\% &  4.9\% \\[3pt]
-\textbf{45\%} & \textbf{MV}       & \textbf{8.60\%} & \textbf{0.920} & $\mathbf{-}$\textbf{27.25\%} & \textbf{7.78\%} & \textbf{1.123} & \textbf{0.316} & \textbf{29.9\%} & \textbf{1.5\%} \\
-\textbf{45\%} & \textbf{MVS\_cons}& \textbf{8.78\%} & \textbf{0.939} & $\mathbf{-}$\textbf{27.25\%} & \textbf{7.77\%} & \textbf{1.145} & \textbf{0.322} & \textbf{29.9\%} & \textbf{3.0\%} \\
-\textbf{45\%} & \textbf{MVS}\,$\star\dagger$ & \textbf{8.90\%} & \textbf{0.956} & $\mathbf{-}$\textbf{27.25\%} & \textbf{7.72\%} & \textbf{1.167} & \textbf{0.327} & \textbf{29.3\%} & \textbf{3.4\%} \\
-\textbf{45\%} & \textbf{MVK}      & \textbf{8.76\%} & \textbf{0.941} & $\mathbf{-}$\textbf{27.64\%} & \textbf{7.76\%} & \textbf{1.145} & \textbf{0.317} & \textbf{29.6\%} & \textbf{3.0\%} \\[3pt]
-50\% & MV          & 8.73\% & 0.923 & $-$27.95\% & 7.91\% & 1.120 & 0.312 & 32.7\% &  0.8\% \\
-50\% & MVS\_cons   & 8.79\% & 0.932 & $-$28.15\% & 7.93\% & 1.125 & 0.312 & 32.8\% &  1.9\% \\
-50\% & MVS\,$\star$& 8.93\% & 0.945 & $-$28.34\% & 7.91\% & 1.145 & 0.315 & 32.8\% &  1.5\% \\
-50\% & MVK         & 8.71\% & 0.920 & $-$28.36\% & 7.96\% & 1.112 & 0.307 & 32.9\% &  1.5\% \\[6pt]
+\multicolumn{9}{l}{\textbf{Score improvement floor = 0.001}} \\[2pt]
+20\% & MV           & 8.06\% & 0.923 & $-$26.78\% & 7.05\% & 1.159 & 0.301 & 32.6\% \\
+20\% & MVS\_cons    & 8.09\% & 0.927 & $-$27.00\% & 6.94\% & 1.181 & 0.300 & 30.7\% \\
+20\% & MVS\,$\star$ & 8.10\% & 0.927 & $-$27.00\% & 6.95\% & 1.181 & 0.300 & 30.7\% \\
+20\% & MVK          & 8.04\% & 0.923 & $-$27.38\% & 6.93\% & 1.176 & 0.294 & 29.2\% \\[3pt]
+30\% & MV           & 8.33\% & 0.935 & $-$25.39\% & 7.30\% & 1.156 & 0.328 &  8.3\% \\
+30\% & MVS\_cons    & 8.32\% & 0.936 & $-$25.51\% & 7.23\% & 1.166 & 0.326 &  8.0\% \\
+30\% & MVS\,$\star$ & 8.39\% & 0.943 & $-$25.62\% & 7.24\% & 1.173 & 0.327 &  8.3\% \\
+30\% & MVK          & 8.24\% & 0.923 & $-$26.31\% & 7.26\% & 1.150 & 0.313 &  7.2\% \\[3pt]
+35\% & MV           & 8.55\% & 0.944 & $-$25.82\% & 7.42\% & 1.167 & 0.331 &  4.5\% \\
+35\% & MVS\_cons    & 8.49\% & 0.941 & $-$25.82\% & 7.40\% & 1.162 & 0.329 &  5.7\% \\
+35\% & MVS\,$\star$ & 8.58\% & 0.949 & $-$25.82\% & 7.36\% & 1.179 & 0.332 &  5.7\% \\
+35\% & MVK          & 8.39\% & 0.930 & $-$25.91\% & 7.41\% & 1.148 & 0.324 &  6.8\% \\[3pt]
+40\% & MV           & 8.57\% & 0.931 & $-$26.54\% & 7.58\% & 1.147 & 0.323 &  3.0\% \\
+40\% & MVS\_cons    & 8.67\% & 0.945 & $-$26.54\% & 7.59\% & 1.158 & 0.327 &  4.2\% \\
+40\% & MVS\,$\star$ & 8.74\% & 0.952 & $-$26.54\% & 7.58\% & 1.167 & 0.330 &  4.5\% \\
+40\% & MVK          & 8.65\% & 0.944 & $-$26.75\% & 7.58\% & 1.154 & 0.323 &  4.9\% \\[3pt]
+\textbf{45\%} & \textbf{MV}            & \textbf{8.60\%} & \textbf{0.920} & $\mathbf{-}$\textbf{27.25\%} & \textbf{7.78\%} & \textbf{1.123} & \textbf{0.316} & \textbf{1.5\%} \\
+\textbf{45\%} & \textbf{MVS\_cons}     & \textbf{8.78\%} & \textbf{0.939} & $\mathbf{-}$\textbf{27.25\%} & \textbf{7.77\%} & \textbf{1.145} & \textbf{0.322} & \textbf{3.0\%} \\
+\textbf{45\%} & \textbf{MVS}\,$\star\dagger$ & \textbf{8.90\%} & \textbf{0.956} & $\mathbf{-}$\textbf{27.25\%} & \textbf{7.72\%} & \textbf{1.167} & \textbf{0.327} & \textbf{3.4\%} \\
+\textbf{45\%} & \textbf{MVK}           & \textbf{8.76\%} & \textbf{0.941} & $\mathbf{-}$\textbf{27.64\%} & \textbf{7.76\%} & \textbf{1.145} & \textbf{0.317} & \textbf{3.0\%} \\[3pt]
+50\% & MV           & 8.73\% & 0.923 & $-$27.95\% & 7.91\% & 1.120 & 0.312 &  0.8\% \\
+50\% & MVS\_cons    & 8.79\% & 0.932 & $-$28.15\% & 7.93\% & 1.125 & 0.312 &  1.9\% \\
+50\% & MVS\,$\star$ & 8.93\% & 0.945 & $-$28.34\% & 7.91\% & 1.145 & 0.315 &  1.5\% \\
+50\% & MVK          & 8.71\% & 0.920 & $-$28.36\% & 7.96\% & 1.112 & 0.307 &  1.5\% \\[6pt]
 % ── Floor = 0.002 ─────────────────────────────────────────────────────────
-\multicolumn{10}{l}{\textbf{Score improvement floor = 0.002}} \\[2pt]
-20\% & MV\,$\star$ & 7.85\% & 0.909 & $-$27.33\% & 6.86\% & 1.162 & 0.287 &  6.2\% & 72.7\% \\
-20\% & MVS\_cons   & 7.76\% & 0.898 & $-$27.55\% & 6.83\% & 1.155 & 0.282 &  6.3\% & 73.1\% \\
-20\% & MVS         & 7.75\% & 0.897 & $-$27.55\% & 6.86\% & 1.148 & 0.281 &  6.0\% & 73.5\% \\
-20\% & MVK         & 7.80\% & 0.901 & $-$27.92\% & 6.88\% & 1.152 & 0.280 &  7.3\% & 70.5\% \\[3pt]
-30\% & MV          & 8.02\% & 0.921 & $-$25.39\% & 7.10\% & 1.145 & 0.316 & 14.8\% & 58.7\% \\
-30\% & MVS\_cons\,$\star$ & 8.16\% & 0.934 & $-$25.51\% & 7.06\% & 1.170 & 0.320 & 14.6\% & 58.3\% \\
-30\% & MVS         & 8.10\% & 0.929 & $-$25.62\% & 7.07\% & 1.161 & 0.316 & 14.6\% & 58.3\% \\
-30\% & MVK         & 8.18\% & 0.933 & $-$26.31\% & 7.06\% & 1.173 & 0.311 & 13.5\% & 53.8\% \\[3pt]
-35\% & MV          & 8.22\% & 0.933 & $-$25.28\% & 7.22\% & 1.153 & 0.325 & 16.9\% & 48.5\% \\
-35\% & MVS\_cons\,$\star$ & 8.40\% & 0.950 & $-$25.28\% & 7.20\% & 1.180 & 0.332 & 15.7\% & 47.7\% \\
-35\% & MVS         & 8.38\% & 0.946 & $-$25.55\% & 7.20\% & 1.178 & 0.328 & 16.0\% & 47.3\% \\
-35\% & MVK         & 8.43\% & 0.946 & $-$25.90\% & 7.28\% & 1.171 & 0.325 & 17.7\% & 44.3\% \\[3pt]
-40\% & MV          & 8.20\% & 0.916 & $-$25.99\% & 7.52\% & 1.107 & 0.315 & 21.1\% & 40.2\% \\
-40\% & MVS\_cons   & 8.43\% & 0.938 & $-$26.46\% & 7.50\% & 1.139 & 0.319 & 22.1\% & 37.9\% \\
-40\% & MVS         & 8.45\% & 0.939 & $-$26.46\% & 7.49\% & 1.142 & 0.319 & 22.4\% & 37.5\% \\
-40\% & MVK\,$\star$& 8.54\% & 0.953 & $-$26.75\% & 7.39\% & 1.168 & 0.319 & 22.5\% & 35.2\% \\[3pt]
-45\% & MV          & 8.32\% & 0.912 & $-$26.70\% & 7.61\% & 1.111 & 0.312 & 28.7\% & 30.3\% \\
-45\% & MVS\_cons   & 8.55\% & 0.938 & $-$27.16\% & 7.56\% & 1.145 & 0.315 & 27.3\% & 28.8\% \\
-45\% & MVS\,$\star$& 8.66\% & 0.952 & $-$27.16\% & 7.52\% & 1.165 & 0.319 & 27.1\% & 28.4\% \\
-45\% & MVK         & 8.44\% & 0.928 & $-$27.64\% & 7.55\% & 1.134 & 0.305 & 28.8\% & 25.4\% \\[3pt]
-50\% & MV          & 8.56\% & 0.919 & $-$27.86\% & 7.75\% & 1.121 & 0.307 & 28.7\% & 23.1\% \\
-50\% & MVS\_cons   & 8.67\% & 0.933 & $-$28.15\% & 7.79\% & 1.129 & 0.308 & 29.7\% & 19.7\% \\
-50\% & MVS\,$\star$& 8.69\% & 0.936 & $-$28.34\% & 7.75\% & 1.137 & 0.307 & 29.6\% & 19.3\% \\
-50\% & MVK         & 8.74\% & 0.934 & $-$28.36\% & 7.82\% & 1.133 & 0.308 & 29.6\% & 17.8\% \\
+\multicolumn{9}{l}{\textbf{Score improvement floor = 0.002}} \\[2pt]
+20\% & MV\,$\star$  & 7.85\% & 0.909 & $-$27.33\% & 6.86\% & 1.162 & 0.287 & 72.7\% \\
+20\% & MVS\_cons    & 7.76\% & 0.898 & $-$27.55\% & 6.83\% & 1.155 & 0.282 & 73.1\% \\
+20\% & MVS          & 7.75\% & 0.897 & $-$27.55\% & 6.86\% & 1.148 & 0.281 & 73.5\% \\
+20\% & MVK          & 7.80\% & 0.901 & $-$27.92\% & 6.88\% & 1.152 & 0.280 & 70.5\% \\[3pt]
+30\% & MV           & 8.02\% & 0.921 & $-$25.39\% & 7.10\% & 1.145 & 0.316 & 58.7\% \\
+30\% & MVS\_cons\,$\star$ & 8.16\% & 0.934 & $-$25.51\% & 7.06\% & 1.170 & 0.320 & 58.3\% \\
+30\% & MVS          & 8.10\% & 0.929 & $-$25.62\% & 7.07\% & 1.161 & 0.316 & 58.3\% \\
+30\% & MVK          & 8.18\% & 0.933 & $-$26.31\% & 7.06\% & 1.173 & 0.311 & 53.8\% \\[3pt]
+35\% & MV           & 8.22\% & 0.933 & $-$25.28\% & 7.22\% & 1.153 & 0.325 & 48.5\% \\
+35\% & MVS\_cons\,$\star$ & 8.40\% & 0.950 & $-$25.28\% & 7.20\% & 1.180 & 0.332 & 47.7\% \\
+35\% & MVS          & 8.38\% & 0.946 & $-$25.55\% & 7.20\% & 1.178 & 0.328 & 47.3\% \\
+35\% & MVK          & 8.43\% & 0.946 & $-$25.90\% & 7.28\% & 1.171 & 0.325 & 44.3\% \\[3pt]
+40\% & MV           & 8.20\% & 0.916 & $-$25.99\% & 7.52\% & 1.107 & 0.315 & 40.2\% \\
+40\% & MVS\_cons    & 8.43\% & 0.938 & $-$26.46\% & 7.50\% & 1.139 & 0.319 & 37.9\% \\
+40\% & MVS          & 8.45\% & 0.939 & $-$26.46\% & 7.49\% & 1.142 & 0.319 & 37.5\% \\
+40\% & MVK\,$\star$ & 8.54\% & 0.953 & $-$26.75\% & 7.39\% & 1.168 & 0.319 & 35.2\% \\[3pt]
+45\% & MV           & 8.32\% & 0.912 & $-$26.70\% & 7.61\% & 1.111 & 0.312 & 30.3\% \\
+45\% & MVS\_cons    & 8.55\% & 0.938 & $-$27.16\% & 7.56\% & 1.145 & 0.315 & 28.8\% \\
+45\% & MVS\,$\star$ & 8.66\% & 0.952 & $-$27.16\% & 7.52\% & 1.165 & 0.319 & 28.4\% \\
+45\% & MVK          & 8.44\% & 0.928 & $-$27.64\% & 7.55\% & 1.134 & 0.305 & 25.4\% \\[3pt]
+50\% & MV           & 8.56\% & 0.919 & $-$27.86\% & 7.75\% & 1.121 & 0.307 & 23.1\% \\
+50\% & MVS\_cons    & 8.67\% & 0.933 & $-$28.15\% & 7.79\% & 1.129 & 0.308 & 19.7\% \\
+50\% & MVS\,$\star$ & 8.69\% & 0.936 & $-$28.34\% & 7.75\% & 1.137 & 0.307 & 19.3\% \\
+50\% & MVK          & 8.74\% & 0.934 & $-$28.36\% & 7.82\% & 1.133 & 0.308 & 17.8\% \\
 \end{longtable}
-\begin{minipage}{\linewidth}
+\begin{minipage}{0.95\linewidth}
 \vspace{4pt}\footnotesize
 \textit{Notes:} Benchmark (60/40): CAGR\,=\,7.71\%, Sharpe\,=\,0.875, Max\,DD\,=\,$-$30.61\%, Downside\,Dev\,=\,7.11\%, Sortino\,=\,1.104, Calmar\,=\,0.252.
 All configurations: rolling 60-month window, 60/40 core, 5\,bp transaction costs, 2004--2026, up to two simultaneous satellite tilts.
-$\star$ = best Sharpe within the floor/sleeve group. $\dagger$ = global best Sharpe (0.956) across all configurations.
+$\star$ = best Sharpe within the floor/sleeve group.\ $\dagger$ = global best Sharpe (0.956) across all configurations.
 \textbf{Bold rows} = primary configuration (45\%/0.001).
 \end{minipage}
 

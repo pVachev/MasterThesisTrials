@@ -5,6 +5,7 @@ import numpy as np
 from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
+from scipy import stats 
 
 if TYPE_CHECKING:
     from src.runner import ModelRunResult
@@ -461,4 +462,33 @@ def evaluate_candidate_tilt_moments(
         "predictive_probabilities": pred_row.to_dict(),
         "state_moment_table": state_moment_table,
         "aggregated_moments": aggregated,
+    }
+
+def calibrate_investor_params(
+    benchmark_returns: pd.Series,
+    lambda_: float = 3.0,
+    skewness_target_pct: float = 0.20,
+    kurtosis_target_pct: float = 0.20,
+) -> dict:
+    """
+    Calibrate gamma and delta from unconditional benchmark moments such that
+    skewness and kurtosis terms each contribute a target percentage of the
+    variance term at benchmark moment values.
+
+    Without factorial scalings:
+        gamma = target_pct * lambda * var_bm / |skew_bm|
+        delta = target_pct * lambda * var_bm / |ekurt_bm|
+
+    Parameters are fixed once from the benchmark and held constant —
+    they represent stable investor preferences, not time-varying estimates.
+    """
+    
+
+    var   = benchmark_returns.var()
+    skew  = abs(stats.skew(benchmark_returns))
+    ekurt = abs(stats.kurtosis(benchmark_returns, fisher=True))
+    return {
+        "lambda_": lambda_,
+        "gamma":   round(skewness_target_pct * lambda_ * var / skew, 6),
+        "delta":   round(kurtosis_target_pct * lambda_ * var / ekurt, 6),
     }

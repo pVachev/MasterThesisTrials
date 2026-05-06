@@ -28,6 +28,7 @@
 \usepackage{caption}
 \usepackage{float}
 \usepackage{enumitem}
+\usepackage{verbatim}
 \usepackage{placeins}           % \FloatBarrier
 \usepackage{titlesec}
 \usepackage{parskip}
@@ -91,7 +92,7 @@
 % ── Abstract ────────────────────────────────────────────────
 \begin{abstract}
 \noindent
-This paper develops and evaluates a regime-aware core-plus-satellite allocation framework
+This thesis develops and evaluates a regime-aware core-plus-satellite allocation framework
 designed for implementation within the operational constraints of a wealth management context.
 A three-state Hidden Markov Model is estimated on monthly excess log returns of the S\&P~500
 Total Return index and the Bloomberg US Treasury 7--10 Year index. The resulting one-step-ahead
@@ -107,12 +108,20 @@ returning the portfolio to the passive 60/40 core when regime conviction is insu
 The primary configuration (45\% satellite sleeve, score improvement floor = 0.001) achieves a CAGR of 8.60--8.90\% against a benchmark of 7.71\%, Sharpe ratios of 0.920--0.956 versus 0.875, and maximum drawdown improvements of approximately 335 basis points. A conservative 20\% sleeve variant simultaneously beats the benchmark on all five risk-adjusted metrics including downside deviation.
 \end{abstract}
 
+\vspace{6pt}
+\noindent\textbf{Keywords:} Hidden Markov Model, regime switching, tactical asset allocation, sector rotation, higher-moment preferences, rolling window estimation, core-plus-satellite portfolio
+
+\vspace{4pt}
+\noindent\textbf{JEL Classification:} G11 (Portfolio Choice; Investment Decisions) $\cdot$ G17 (Financial Forecasting and Simulation) $\cdot$ C22 (Time-Series Models) $\cdot$ C61 (Optimization Techniques) $\cdot$ G23 (Pension Funds; Other Private Financial Institutions)
+
 \newpage
 \tableofcontents
 \newpage
 \pagenumbering{arabic}
 
+\clearpage
 % ============================================================
+\clearpage
 \section{Introduction}
 % ============================================================
 
@@ -170,7 +179,7 @@ focus on a US sector ETF universe rather than international equity. And we intro
 window re-estimation as the mechanism for handling structural breaks, an aspect that was not
 required in studies relying on the stable 1954--1999 data environment.
 
-The paper is structured as follows. Section~\ref{sec:litreview} reviews the relevant
+The thesis is structured as follows. Section~\ref{sec:litreview} reviews the relevant
 literature. Section~\ref{sec:data} describes the data. Section~\ref{sec:model} presents
 the Hidden Markov Model specification and estimation. Section~\ref{sec:preferences} develops
 the investor preference theory and scoring function. Section~\ref{sec:allocation} describes
@@ -179,7 +188,9 @@ conviction scalar, and rolling window mechanics. Section~\ref{sec:findings} repo
 key findings. Section~\ref{sec:gold} discusses gold as a conditional safe haven.
 Section~\ref{sec:conclusion} concludes.
 
+\clearpage
 % ============================================================
+\clearpage
 \section{Literature Review}
 \label{sec:litreview}
 % ============================================================
@@ -327,7 +338,9 @@ window would be computationally expensive, methodologically inconsistent, and li
 spurious variation in the number of states that would interfere with the allocation signal.
 The two-stage approach is therefore both principled and practical.
 
+\clearpage
 % ============================================================
+\clearpage
 \section{Data}
 \label{sec:data}
 % ============================================================
@@ -364,37 +377,87 @@ in a macroeconomic context. Given the focus of the study on sector ETF tilts, th
 could not be reasonably justified at this stage of the research.
 
 
-\begin{table}[htbp]
-\centering
-\caption{HMM Transition Probability Matrix and Regime Persistence (Model A, 1999--2026)}
-\label{tab:transition}
-\setlength{\tabcolsep}{8pt}
-\small
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{lcccc}
-\toprule
-\textbf{From $\backslash$ To} & \textbf{Regime 0 (Bear)} & \textbf{Regime 1 (Trans.)} & \textbf{Regime 2 (Bull)} & \textbf{Exp.\ Duration} \\
-\midrule
-Regime 0 (Bear)         & 0.892 & 0.000 & 0.108 & 9.2 months  \\
-Regime 1 (Transitional) & 0.017 & 0.940 & 0.043 & 16.6 months \\
-Regime 2 (Bull)         & 0.000 & 0.050 & 0.950 & 19.9 months \\
-\bottomrule
-\end{tabular}}
-\begin{minipage}{\linewidth}
-\vspace{4pt}\footnotesize
-\textit{Notes:} Estimated on the full 1999--2026 sample, best seed (seed\,=\,24, log-likelihood\,=\,1445.79, $T=325$).
-Each row sums to 1; entries below 0.0005 are shown as 0.000.
-Expected duration\,=\,$1/(1-p_{kk})$. Regime~2 (Bull) is the most persistent state at 19.9 months.
-The zero entry $p_{02}$ (Bear $\to$ Bull) implies the model never transitions directly from a crisis state to a bull state without passing through the transitional regime.
-\end{minipage}
-\end{table}
 
 Together, the S\&P~500 TR and LT09TRUU constitute the benchmark core portfolio at a 60/40
 fixed weight allocation. The choice of a 60/40 split is the industry standard for a balanced
 client mandate and represents the passive baseline against which all strategy configurations
 are evaluated.
 
+\clearpage
 % ============================================================
+
+
+\begin{table}[htbp]
+\centering
+\caption{Descriptive Statistics for Monthly Log Returns --- Full Sample (Feb 2004 -- Jan 2026)}
+\label{tab:data_stats}
+\setlength{\tabcolsep}{4pt}
+\footnotesize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrrrr}
+\toprule
+\textbf{Asset} & \textbf{Ann.\ Mean (\%)} & \textbf{Ann.\ Vol (\%)} & \textbf{Sharpe} & \textbf{Skewness} & \textbf{Exc.\ Kurt.} & \textbf{Min (\%)} & \textbf{Max (\%)} \\
+\midrule
+\multicolumn{8}{l}{\textit{Core assets}} \\[2pt]
+S\&P 500 TR        & 10.16 & 14.65 & 0.523 & $-$0.806 & 1.831 & $-$18.39 & 12.06 \\
+LT Bond (7--10y)   &  3.33 &  6.41 & 0.129 & \phantom{$-$}0.056 & 0.868 & $-$4.80  & 7.69  \\
+\midrule
+\multicolumn{8}{l}{\textit{Cyclical sector satellites}} \\[2pt]
+XLB Materials      &  8.32 & 19.77 & 0.294 & $-$0.567 & 1.842 & $-$25.35 & 15.99 \\
+XLE Energy         &  8.63 & 25.99 & 0.236 & $-$0.667 & 4.539 & $-$42.12 & 26.82 \\
+XLF Financials     &  5.72 & 21.67 & 0.149 & $-$1.120 & 4.116 & $-$30.38 & 19.72 \\
+XLI Industrials    & 10.12 & 18.30 & 0.417 & $-$0.733 & 2.334 & $-$20.61 & 16.61 \\
+XLK Technology     & 13.14 & 17.92 & 0.594 & $-$0.485 & 0.376 & $-$17.58 & 12.87 \\
+XLY Cons.\ Disc.   & 10.52 & 18.53 & 0.433 & $-$0.257 & 1.415 & $-$19.40 & 17.30 \\
+\midrule
+\multicolumn{8}{l}{\textit{Defensive sector satellites}} \\[2pt]
+XLP Cons.\ Staples &  8.66 & 11.69 & 0.527 & $-$0.578 & 1.168 & $-$13.48 & 9.94  \\
+XLU Utilities      &  9.31 & 14.21 & 0.479 & $-$0.848 & 1.020 & $-$13.93 & 10.03 \\
+XLV Health Care    &  8.98 & 13.62 & 0.476 & $-$0.379 & 0.449 & $-$13.23 & 11.86 \\
+\midrule
+\multicolumn{8}{l}{\textit{Commodity satellite}} \\[2pt]
+XAU Gold           & 11.36 & 16.75 & 0.529 & $-$0.184 & 0.621 & $-$18.50 & 12.49 \\
+\bottomrule
+\end{tabular}}
+\begin{minipage}{\linewidth}
+\vspace{4pt}\footnotesize
+\textit{Notes:} Monthly log returns from the allocation backtest period (February 2004 -- January 2026, $T=264$ monthly observations). Annual mean and volatility obtained by multiplying monthly mean by 12 and monthly standard deviation by $\sqrt{12}$. Sharpe ratio uses an approximate average 1-month T-bill rate of 2.5\% per annum as the risk-free rate. Skewness and excess kurtosis use Fisher's definition. All nine sector ETF returns obtained via Yahoo Finance API; XAU obtained from Bloomberg; LT Bond = \texttt{LT09TRUU} Bloomberg US Treasury 7--10 Year index.
+\end{minipage}
+\end{table}
+
+
+\begin{table}[htbp]
+\centering
+\caption{Pairwise Correlation Matrix of Monthly Log Returns (Feb 2004 -- Jan 2026)}
+\label{tab:correlations}
+\setlength{\tabcolsep}{3.5pt}
+\footnotesize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrrrrrrrrr}
+\toprule
+ & \textbf{SP500} & \textbf{Bond} & \textbf{XLB} & \textbf{XLE} & \textbf{XLF} & \textbf{XLI} & \textbf{XLK} & \textbf{XLY} & \textbf{XLP} & \textbf{XLU} & \textbf{XLV} & \textbf{XAU} \\
+\midrule
+SP500 & 1.00 & $-$0.06 & 0.86 & 0.63 & 0.85 & 0.92 & 0.90 & 0.90 & 0.72 & 0.51 & 0.75 & 0.09 \\
+Bond  &      & 1.00 & $-$0.11 & $-$0.25 & $-$0.16 & $-$0.11 & $-$0.03 & $-$0.03 & 0.10 & 0.22 & 0.04 & 0.32 \\
+XLB   &      &      & 1.00 & 0.68 & 0.75 & 0.87 & 0.71 & 0.77 & 0.63 & 0.43 & 0.65 & 0.24 \\
+XLE   &      &      &      & 1.00 & 0.55 & 0.63 & 0.46 & 0.48 & 0.42 & 0.33 & 0.43 & 0.13 \\
+XLF   &      &      &      &      & 1.00 & 0.84 & 0.63 & 0.75 & 0.59 & 0.34 & 0.62 & $-$0.03 \\
+XLI   &      &      &      &      &      & 1.00 & 0.76 & 0.83 & 0.69 & 0.45 & 0.66 & 0.06 \\
+XLK   &      &      &      &      &      &      & 1.00 & 0.83 & 0.55 & 0.40 & 0.58 & 0.04 \\
+XLY   &      &      &      &      &      &      &      & 1.00 & 0.59 & 0.36 & 0.61 & 0.03 \\
+XLP   &      &      &      &      &      &      &      &      & 1.00 & 0.60 & 0.68 & 0.13 \\
+XLU   &      &      &      &      &      &      &      &      &      & 1.00 & 0.46 & 0.23 \\
+XLV   &      &      &      &      &      &      &      &      &      &      & 1.00 & 0.10 \\
+XAU   &      &      &      &      &      &      &      &      &      &      &      & 1.00 \\
+\bottomrule
+\end{tabular}}
+\begin{minipage}{\linewidth}
+\vspace{4pt}\footnotesize
+\textit{Notes:} Pearson correlations of monthly log returns. Several features of this matrix motivate the satellite selection logic. XAU (gold) has near-zero correlation with all sector ETFs and a mildly negative correlation with bonds, confirming its role as a diversifier orthogonal to both core assets. XLE (energy) has the lowest correlation with the S\&P~500 among cyclical sectors (0.63), explaining its frequent selection during the 2004--2009 commodity supercycle. XLU (utilities) has the lowest sector-to-S\&P~500 correlation (0.51) among the cyclicals, consistent with its defensive classification. Bond--equity correlation is $-0.06$ unconditionally but varies substantially across regimes, as documented in \textbf{Table~\ref{tab:summary_stats}}.
+\end{minipage}
+\end{table}
+
+\clearpage
 \section{Model}
 \label{sec:model}
 % ============================================================
@@ -492,6 +555,35 @@ when the improvement in log-likelihood between iterations falls below $10^{-6}$.
 the risk of converging to local optima, 25 random initialisations were run and the solution
 with the highest converged log-likelihood was retained.
 
+The following code illustrates the core estimation call. \texttt{GaussianHMM} from \texttt{hmmlearn} is used with \texttt{covariance\_type="full"} to allow a distinct full covariance matrix per regime. Twenty-five random initialisations are run and the best log-likelihood solution is retained.
+
+\begin{verbatim}
+from hmmlearn import hmm
+import numpy as np
+
+best_model, best_ll = None, -np.inf
+
+for seed in range(1, 26):
+    model = hmm.GaussianHMM(
+        n_components=3,
+        covariance_type="full",
+        n_iter=2000,
+        tol=1e-6,
+        random_state=seed,
+    )
+    model.fit(X)           # X: (T, 2) array of excess log returns
+    ll = model.score(X)
+    if ll > best_ll:
+        best_ll, best_model = ll, model
+
+# One-step-ahead predictive probabilities
+filtered    = best_model.predict_proba(X)
+predictive  = filtered @ best_model.transmat_
+\end{verbatim}
+
+Post-estimation, regimes are reordered by ascending mean equity return so that Regime~0 is always the bear state, consistently across all seeds and rolling windows.
+
+
 \subsection{Model Selection and the Two-Stage Design Rationale}
 
 Three state configurations were evaluated: $K=2$, $K=3$, and $K=5$. The two-state model
@@ -588,6 +680,31 @@ Sample: January 1999 -- January 2026 ($T = 325$ monthly observations).
 
 
 
+\begin{table}[htbp]
+\centering
+\caption{HMM Transition Probability Matrix and Regime Persistence (Model A, 1999--2026)}
+\label{tab:transition}
+\setlength{\tabcolsep}{8pt}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+\textbf{From $\backslash$ To} & \textbf{Regime 0 (Bear)} & \textbf{Regime 1 (Trans.)} & \textbf{Regime 2 (Bull)} & \textbf{Exp.\ Duration} \\
+\midrule
+Regime 0 (Bear)         & 0.892 & 0.000 & 0.108 & 9.2 months  \\
+Regime 1 (Transitional) & 0.017 & 0.940 & 0.043 & 16.6 months \\
+Regime 2 (Bull)         & 0.000 & 0.050 & 0.950 & 19.9 months \\
+\bottomrule
+\end{tabular}}
+\begin{minipage}{\linewidth}
+\vspace{4pt}\footnotesize
+\textit{Notes:} Estimated on the full 1999--2026 sample, best seed (seed\,=\,24, log-likelihood\,=\,1445.79, $T=325$).
+Each row sums to 1; entries below 0.0005 are shown as 0.000.
+Expected duration\,=\,$1/(1-p_{kk})$. Regime~2 (Bull) is the most persistent state at 19.9 months.
+The zero entry $p_{02}$ (Bear $\to$ Bull) implies the model never transitions directly from a crisis state to a bull state without passing through the transitional regime.
+\end{minipage}
+\end{table}
+
 The bear state (Regime~0) is characterised by negative mean excess equity returns and
 elevated volatility. The bond-equity correlation in this regime turns negative, consistent
 with a flight-to-quality dynamic where bonds provide genuine diversification against equity
@@ -650,6 +767,7 @@ diversification benefit during expansion periods.
 \clearpage
 %% ── End figure cluster ───────────────────────────────────────────────────
 
+\clearpage
 \section{Investor Preference Theory}
 \label{sec:preferences}
 % ============================================================
@@ -768,7 +886,9 @@ $\delta_{\text{mod}} = 0.000207$ (20\%).
 \end{minipage}
 \end{table}
 
+\clearpage
 % ============================================================
+\clearpage
 \section{Allocation Layer}
 \label{sec:allocation}
 % ============================================================
@@ -849,7 +969,9 @@ rebalance. The average monthly turnover in the primary configuration is approxim
 implying an annual transaction cost of approximately 15 basis points, which is consistent
 with institutional execution in liquid ETFs.
 
+\clearpage
 % ============================================================
+\clearpage
 \section{Allocation Tilts and Computational Elements}
 \label{sec:tilts}
 % ============================================================
@@ -906,7 +1028,9 @@ insufficient observations for stable higher-moment estimation within each regime
 of 60 months ensures a minimum of approximately 15--20 bear-state observations within most
 rolling periods, sufficient for stable variance and skewness estimation.
 
+\clearpage
 % ============================================================
+\clearpage
 \section{Key Findings}
 \label{sec:findings}
 % ============================================================
@@ -1056,7 +1180,27 @@ with floor\,=\,0.001, CAGR improves from 8.06\% to 8.57\% for the MV investor, b
 deviation worsens from 7.05\% to 7.58\%, exceeding the benchmark's 7.11\% at every sleeve
 size above 20\%. The NONE rate collapses from 33\% to 3\%. The 20\% sleeve with floor\,=\,0.001 is the only configuration that beats the benchmark on all five risk-adjusted metrics simultaneously, including downside deviation. Larger sleeves improve CAGR and Sharpe but exceed the benchmark downside deviation as the satellite allocations become more concentrated. The full sensitivity results across all 48 configurations are presented in \textbf{Table~\ref{tab:sensitivity_full}} in Appendix~\ref{sec:appendix}. The monotonic pattern --- increasing CAGR and Sharpe with sleeve size, deteriorating downside deviation --- is visible across both floor levels.
 
+\clearpage
 % ============================================================
+
+\paragraph*{Performance ratio definitions.}
+The ratios used throughout this thesis are defined as follows:
+\begin{align*}
+  \text{Sortino}  &= \frac{\overline{R}_p - r_f}{\sigma_{\text{down}}}
+                   \quad\text{where } \sigma_{\text{down}} = \sqrt{\tfrac{1}{T}\textstyle\sum_t \min(R_{p,t}-r_f,\,0)^2} \\[4pt]
+  \text{Calmar}   &= \frac{\text{CAGR}}{|\text{Max Drawdown}|} \\[4pt]
+  \text{Sterling} &= \frac{\text{CAGR}}{\overline{\text{top-3 drawdown episodes}}} \\[4pt]
+  \text{Burke}    &= \frac{\text{Sharpe} \times \sigma}
+                          {\sqrt{\sum_i (\text{top-3 drawdown depths})_i^2}} \\[4pt]
+  \text{Omega}    &= \frac{\sum_t \max(R_{p,t} - \tau,\,0)}
+                          {\sum_t \max(\tau - R_{p,t},\,0)}, \quad \tau = 0
+\end{align*}
+All ratios are computed on the full monthly return series. The Sortino ratio penalises only
+downside deviation, making it the most relevant metric for the kurtosis-averse MVK investor.
+The Calmar ratio captures the return-per-unit-of-peak-loss trade-off central to the
+conservative 20\% sleeve discussion.
+
+\clearpage
 \section{Gold as a Conditional Safe Haven}
 \label{sec:gold}
 % ============================================================
@@ -1087,12 +1231,14 @@ core. The model's endogenous treatment of gold, as one candidate among ten in a 
 scoring environment, is arguably a more defensible allocation approach than treating it as a
 permanent strategic allocation or as a crisis-period override.
 
+\clearpage
 % ============================================================
+\clearpage
 \section{Conclusion}
 \label{sec:conclusion}
 % ============================================================
 
-This paper has developed and empirically evaluated a regime-aware tactical allocation
+This thesis develops and empirically evaluated a regime-aware tactical allocation
 framework for the equity sleeve of a 60/40 balanced portfolio. The framework combines a
 three-state Hidden Markov Model for regime identification, a sector ETF and gold satellite
 universe, a Taylor-expanded expected utility scoring function accommodating three investor
@@ -1208,6 +1354,7 @@ outcomes.
 
 % ============================================================
 \appendix
+\clearpage
 \section{Full Sensitivity and Ratio Table}
 \label{sec:appendix}
 % ============================================================
@@ -1292,19 +1439,6 @@ $\star$ = best Sharpe within the floor/sleeve group.\ $\dagger$ = global best Sh
 \textbf{Bold rows} = primary configuration (45\%/0.001).
 \end{minipage}
 
-\subsection*{Ratio Formulas}
 
-\begin{align*}
-  \text{Sortino}  &= \frac{\text{Sharpe} \times \sigma}{\text{Downside Deviation}} \\[4pt]
-  \text{Calmar}   &= \frac{\text{CAGR}}{|\text{Max Drawdown}|} \\[4pt]
-  \text{Sterling} &= \frac{\text{CAGR}}{\overline{\text{top-3 DD episodes}}} \\[4pt]
-  \text{Burke}    &= \frac{\text{Sharpe} \times \sigma}
-                          {\sqrt{\sum_i (\text{top-3 DD depths})_i^2}} \\[4pt]
-  \text{Omega}    &= \frac{\sum \max(R_t - \tau,\,0)}{\sum \max(\tau - R_t,\,0)},
-                   \quad \tau = 0
-\end{align*}
-
-All ratios are computed from the full monthly return series.
-Benchmark ratios are verified identical across all uploaded result files.
 
 \end{document}

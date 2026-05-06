@@ -10,7 +10,7 @@ from src.runner import (
     run_one_model,
 )
 
-from src.export import export_model_results_to_excel
+
 from src.plot import plot_results_dashboard, plot_requested_distributions
 
 from src.allocation_config import (
@@ -19,8 +19,11 @@ from src.allocation_config import (
     AllocationConfig,
     TrainTestConfig,
     CashSleeveConfig,
-    calibrate_investor_params
 )
+
+from src.allocation_moments import calibrate_investor_params
+
+
 from src.allocation_backtest import (
     run_fixed_parameter_train_test_backtest,
     run_expanding_window_backtest,
@@ -28,7 +31,7 @@ from src.allocation_backtest import (
 )
 
 
-from src.allocation_export import export_allocation_backtest_to_excel
+from src.allocation_export import export_allocation_backtest_to_excel, export_model_results_to_excel
 from src.allocation_plot import plot_allocation_dashboard, plot_distribution_comparison
 
 
@@ -60,22 +63,7 @@ def main():
 
     model_asset_sets = [
         ["^SP500TR", "LT09TRUU"],
-        ["^SP500TR", "LT09TRUU","XAU"],
-        # ["^SP500TR", "LT09TRUU", "XLB", "XLE", "XLF", "XLI", "XLK", "XLP", "XLU", "XLV", "XLY", "XAU"],
-        # ["^SP500TR", "EEM"],
-        # ["^SP500TR", "WFBIX"],
-        # ["^SP500TR", "LT09TRUU","Oil COMP"],
-        # ["^SP500TR","DEMUSD"], 
-        # ["^SP500TR","DEMUSD", "LT13TRUU"],
-        # ["^SP500TR","DEMUSD","XAU"],
-        # ["^SP500TR","LT09TRUU", "XAU"],
-        # ["^SP500TR", "Oil COMP"],
-        # ["^SP500TR", "LT09TRUU", "XAU", "XLK", "XLP"],
-        # ["^SP500TR", "WFBIX", "XAU", "XLK", "XLP"],
-        # ["^SP500TR", "Oil COMP", "DEMUSD"],
-        # ["^SP500TR", "Oil COMP", "DEMUSD", "XAU","LT09TRUU"],
-        # ["^SP500TR", "EEM", "IYW", "XLE"], 
-        # ["^SP500TR", "EEM", "XLE"]
+        ["^SP500TR", "LT09TRUU","XAU"]
     ]
 
 

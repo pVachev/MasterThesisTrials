@@ -11,7 +11,7 @@ from src.runner import (
 )
 
 
-from src.plot import plot_results_dashboard, plot_requested_distributions
+from src.plot import plot_results_dashboard, plot_requested_distributions, plot_asset_price_levels
 
 from src.allocation_config import (
     InvestorPreferenceConfig,
@@ -112,6 +112,12 @@ def main():
 
     if cfg.make_distribution_plots:
         plot_requested_distributions(results)
+
+
+    plot_asset_price_levels(
+    backtest_excel_path="allocation_backtest_EW_45pct_floor001_MVS_cons.xlsx",
+    out_path="ThesisDoc/figures/fig0_asset_price_levels.png",
+)
 
 
     # ============================================================

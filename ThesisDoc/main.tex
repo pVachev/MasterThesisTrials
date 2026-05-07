@@ -378,7 +378,7 @@ could not be reasonably justified at this stage of the research.
 
 
 
-Together, the S\&P~500 TR and LT09TRUU constitute the benchmark core portfolio at a 60/40
+\textbf{Figure~\ref{fig:price_levels}} shows the full price history of all twelve assets. Together, the S\&P~500 TR and LT09TRUU constitute the benchmark core portfolio at a 60/40
 fixed weight allocation. The choice of a 60/40 split is the industry standard for a balanced
 client mandate and represents the passive baseline against which all strategy configurations
 are evaluated.
@@ -386,6 +386,20 @@ are evaluated.
 \clearpage
 % ============================================================
 
+
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig0_asset_price_levels}
+  \caption{Cumulative price levels of the core and satellite assets, rebased to 100 at
+           February 2004. Shaded regions mark the four crisis episodes. Final index values
+           are annotated at the right of each panel. XLK (Technology, 1247) and XAU
+           (Gold, 896) are the highest-returning satellites over the full period;
+           XLE (Energy, 306) and XLF (Financials, 204) are the weakest cyclical performers,
+           reflecting the post-2014 energy bear market and the persistent post-GFC
+           underperformance of financials respectively.}
+  \label{fig:price_levels}
+\end{figure}
 
 \begin{table}[htbp]
 \centering
@@ -555,6 +569,48 @@ when the improvement in log-likelihood between iterations falls below $10^{-6}$.
 the risk of converging to local optima, 25 random initialisations were run and the solution
 with the highest converged log-likelihood was retained.
 
+\paragraph*{Likelihood computation via the forward algorithm.}
+
+The observed-data log-likelihood is obtained by integrating out the latent state sequence.
+For a single observation $\mathbf{Y}_t$ in state $k$, the state-conditional emission density is:
+\begin{equation}
+  f(\mathbf{Y}_t \mid S_t = k;\,\boldsymbol{\theta})
+  = \frac{1}{(2\pi)^{n/2}\,|\boldsymbol{\Sigma}_k|^{1/2}}
+    \exp\!\left(-\tfrac{1}{2}
+    (\mathbf{Y}_t - \boldsymbol{\mu}_k)^\prime
+    \boldsymbol{\Sigma}_k^{-1}
+    (\mathbf{Y}_t - \boldsymbol{\mu}_k)
+    \right)
+  \label{eq:emission_density}
+\end{equation}
+where $n = 2$ is the number of observed series. The full observed-data log-likelihood
+$\mathcal{L}(\boldsymbol{\theta}) = \log p(\mathbf{Y}_1,\ldots,\mathbf{Y}_T;\,\boldsymbol{\theta})$
+is evaluated using the forward (filter) recursion. Define the forward variable:
+\begin{equation}
+  \alpha_t(k) = p(\mathbf{Y}_1,\ldots,\mathbf{Y}_t,\, S_t = k;\,\boldsymbol{\theta})
+  \label{eq:forward_var}
+\end{equation}
+The recursion is initialised at $t = 1$ as:
+\begin{equation}
+  \alpha_1(k) = \pi_{0,k} \cdot f(\mathbf{Y}_1 \mid S_1 = k;\,\boldsymbol{\theta})
+\end{equation}
+and propagated forward for $t = 2,\ldots,T$:
+\begin{equation}
+  \alpha_t(k) = f(\mathbf{Y}_t \mid S_t = k;\,\boldsymbol{\theta})
+                \sum_{j=0}^{K-1} \alpha_{t-1}(j)\, p_{jk}
+  \label{eq:forward_recursion}
+\end{equation}
+The log-likelihood is then:
+\begin{equation}
+  \mathcal{L}(\boldsymbol{\theta})
+  = \sum_{t=1}^{T} \log \sum_{k=0}^{K-1} \alpha_t(k)
+  \label{eq:loglik}
+\end{equation}
+In practice, the recursion is implemented in log-space using the log-sum-exp trick to avoid
+numerical underflow, which is the approach taken in \texttt{hmmlearn}. The filtered
+probabilities from Equation~\eqref{eq:filtered} are recovered by normalising:
+$\xi_{t|t}(k) = \alpha_t(k) \,/\, \sum_j \alpha_t(j)$.
+
 The following code illustrates the core estimation call. \texttt{GaussianHMM} from \texttt{hmmlearn} is used with \texttt{covariance\_type="full"} to allow a distinct full covariance matrix per regime. Twenty-five random initialisations are run and the best log-likelihood solution is retained.
 
 \begin{verbatim}
@@ -604,6 +660,32 @@ to carry economic interpretation, and that they recur across multiple market cyc
 consistent way. This is the model selection stage. Once $k=3$ is established as the correct
 structural assumption, the rolling window then takes this as given and re-estimates only the
 parameter values, not the number of states, within each 60-month window.
+
+\begin{table}[htbp]
+\centering
+\caption{Model Selection: Log-Likelihood, AIC and BIC for $K = 2, 3, 5$ States}
+\label{tab:model_selection}
+\setlength{\tabcolsep}{8pt}
+\small
+\begin{tabular}{lrrrrrr}
+\toprule
+\textbf{States} & \textbf{Log-lik.} & \textbf{Params} & \textbf{AIC} & \textbf{BIC}
+  & \textbf{Avg.\ dur.\ (mo)} & \textbf{Min.\ regime frac.} \\
+\midrule
+$K = 2$ & 1427.86 & 13 & $-$2829.72 & $-$2780.53 & 11.0 & 0.234 \\
+$K = 3$ & \textbf{1445.83} & 23 & $\mathbf{-}$\textbf{2845.67} & $-$2758.64 & 15.3 & 0.062 \\
+$K = 5$ & 1466.68 & 49 & $-$2835.35 & $-$2649.94 & 4.7 & 0.009 \\
+\bottomrule
+\end{tabular}
+\begin{minipage}{\linewidth}
+\vspace{4pt}\footnotesize
+\textit{Notes:} Best log-likelihood across 25 random seeds for each $K$. Free parameters:
+$(K^2-K)$ transition probabilities $+ K\times 2$ means $+ K\times 3$ unique covariance entries $+ (K-1)$
+initial state probabilities. AIC $= -2\mathcal{L} + 2p$; BIC $= -2\mathcal{L} + p\ln T$, $T=325$.
+$K=3$ is selected: it has the best AIC ($-2845.67$) and adequate minimum regime fraction (6.2\%). $K=2$ has the best BIC but collapses the bear and transitional states into one, losing economic interpretability. $K=5$ achieves the highest log-likelihood but produces a degenerate regime with only 0.9\% of observations and an average duration of 4.7 months, consistent with overfitting. Bold = selected specification.
+\end{minipage}
+\end{table}
+
 
 Models where any regime's expected duration was less than three to four months, or where any
 regime accounted for less than 6\% of total observations, were considered too noisy and not
@@ -781,6 +863,88 @@ our approach uses the same mathematical structure but calibrates it differently 
 are scoring candidate portfolios rather than solving for optimal weights. The main reference
 for classifying investor preference is Scott and Horvath (1980). To quantify and calibrate
 investor preference, we turn to Jondeau and Rockinger (2006).
+
+\subsection{Formal Framework: Optimisation, Welfare, Certainty Equivalent, and Scoring}
+\label{subsec:formal_framework}
+
+This subsection establishes the formal relationships among four concepts that are central
+to this thesis but are sometimes conflated in applied work: portfolio optimisation, investor
+welfare, certainty equivalent wealth, and the scoring criterion used here. The distinctions
+matter because this thesis deliberately departs from the optimisation framework adopted by
+most of the theoretical literature.
+
+\paragraph*{Portfolio optimisation.}
+The classical formulation is a constrained optimisation problem over portfolio weights
+$\mathbf{w} \in \mathbb{R}^N$:
+\begin{equation}
+  \mathbf{w}^* = \arg\max_{\mathbf{w}} \;\mathbb{E}\!\left[U(W_T)\right]
+  \quad \text{subject to} \quad
+  \mathbf{w}^\prime \mathbf{1} = 1, \quad \mathbf{w} \geq \mathbf{0}
+  \label{eq:optimisation}
+\end{equation}
+where $W_T = W_0(1 + R_p)$ is terminal wealth, $R_p = \mathbf{w}^\prime \mathbf{r}$ is the
+portfolio return, and $U(\cdot)$ is a von Neumann-Morgenstern utility function. In a
+regime-switching setting, $\mathbb{E}[U(W_T)]$ is evaluated using the predictive distribution
+of returns, which depends on the current regime probabilities. Solving
+Equation~\eqref{eq:optimisation} directly requires numerical optimisation at every rebalance
+date, which is computationally demanding and sensitive to moment estimation error --- particularly
+for higher-moment utility functions where the objective surface is non-convex.
+
+\paragraph*{Investor welfare.}
+The welfare of an allocation $\mathbf{w}$ is the expected utility of terminal wealth under
+that allocation:
+\begin{equation}
+  V(\mathbf{w}) = \mathbb{E}\!\left[U(W_T(\mathbf{w}))\right]
+               = \sum_{k=0}^{K-1} \pi_k \int U(W_0(1+r))\, f(r \mid k)\, dr
+  \label{eq:welfare}
+\end{equation}
+where $\pi_k$ is the predictive probability of regime $k$ and $f(r \mid k)$ is the
+regime-conditional return density. Unlike optimisation, welfare evaluation takes $\mathbf{w}$
+as given and returns a scalar measure of investor wellbeing. Guidolin and Timmermann (2007,
+2008) compute welfare costs by comparing $V(\mathbf{w}^*_{\text{regime}})$ against
+$V(\mathbf{w}^*_{\text{static}})$ for the optimal portfolio under each specification.
+
+\paragraph*{Certainty equivalent.}
+The certainty equivalent $\text{CE}(\mathbf{w})$ converts welfare into a money-metric
+by finding the risk-free return $r^*$ such that the investor is indifferent between the
+risky portfolio and a guaranteed payoff:
+\begin{equation}
+  U\!\left(W_0(1 + r^*)\right) = V(\mathbf{w})
+  \quad\Longrightarrow\quad
+  \text{CE}(\mathbf{w}) = U^{-1}\!\left(V(\mathbf{w})\right) / W_0 - 1
+  \label{eq:ce}
+\end{equation}
+Welfare cost comparisons expressed in ``cents per dollar'' in the literature (Ang and
+Bekaert, 2002; Guidolin and Timmermann, 2007) are certainty equivalent differences:
+$\Delta\text{CE} = \text{CE}(\mathbf{w}^*_{\text{regime}}) - \text{CE}(\mathbf{w}^*_{\text{static}})$.
+
+\paragraph*{Taylor expansion and the scoring criterion.}
+Rather than evaluating Equation~\eqref{eq:welfare} by numerical integration, this thesis
+adopts the Taylor series approximation of Jondeau and Rockinger (2006). For a twice
+continuously differentiable utility function $U$, expanding $\mathbb{E}[U(R_p)]$ around
+$\mu_p$ to the fourth order gives:
+\begin{equation}
+  \mathbb{E}\!\left[U(R_p)\right]
+  \approx U(\mu_p)
+  + \frac{U''(\mu_p)}{2}\,\sigma^2_p
+  + \frac{U'''(\mu_p)}{6}\,\mu_3(R_p)
+  + \frac{U^{(4)}(\mu_p)}{24}\,\mu_4(R_p)
+  \label{eq:taylor_full}
+\end{equation}
+where $\mu_3$ and $\mu_4$ are the third and fourth central moments of $R_p$. Normalising
+by $U'(\mu_p)$ and absorbing the utility derivatives into preference parameters
+$\lambda$, $\gamma$, $\delta$ yields Equation~\eqref{eq:taylor_utility}.
+
+The key departure from the optimisation literature is that this thesis uses
+Equation~\eqref{eq:taylor_utility} as a \textit{scoring criterion} rather than an objective
+function to be maximised. At each rebalance date, a finite set of candidate portfolios
+(defined by the discrete satellite weight grid) is evaluated by computing their predictive
+moments and ranking them by score. The portfolio with the highest score is selected, provided
+it clears the improvement floor. This is computationally equivalent to evaluating
+$V(\mathbf{w})$ for each candidate and selecting the maximiser, but without solving the
+continuous optimisation problem in Equation~\eqref{eq:optimisation}. The approach is exact
+within the grid of candidates and approximate relative to the global optimum, with the
+approximation error shrinking as the grid becomes finer.
 
 \subsection{Direction of Higher-Moment Preference}
 

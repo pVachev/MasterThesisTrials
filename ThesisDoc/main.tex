@@ -97,15 +97,15 @@ designed for implementation within the operational constraints of a wealth manag
 A three-state Hidden Markov Model is estimated on monthly excess log returns of the S\&P~500
 Total Return index and the Bloomberg US Treasury 7--10 Year index. The resulting one-step-ahead
 predictive regime probabilities serve as the signal for a scoring engine that evaluates nine US
-sector ETFs and gold as candidate tilts against a fixed 60/40 core portfolio. Tilt scoring
+sector ETFs and gold as candidate tilts against a 60/40 benchmark with a fixed 40\% Treasury allocation and a replaceable 60\% equity sleeve. Tilt scoring
 follows a Taylor-expanded expected utility function after Jondeau and Rockinger (2006),
 accommodating mean-variance, mean-variance-skewness, and mean-variance-kurtosis investor types.
-The central methodological contribution is a rolling 60-month estimation window that enables
+The central design feature is a rolling 60-month estimation window that enables
 the model to adapt to structural breaks in sector leadership, specifically the rotation from
 energy sector dominance during the 2003--2008 commodity supercycle to technology sector
 dominance in the post-2016 period. A score improvement floor functions as a hurdle rate,
 returning the portfolio to the passive 60/40 core when regime conviction is insufficient.
-The primary configuration (45\% satellite sleeve, score improvement floor = 0.001) achieves a CAGR of 8.60--8.90\% against a benchmark of 7.71\%, Sharpe ratios of 0.920--0.956 versus 0.875, and maximum drawdown improvements of approximately 335 basis points. A conservative 20\% sleeve variant simultaneously beats the benchmark on all five risk-adjusted metrics including downside deviation.
+The primary configuration (45\% satellite sleeve, score improvement floor = 0.001) achieves a CAGR of 8.60--8.90\% against a benchmark of 7.71\%, Sharpe ratios of 0.920--0.956 versus 0.875, and maximum drawdown improvements of approximately 335 basis points. A conservative 20\% sleeve variant is also reported, which simultaneously beats the benchmark on all five risk-adjusted metrics including downside deviation.
 \end{abstract}
 
 \vspace{6pt}
@@ -336,7 +336,10 @@ form is validated on the full sample, and the rolling window then adapts the par
 that structure to the current data environment. The alternative of re-selecting $k$ at every
 window would be computationally expensive, methodologically inconsistent, and likely to produce
 spurious variation in the number of states that would interfere with the allocation signal.
-The two-stage approach is therefore both principled and practical.
+The two-stage approach is both principled and practical, with one caveat: because $k=3$
+is selected by inspecting the full sample that includes the evaluation period, this is a
+modelling assumption rather than a fully out-of-sample structural choice. The rolling backtest
+tests the performance of this fixed structural assumption under recursively updated parameters.
 
 \clearpage
 % ============================================================
@@ -378,10 +381,12 @@ could not be reasonably justified at this stage of the research.
 
 
 
-\textbf{Figure~\ref{fig:price_levels}} shows the full price history of all twelve assets. Together, the S\&P~500 TR and LT09TRUU constitute the benchmark core portfolio at a 60/40
+\textbf{Figure~\ref{fig:price_levels}} shows the full price history of all twelve assets. Together, the S\&P~500 TR and LT09TRUU constitute the 60/40 benchmark core at a
 fixed weight allocation. The choice of a 60/40 split is the industry standard for a balanced
 client mandate and represents the passive baseline against which all strategy configurations
 are evaluated.
+
+\paragraph*{Rebalancing timeline and data construction.} All series are monthly end-of-month log returns from total-return adjusted prices. Bloomberg indices are total-return series. The no-look-ahead convention is strict: the HMM is estimated using returns through month $t$; predictive probabilities $\boldsymbol{\pi}_{t+1|t}$ are computed from the filtered state at $t$; weights are set at the close of month $t$ and earn returns in month $t+1$. Transaction costs of 5 basis points per side are deducted at rebalancing. The risk-free rate is aligned to the same month-end.
 
 \clearpage
 % ============================================================
@@ -699,7 +704,7 @@ identified regimes are ordered by ascending mean excess equity return: Regime~0 
 state, Regime~1 is a transitional state, and Regime~2 is the bull state. This ordering is
 enforced consistently across all seeds and rolling windows.
 
-\textbf{Figure~\ref{fig:regime_probs}} shows the one-step-ahead predictive regime probabilities over the full 2004--2026 backtest period. The bear regime (Regime~0, red) spikes sharply during the GFC, COVID-19, and the 2022 rate shock, confirming that the rolling window correctly identifies stress episodes. The transitional regime (Regime~1, orange) dominates the 2010--2016 recovery period, consistent with the sub-period alpha analysis in Section~\ref{sec:findings}.
+\textbf{Figure~\ref{fig:regime_probs}} shows the one-step-ahead predictive regime probabilities over the full 2004--2026 backtest period. The bear regime (Regime~0, red) spikes sharply during the GFC, COVID-19, and the 2022 rate shock, consistent with the rolling window adapting toward elevated bear-regime probability during these episodes. The transitional regime (Regime~1, orange) dominates the 2010--2016 recovery period, consistent with the sub-period alpha analysis in Section~\ref{sec:findings}.
 
 \subsection{Model Output and Economic Interpretation}
 
@@ -788,13 +793,19 @@ The zero entry $p_{02}$ (Bear $\to$ Bull) implies the model never transitions di
 \end{table}
 
 The bear state (Regime~0) is characterised by negative mean excess equity returns and
-elevated volatility. The bond-equity correlation in this regime turns negative, consistent
-with a flight-to-quality dynamic where bonds provide genuine diversification against equity
-drawdowns. Regime~1, the transitional state, exhibits near-zero mean equity returns and
-high cross-asset correlation, which is the computationally informative but economically
-ambiguous state. Regime~2, the bull state, has positive mean excess equity returns, lower
-volatility, and a negative correlation consistent with the historically observed equity-bond
-diversification benefit during expansion periods.
+elevated volatility. Contrary to the textbook flight-to-quality narrative, the
+bond-equity correlation in Regime~0 is \textit{positive} ($+0.28$), not negative.
+This reflects the composition of bear-state observations: the 20 months classified as
+Regime~0 include the 2022 rate shock, in which both equities and bonds fell simultaneously.
+The bear regime therefore conflates two types of stress --- deflationary crashes where
+Treasuries hedge, and inflation/rate shocks where they do not.
+
+Regime~1, the transitional state, is where the strongest negative bond-equity correlation
+appears ($-0.52$), providing genuine diversification between the two core assets. This
+is the regime covering 43\% of the sample where the 60/40 benchmark most reliably
+delivers its intended diversification benefit. Regime~2, the bull state, has positive
+mean excess equity returns, lower volatility, and a mild positive correlation ($+0.20$),
+consistent with risk-on periods where both assets can be bid simultaneously.
 
 % ============================================================
 
@@ -1009,6 +1020,13 @@ performance; and second, because the signs of skewness and kurtosis preferences 
 conflicting demands on the return distribution in some configurations, and keeping them
 separate allows clean attribution.
 
+An important interpretive caveat: the scoring function is \textit{not} a structural
+estimate of CRRA or any parametric utility function. It is a normalised,
+utility-inspired ranking criterion where $\gamma$ and $\delta$ are calibrated to keep
+higher-moment terms at 15--20\% of the variance penalty at benchmark moments
+(\textbf{Table~\ref{tab:calibration}}). This is moment-contribution targeting, not
+utility-derivative calibration in the Jondeau and Rockinger (2006) sense.
+
 \subsection{Calibration of Preference Parameters}
 
 The choice of values for the preference parameters was grounded in the existing literature.
@@ -1089,10 +1107,14 @@ constructed using only information available at the current rebalance date.
 
 \subsection{Candidate Enumeration and Scoring}
 
-The scoring engine enumerates all feasible candidate portfolios. For a universe of 10
-satellites (9 sector ETFs and gold) at discrete allowed weights of 0\%, 5\%, 10\%, 15\%, and
-20\%, with a maximum of two simultaneous tilts and a maximum total sleeve of 20\%, this
-produces a manageable finite set of candidates. Each candidate is evaluated by computing its
+The scoring engine enumerates all feasible candidate portfolios. For each sensitivity
+configuration, the total satellite sleeve cap $S \in \{20\%,30\%,35\%,40\%,45\%,50\%\}$
+defines the maximum combined satellite allocation. Individual satellite weights are drawn
+from a discrete grid of $\{0\%,5\%,10\%,\ldots,S\}$ in 5\% increments, with up to two
+satellites selected simultaneously subject to the total cap. A single satellite may reach
+the full sleeve cap $S$ if no second satellite is selected. This produces a finite,
+manageable candidate set at each rebalance date. The primary configuration uses $S=45\%$;
+the conservative configuration uses $S=20\%$. Each candidate is evaluated by computing its
 regime-conditional portfolio return moments and applying the scoring function for the relevant
 investor type.
 
@@ -1177,8 +1199,7 @@ core.
 
 \subsection{Rolling Window Rationale and the Structural Break Problem}
 
-The rolling 60-month estimation window is the central methodological contribution of this
-study. Under an expanding window, the HMM is estimated on all available history from the
+The rolling 60-month estimation window is the central design choice of this thesis. Under an expanding window, the HMM is estimated on all available history from the
 start of the sample at each rebalance date. XLE's extraordinary 2003--2008 performance
 permanently elevates its regime-conditional moments; the model continues to select XLE
 through the 2010--2015 period, generating active alpha of approximately $-0.035\%$ per month
@@ -1189,8 +1210,13 @@ to each rebalance date.
 The 60-month window length was selected as a balance between recency and statistical
 reliability. A shorter window of 24--36 months would provide faster adaptation but
 insufficient observations for stable higher-moment estimation within each regime. A window
-of 60 months ensures a minimum of approximately 15--20 bear-state observations within most
-rolling periods, sufficient for stable variance and skewness estimation.
+of 60 months is a compromise between adaptation and sample size. Because bear regimes
+represent approximately 6\% of full-sample observations, a 60-month window contains
+only 3--4 bear-state months on average --- insufficient for standalone higher-moment
+estimation in isolation. This is a genuine limitation and a reason the model uses the
+full predictive probability vector rather than hard regime classification: by weighting
+all three regime distributions by their predictive probabilities, the scoring function
+draws on all 60 observations rather than only the bear-state subset.
 
 \clearpage
 % ============================================================
@@ -1219,6 +1245,11 @@ Regime~2 captures the sustained bull markets of 2003--2007, 2010--2019, and 2020
 
 The primary configuration uses a 45\% maximum satellite sleeve (our preferred configuration), a score improvement floor
 of 0.001, a rolling 60-month estimation window, and up to two simultaneous satellite tilts.
+\textit{Note: the sleeve size, floor, and investor type were selected by inspecting a
+sensitivity grid of 48 configurations on the same historical path. Results should be
+interpreted as evidence of economic plausibility rather than clean out-of-sample performance.
+The full sensitivity table (\textbf{Table~\ref{tab:sensitivity_full}}) is presented
+transparently.}
 The backtest period runs from February 2004 to January 2026, a total of 264 monthly
 rebalance decisions. \textbf{Table~\ref{tab:performance}} presents the performance summary across investor
 types and the main sensitivity variants.
@@ -1296,8 +1327,8 @@ NONE\% = proportion of months holding the passive 60/40 core.
  In the 2016--2026 period (120 months), the model is inactive for only 4--9 months
  depending on investor type (NONE rate $\approx$3--7\%). All four investor types
  generate positive alpha: MV $+0.036\%$/month, MVS\_cons $+0.048\%$, MVS $+0.050\%$,
- and MVK $+0.049\%$. The rolling window correctly identifies XLK dominance in the
- post-2016 structural bull market and re-engages gold allocation from 2022 onwards,
+ and MVK $+0.049\%$. The rolling window adapts toward XLK exposure in the post-2016 period, consistent with
+ the realised technology-led market cycle and re-engages gold allocation from 2022 onwards,
  with higher-moment investors maintaining a consistent edge over MV throughout.
 
 \textbf{Figure~\ref{fig:satweights}} shows the month-by-month satellite allocation weights for MVS\_cons. The three-phase structure of sector leadership is immediately visible: XLE (energy, orange) dominates 2004--2009, nearly all sectors go quiet through 2010--2015, and XLK (technology, purple) becomes the dominant satellite from 2016 onwards. XAU (gold, yellow) appears persistently at low weights throughout and spikes during crisis episodes.
@@ -1380,7 +1411,7 @@ that gold's tail-risk reduction properties were not consistent during the COVID-
 though their primary focus is on the cryptocurrency universe. The present study adds a
 regime-switching dimension to this debate.
 
-The rolling window HMM correctly identifies periods in which gold's correlation with the
+The rolling window HMM identifies periods in which gold's correlation with the
 broad equity market deteriorates. In the 2013--2019 period, which corresponds to gold's
 structural bear market following the 2011 peak, the model assigns gold near-zero weight and
 the score improvement floor keeps the satellite inactive in most months. In the post-2022
@@ -1427,7 +1458,15 @@ meaningful work.
 The framework has important limitations. The backtest covers a single historical path, and
 the configuration search across sleeve sizes and floors constitutes a form of in-sample
 optimisation on the same data used for evaluation. This is addressed by presenting the full
-sensitivity table transparently. A second limitation is the myopic one-period scoring
+sensitivity table transparently. A third limitation concerns benchmark fairness. The strategy is compared only to the
+static 60/40 benchmark. A static XLK sleeve would test whether post-2016 outperformance
+reflects technology exposure rather than dynamic selection; a static gold sleeve would test
+whether drawdown improvement reflects gold alone. These comparisons are not implemented here
+but remain important robustness checks. The sub-period decomposition provides partial
+evidence against a pure XLK story (positive alpha in 2004--2015 predates XLK dominance),
+but a formal comparison is left to future work.
+
+A second limitation is the myopic one-period scoring
 function, which does not account for multi-period horizon effects or regime transition
 hedging demands as the Bellman equation approach of Guidolin and Timmermann (2007) does.
 This is a deliberate trade-off for operational manageability. It is worth noting that the EM algorithm used to estimate the HMM is distinct from Bellman equation optimisation: the EM algorithm is a parameter estimation procedure for the latent-state model, whereas the Bellman approach refers to solving the dynamic programming problem for optimal portfolio weights across a multi-period horizon. The present study replaces the latter with a one-period scoring function.

@@ -1,4 +1,4 @@
-import pandas as pd 
+import pandas as pd
 import numpy as np
 
 from src.transform import clean_data
@@ -9,10 +9,7 @@ from src.runner import (
     build_model_input,
     run_one_model,
 )
-
-
 from src.plot import plot_results_dashboard, plot_requested_distributions, plot_asset_price_levels
-
 from src.allocation_config import (
     InvestorPreferenceConfig,
     SatelliteSpec,
@@ -20,81 +17,151 @@ from src.allocation_config import (
     TrainTestConfig,
     CashSleeveConfig,
 )
-
 from src.allocation_moments import calibrate_investor_params
-
-
 from src.allocation_backtest import (
     run_fixed_parameter_train_test_backtest,
     run_expanding_window_backtest,
     ExpandingWindowConfig,
 )
-
-
 from src.allocation_export import export_allocation_backtest_to_excel, export_model_results_to_excel
 from src.allocation_plot import plot_allocation_dashboard, plot_distribution_comparison
 
 
+# ── Shared configuration ───────────────────────────────────────────────────
+
+TICKERS_ALL = [
+    "SPY", "WFBIX", "^IRX", "LBUSTRUU", "LT09TRUU", "^SP500TR", "G1BM", "RF",
+    "XAU", "USGG3M", "LT01TRUU", "LT12TRUU", "LT13TRUU", "DEMUSD", "Oil COMP",
+    "XLB", "XLE", "XLF", "XLI", "XLK", "XLP", "XLU", "XLV", "XLY",
+    "LT09TRUUW", "RFW", "EEM",
+]
+M_TICKERS = [
+    "LBUSTRUU", "LT09TRUU", "LT01TRUU", "LT12TRUU", "XAU",
+    "USGG3M", "RF", "LT13TRUU", "DEMUSD", "Oil COMP",
+]
+W_TICKERS = ["LT09TRUUW", "RFW"]
+
+MODEL_ASSET_SETS = [
+    ["^SP500TR", "LT09TRUU"],         # Model A — primary thesis model
+    ["^SP500TR", "LT09TRUU", "XAU"],  # Model B — gold inclusion diagnostic
+]
+
+HMM_CFG = GlobalRunConfig(
+    n_states=3,
+    cov_type="full",
+    seeds=range(1, 26),
+    rf_col="RF",
+    rf_mode="simple_return_monthly_decimal",
+    freq="ME",
+    start_date="1999-01-31",
+    end_date="2026-03-31",
+    output_file="hmm_regime_results_monthly.xlsx",
+)
+
+# ── Preference parameters ──────────────────────────────────────────────────
+# γ and δ calibrated to unconditional 60/40 benchmark moments (2004–2026):
+#   σ²_bm = 0.000672, |skew_bm| = 0.7014, |ekurt_bm| = 1.9482
+# Formula: γ = target_pct × λ × σ²_bm / |skew_bm|
+#          δ = target_pct × λ × σ²_bm / |ekurt_bm|
+# Score contribution at benchmark moments:
+#   mean return  100%  — primary driver
+#   variance      31%  — λ·σ² = 0.002016
+#   skewness       6%  — γ·|skew| = 0.000403 (moderate)
+#   kurtosis       6%  — δ·|ekurt| = 0.000403 (moderate)
+
+INVESTOR_CONFIGS = {
+    "MV": InvestorPreferenceConfig(
+        name="MV Investor", investor_type="MV", lambda_=3.0,
+    ),
+    "MVS_cons": InvestorPreferenceConfig(
+        name="MVS Investor (conservative)", investor_type="MVS",
+        lambda_=3.0, gamma=0.000431,  # 15% × 3.0 × 0.000672 / 0.7014
+    ),
+    "MVS": InvestorPreferenceConfig(
+        name="MVS Investor", investor_type="MVS",
+        lambda_=3.0, gamma=0.000574,  # 20% × 3.0 × 0.000672 / 0.7014
+    ),
+    "MVK": InvestorPreferenceConfig(
+        name="MVK Investor", investor_type="MVK",
+        lambda_=3.0,
+        gamma=0.000574,   # 20% × 3.0 × 0.000672 / 0.7014
+        delta=0.000207,   # 20% × 3.0 × 0.000672 / 1.9482
+    ),
+}
+
+SECTOR_WEIGHTS = [0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50]
+
+SECTOR_SPECS = [
+    # Cyclical: conviction scaled by (1 - p_bear)
+    SatelliteSpec(ticker="XLB", label="Materials",              allowed_weights=SECTOR_WEIGHTS, group="sector",    style="cyclical"),
+    SatelliteSpec(ticker="XLE", label="Energy",                 allowed_weights=SECTOR_WEIGHTS, group="sector",    style="cyclical"),
+    SatelliteSpec(ticker="XLF", label="Financials",             allowed_weights=SECTOR_WEIGHTS, group="sector",    style="cyclical"),
+    SatelliteSpec(ticker="XLI", label="Industrials",            allowed_weights=SECTOR_WEIGHTS, group="sector",    style="cyclical"),
+    SatelliteSpec(ticker="XLK", label="Technology",             allowed_weights=SECTOR_WEIGHTS, group="sector",    style="cyclical"),
+    SatelliteSpec(ticker="XLY", label="Consumer Discretionary", allowed_weights=SECTOR_WEIGHTS, group="sector",    style="cyclical"),
+    # Defensive: conviction scaled by p_bear
+    SatelliteSpec(ticker="XLP", label="Consumer Staples",       allowed_weights=SECTOR_WEIGHTS, group="sector",    style="defensive"),
+    SatelliteSpec(ticker="XLU", label="Utilities",              allowed_weights=SECTOR_WEIGHTS, group="sector",    style="defensive"),
+    SatelliteSpec(ticker="XLV", label="Health Care",            allowed_weights=SECTOR_WEIGHTS, group="sector",    style="defensive"),
+    SatelliteSpec(ticker="XAU", label="Gold",                   allowed_weights=SECTOR_WEIGHTS, group="commodity", style="defensive"),
+]
+
+BENCHMARK_WEIGHTS = {"^SP500TR": 0.60, "LT09TRUU": 0.40}
+
+CASH_SLEEVE = CashSleeveConfig(
+    enabled=False,
+    activation_threshold=0.55,
+    max_cash_weight=0.40,
+    rf_ticker="RF",
+)
+
+SENSITIVITY_GRID = [
+    {"sleeve": 0.20, "floor": 0.001},
+    {"sleeve": 0.20, "floor": 0.002},
+    {"sleeve": 0.30, "floor": 0.001},
+    {"sleeve": 0.30, "floor": 0.002},
+    {"sleeve": 0.35, "floor": 0.001},
+    {"sleeve": 0.35, "floor": 0.002},
+    {"sleeve": 0.40, "floor": 0.001},
+    {"sleeve": 0.40, "floor": 0.002},
+    {"sleeve": 0.45, "floor": 0.001},
+    {"sleeve": 0.45, "floor": 0.002},
+    {"sleeve": 0.50, "floor": 0.001},
+    {"sleeve": 0.50, "floor": 0.002},
+]
 
 
-def main():
-    tickers_all = ["SPY", "WFBIX","^IRX", "LBUSTRUU", "LT09TRUU", "^SP500TR","G1BM", "RF",
-                   "XAU", "USGG3M","LT01TRUU","LT12TRUU","LT13TRUU", "DEMUSD", "Oil COMP",
-                   "XLB", "XLE", "XLF", "XLI", "XLK", "XLP", "XLU", "XLV", "XLY", "LT09TRUUW", "RFW", "EEM"]
-    m_tickers = ["LBUSTRUU", "LT09TRUU","LT01TRUU","LT12TRUU", "XAU", "USGG3M", "RF", "LT13TRUU", "DEMUSD","Oil COMP"]
-    w_tickers = ["LT09TRUUW", "RFW"]
-    """
-    ModelA -> Bond ETF
-    ModelB -> 10Y bonds 
-    """
+# ── Run flags ──────────────────────────────────────────────────────────────
+RUN_ALLOCATION          = False   # A1 honest train/test backtest
+EXPORT_ALLOCATION       = False
+PLOT_ALLOCATION         = False
+STORE_CANDIDATE_SCORES  = False
 
-    cfg = GlobalRunConfig(
-        n_states=3,
-        cov_type="full",
-        seeds=range(1, 26),
-        rf_col="RF",
-        rf_mode="simple_return_monthly_decimal",
-        freq="ME",
-        start_date="1999-01-31",
-        end_date="2026-03-31",
-        output_file="hmm_regime_results_monthly.xlsx",
+RUN_EXPANDING_WINDOW    = False   # Full sensitivity grid
+EXPORT_EXPANDING_WINDOW = False
 
-    )
+ONLY_SLEEVE    = None   # e.g. 0.45
+ONLY_FLOOR     = None   # e.g. 0.001
+ONLY_INVESTORS = None   # e.g. ["MV", "MVS"]
 
-    model_asset_sets = [
-        ["^SP500TR", "LT09TRUU"],
-        ["^SP500TR", "LT09TRUU","XAU"]
-    ]
+CORE_MODEL_CODE = "A"
 
 
-    # Build inferred specs automatically
-    model_specs = build_model_specs(model_asset_sets, rf_col=cfg.rf_col)
+# ── Pipeline functions ─────────────────────────────────────────────────────
 
-    # Load / clean once
-    df = clean_data(tickers_all, m_tickers, w_tickers)
-
-    # Build features up to prepare_data()
-    prepared_inputs = {}
-    for spec in model_specs:
-        df_model, x_model = build_model_input(
-            raw_df=df,
-            spec=spec,
-            monthly_tickers=m_tickers,
-            weekly_tickers=w_tickers,
-            rf_mode=cfg.rf_mode,
-            freq=cfg.freq,
-            start_date=cfg.start_date,
-            end_date=cfg.end_date,
-        )
-        prepared_inputs[spec.code] = (df_model, x_model)
-
-    # Run all models
+def run_hmm_models(df: pd.DataFrame) -> list:
+    """Fit HMM on all model asset sets. Returns list of ModelResult."""
+    model_specs = build_model_specs(MODEL_ASSET_SETS, rf_col=HMM_CFG.rf_col)
     results = []
     for spec in model_specs:
-        _, x_model = prepared_inputs[spec.code]
-        res = run_one_model(spec, x_model, cfg)
+        df_model, x_model = build_model_input(
+            raw_df=df, spec=spec,
+            monthly_tickers=M_TICKERS, weekly_tickers=W_TICKERS,
+            rf_mode=HMM_CFG.rf_mode, freq=HMM_CFG.freq,
+            start_date=HMM_CFG.start_date, end_date=HMM_CFG.end_date,
+        )
+        res = run_one_model(spec, x_model, HMM_CFG)
         results.append(res)
-
         print(f"\n--- {spec.label} ---")
         if res.regime_summary is not None:
             print(res.regime_summary)
@@ -102,284 +169,123 @@ def main():
         if res.corr_table is not None:
             print(res.corr_table)
 
-    # Export
-    if cfg.export_excel:
-        export_model_results_to_excel(results, cfg.output_file)
-
-    # Plots
-    if cfg.make_dashboard:
+    if HMM_CFG.export_excel:
+        export_model_results_to_excel(results, HMM_CFG.output_file)
+    if HMM_CFG.make_dashboard:
         plot_results_dashboard(results)
-
-    if cfg.make_distribution_plots:
+    if HMM_CFG.make_distribution_plots:
         plot_requested_distributions(results)
 
-
+    # Regenerate thesis Figure 1 (price level plot)
     plot_asset_price_levels(
-    backtest_excel_path="allocation_backtest_EW_45pct_floor001_MVS_cons.xlsx",
-    out_path="ThesisDoc/figures/fig0_asset_price_levels.png",
-)
-
-
-    # ============================================================
-    # ALLOCATION PARAMETERS
-    # ============================================================
-
-    
-
-    # ── Preference parameter calibration ──────────────────────────────────
-    # Parameters γ and δ are calibrated to the unconditional moments of the
-    # 60/40 benchmark portfolio over the full backtest period (2004–2026):
-    #
-    #   σ²_bm  = 0.000672,  |skew_bm| = 0.7014,  |ekurt_bm| = 1.9482
-    #
-    # Formula (no factorial scaling — direct score contribution targeting):
-    #
-    #   γ = target_pct × λ × σ²_bm / |skew_bm|
-    #   δ = target_pct × λ × σ²_bm / |ekurt_bm|
-    #
-    # Resulting score contribution hierarchy at benchmark moments:
-    #   mean return    100%  →  primary driver
-    #   variance term   31%  →  meaningful risk penalty   (λ·σ²  = 0.002016)
-    #   skewness term    6%  →  secondary tiebreaker      (γ·|skew| = 0.000403 at moderate)
-    #   kurtosis term    6%  →  secondary tiebreaker      (δ·|ekurt| = 0.000403 at moderate)
-
-    investor_configs = {
-        "MV": InvestorPreferenceConfig(
-            name="MV Investor",
-            investor_type="MV",
-            lambda_=3.0,
-        ),
-        "MVS_cons": InvestorPreferenceConfig(
-            name="MVS Investor (conservative)",
-            investor_type="MVS",
-            lambda_=3.0,
-            gamma=0.000431,  # 15% × 3.0 × 0.000672 / 0.7014
-        ),
-        "MVS": InvestorPreferenceConfig(
-            name="MVS Investor",
-            investor_type="MVS",
-            lambda_=3.0,
-            gamma=0.000574,  # 20% × 3.0 × 0.000672 / 0.7014
-        ),
-        "MVK": InvestorPreferenceConfig(
-            name="MVK Investor",
-            investor_type="MVK",
-            lambda_=3.0,
-            gamma=0.000574,  # 20% × 3.0 × 0.000672 / 0.7014
-            delta=0.000207,  # 20% × 3.0 × 0.000672 / 1.9482
-        ),
-    }
-
-
-    sector_specs_weights = [0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.4, 0.45, 0.5]
-
-
-    sector_specs = [
-        # ── Cyclical sectors: scale with (1 - p_bear) ──────────────────
-        # These benefit from bull markets and should shrink in bear regimes.
-        SatelliteSpec(ticker="XLB", label="Materials",             allowed_weights=sector_specs_weights, group="sector", style="cyclical"),
-        SatelliteSpec(ticker="XLE", label="Energy",                allowed_weights=sector_specs_weights, group="sector", style="cyclical"),
-        SatelliteSpec(ticker="XLF", label="Financials",            allowed_weights=sector_specs_weights, group="sector", style="cyclical"),
-        SatelliteSpec(ticker="XLI", label="Industrials",           allowed_weights=sector_specs_weights, group="sector", style="cyclical"),
-        SatelliteSpec(ticker="XLK", label="Technology",            allowed_weights=sector_specs_weights, group="sector", style="cyclical"),
-        SatelliteSpec(ticker="XLY", label="Consumer Discretionary",allowed_weights=sector_specs_weights, group="sector", style="cyclical"),
-        # ── Defensive sectors: scale with p_bear ───────────────────────
-        # These preserve capital in stress and should grow in bear regimes.
-        SatelliteSpec(ticker="XLP", label="Consumer Staples",      allowed_weights=sector_specs_weights, group="sector", style="defensive"),
-        SatelliteSpec(ticker="XLU", label="Utilities",             allowed_weights=sector_specs_weights, group="sector", style="defensive"),
-        SatelliteSpec(ticker="XLV", label="Health Care",           allowed_weights=sector_specs_weights, group="sector", style="defensive"),
-        SatelliteSpec(ticker="XAU", label="Gold",                  allowed_weights=sector_specs_weights, group="commodity", style="defensive"),
-    ]
-
-    alloc_cfg = AllocationConfig(
-        rebalance_frequency="ME",
-        top_n_satellites=2,
-        max_satellite_weight=0.35,
-        fixed_core_weights={
-            "^SP500TR": 0.60,
-            "LT09TRUU": 0.40,
-        },
-        long_only=True,
-        no_leverage=True,
-        transaction_cost_bps=5.0,
-        turnover_limit=None,
-        min_regime_obs=24,
-        shrinkage_intensity=0.0,
-        score_improvement_floor=0.002,
-        export_file="allocation_results.xlsx",
-        # Satellites displace SP500 only; LT09TRUU stays fixed at 40%.
-        # A 20% max sleeve reduces SP500 from 60% → min 40% at full tilt.
-        equity_only_displacement=True,
-        equity_ticker="^SP500TR",
+        backtest_excel_path="allocation_backtest_EW_45pct_floor001_MVS_cons.xlsx",
+        out_path="ThesisDoc/figures/fig1_asset_price_levels.png",
     )
-    alloc_cfg.validate()
+
+    return results
+
+
+def run_a1_backtest(results: list, df: pd.DataFrame) -> dict:
+    """
+    A1 honest train/test backtest.
+    HMM and satellite moments frozen on 1999-2016 training window,
+    evaluated out-of-sample from 2017 onwards.
+    Primary thesis configuration: 45% sleeve, floor = 0.001.
+    """
+    if not RUN_ALLOCATION:
+        return {}
+
+    res_core = next(r for r in results if r.spec.code == CORE_MODEL_CODE)
+    satellite_tickers = [s.ticker for s in SECTOR_SPECS]
+    allocation_cols = ["^SP500TR", "LT09TRUU"] + satellite_tickers + [HMM_CFG.rf_col]
+    allocation_df = diff_data(
+        df, cols=allocation_cols, rf_col=HMM_CFG.rf_col,
+        monthly_cols=M_TICKERS, rf_mode=HMM_CFG.rf_mode, freq=HMM_CFG.freq,
+    )
 
     tt_cfg = TrainTestConfig(
-        train_start="1999-01-31",
-        train_end="2016-12-31",
-        test_start="2017-01-31",
-        test_end=None,
+        train_start="1999-01-31", train_end="2016-12-31",
+        test_start="2017-01-31", test_end=None,
         min_train_observations=60,
     )
 
-    benchmark_weights = {
-        "^SP500TR": 0.60,
-        "LT09TRUU": 0.40,
-    }
-
-    cash_sleeve = CashSleeveConfig(
-        enabled=False,
-        activation_threshold=0.55,   # only activate when p_bear > 55%
-        max_cash_weight=0.4,        # up to 25% cash at p_bear = 1.0
-        rf_ticker="RF",
-    )
-
-    # ============================================================
-    # A1 CONFIG — pinned to primary thesis result (20% sleeve / floor 0.001)
-    # This is separate from alloc_cfg which changes per sensitivity grid run.
-    # ============================================================
+    # ── Primary thesis config: 45% sleeve / floor 0.001 ───────────────────
     alloc_cfg_a1 = AllocationConfig(
         rebalance_frequency="ME",
         top_n_satellites=2,
-        max_satellite_weight=0.20,           # primary config
-        fixed_core_weights={"^SP500TR": 0.60, "LT09TRUU": 0.40},
+        max_satellite_weight=0.45,           # primary thesis config
+        fixed_core_weights=BENCHMARK_WEIGHTS,
         long_only=True,
         no_leverage=True,
         transaction_cost_bps=5.0,
         turnover_limit=None,
         min_regime_obs=24,
         shrinkage_intensity=0.0,
-        score_improvement_floor=0.001,       # primary config
+        score_improvement_floor=0.001,       # primary thesis config
         export_file="allocation_results.xlsx",
         equity_only_displacement=True,
         equity_ticker="^SP500TR",
     )
     alloc_cfg_a1.validate()
 
-
-
-
-    # ============================================================
-    # A1 HONEST TRAIN/TEST ALLOCATION BACKTEST
-    # ============================================================
-
- 
-    RUN_ALLOCATION = False
-    EXPORT_ALLOCATION = False
-    PLOT_ALLOCATION = False
-    STORE_CANDIDATE_SCORES = False
- 
-    CORE_MODEL_CODE = "A"
- 
-    if RUN_ALLOCATION:
-        res_core = next(r for r in results if r.spec.code == CORE_MODEL_CODE)
- 
-        satellite_tickers = [s.ticker for s in sector_specs]
-        allocation_cols = ["^SP500TR", "LT09TRUU"] + satellite_tickers + [cfg.rf_col]
- 
-        allocation_df = diff_data(
-            df,
-            cols=allocation_cols,
-            rf_col=cfg.rf_col,
-            monthly_cols=m_tickers,
-            rf_mode=cfg.rf_mode,
-            freq=cfg.freq,
+    allocation_results = {}
+    for inv_key, investor_cfg in INVESTOR_CONFIGS.items():
+        bt, _ = run_fixed_parameter_train_test_backtest(
+            res_core=res_core,
+            allocation_df=allocation_df,
+            hmm_cfg=HMM_CFG,
+            tt_cfg=tt_cfg,
+            alloc_cfg=alloc_cfg_a1,
+            investor_cfg=investor_cfg,
+            satellite_specs=SECTOR_SPECS,
+            benchmark_weights=BENCHMARK_WEIGHTS,
+            signal_return_prefix="ExcessLog",
+            realized_return_prefix="Log",
+            periods_per_year=12,
+            store_candidate_scores=STORE_CANDIDATE_SCORES,
+            cash_sleeve_cfg=CASH_SLEEVE,
         )
- 
-        allocation_results = {}
- 
-        for inv_key, investor_cfg in investor_configs.items():
-            bt, frozen_state = run_fixed_parameter_train_test_backtest(
-                res_core=res_core,
-                allocation_df=allocation_df,
-                hmm_cfg=cfg,
-                tt_cfg=tt_cfg,
-                alloc_cfg=alloc_cfg_a1,   # pinned primary config,
+        allocation_results[inv_key] = bt
+        print(f"\n=== A1 HONEST BACKTEST | {investor_cfg.name} ===")
+        print(bt.performance_summary)
+
+        if EXPORT_ALLOCATION:
+            export_allocation_backtest_to_excel(
+                backtest_res=bt,
+                alloc_cfg=alloc_cfg_a1,
                 investor_cfg=investor_cfg,
-                satellite_specs=sector_specs,
-                benchmark_weights=benchmark_weights,
-                signal_return_prefix="ExcessLog",
-                realized_return_prefix="Log",
-                periods_per_year=12,
-                store_candidate_scores=STORE_CANDIDATE_SCORES,
-                cash_sleeve_cfg=cash_sleeve,
+                satellite_specs=SECTOR_SPECS,
+                res_core=res_core,
+                output_file=f"allocation_backtest_A1_{inv_key}.xlsx",
             )
- 
-            allocation_results[inv_key] = bt
- 
-            print(f"\n=== A1 HONEST BACKTEST | {investor_cfg.name} ===")
-            print(bt.performance_summary)
- 
-            if EXPORT_ALLOCATION:
-                export_allocation_backtest_to_excel(
-                    backtest_res=bt,
-                    alloc_cfg=alloc_cfg,
-                    investor_cfg=investor_cfg,
-                    satellite_specs=sector_specs,
-                    res_core=res_core,
-                    output_file=f"allocation_backtest_A1_{inv_key}.xlsx",
-                )
- 
-            if PLOT_ALLOCATION:
-                plot_allocation_dashboard(bt)
-                plot_distribution_comparison(bt)
- 
-    # ============================================================
-    # EXPANDING WINDOW IN-SAMPLE BACKTEST
-    # ============================================================
-    # Complements A1 by asking: if the model could re-learn
-    # from all data up to each rebalance date, would regime-aware
-    # allocation have added value over the full history?
-    #
-    # Key design differences vs A1:
-    #   - HMM is re-fit from scratch at every rebalance date
-    #   - Candidate moment library is re-estimated on the same window
-    #   - Both the regime signal AND the satellite moments update
-    #     as history accumulates — fixing the stale-library problem
-    #
-    # Expected thesis result:
-    #   - Crisis period (2000–2009): satellite rotation earns its keep,
-    #     regime transitions are frequent and informative
-    #   - Bull period (2010–2026): modest gains, regime rarely switches
-    #   - This asymmetry IS the finding — frame it as such
-    #
-    # Runtime note:
-    #   With seeds=range(1,41) and ~300 rebalance dates this takes
-    #   several minutes. Set seeds=range(1,11) for faster development.
-    # ============================================================
- 
-# ============================================================
-    # SENSITIVITY GRID — sleeve % × floor × investor
-    # ============================================================
-    # Toggle entire grid on/off:
-    RUN_EXPANDING_WINDOW = False
-    EXPORT_EXPANDING_WINDOW = False
+        if PLOT_ALLOCATION:
+            plot_allocation_dashboard(bt)
+            plot_distribution_comparison(bt)
 
-    # ── Filter controls — set to None to run all ─────────────────
-    # To run a single combination, set e.g.:
-    #   ONLY_SLEEVE    = 0.30
-    #   ONLY_FLOOR     = 0.002
-    #   ONLY_INVESTORS = ["MV"]
-    ONLY_SLEEVE    = None   # e.g. 0.30
-    ONLY_FLOOR     = None   # e.g. 0.002
-    ONLY_INVESTORS = None   # e.g. ["MV", "MVS"]
+    return allocation_results
 
-    # ── Full sensitivity grid ─────────────────────────────────────
-    sensitivity_grid = [
-        # {"sleeve": 0.20, "floor": 0.001},
-        # {"sleeve": 0.20, "floor": 0.002},
-        # {"sleeve": 0.30, "floor": 0.001},
-        # {"sleeve": 0.30, "floor": 0.002},
-        # {"sleeve": 0.35, "floor": 0.001},
-        # {"sleeve": 0.35, "floor": 0.002},
-        {"sleeve": 0.40, "floor": 0.001},
-        {"sleeve": 0.40, "floor": 0.002},
-        {"sleeve": 0.45, "floor": 0.001},
-        {"sleeve": 0.45, "floor": 0.002},
-        {"sleeve": 0.50, "floor": 0.001},
-        {"sleeve": 0.50, "floor": 0.002},
-        # {"sleeve": 0.40, "floor": 0.001},  # MV robustness — disabled for now
-    ]
+
+def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
+    """
+    Expanding-window rolling HMM backtest across all sleeve/floor combinations.
+    Toggle RUN_EXPANDING_WINDOW = True to execute.
+    Use ONLY_SLEEVE, ONLY_FLOOR, ONLY_INVESTORS to run a subset.
+
+    Design:
+      - HMM re-fit at every rebalance date on a rolling 60-month window
+      - Both regime signal and satellite moments update recursively
+      - Fixes the stale-moment problem of the expanding window
+    """
+    if not RUN_EXPANDING_WINDOW:
+        return
+
+    res_core = next(r for r in results if r.spec.code == CORE_MODEL_CODE)
+    satellite_tickers = [s.ticker for s in SECTOR_SPECS]
+    allocation_cols = ["^SP500TR", "LT09TRUU"] + satellite_tickers + [HMM_CFG.rf_col]
+    allocation_df = diff_data(
+        df, cols=allocation_cols, rf_col=HMM_CFG.rf_col,
+        monthly_cols=M_TICKERS, rf_mode=HMM_CFG.rf_mode, freq=HMM_CFG.freq,
+    )
 
     ew_cfg = ExpandingWindowConfig(
         burn_in_periods=60,
@@ -389,94 +295,81 @@ def main():
         rolling_window=60,
     )
 
-    if RUN_EXPANDING_WINDOW:
-        res_core = next(r for r in results if r.spec.code == CORE_MODEL_CODE)
+    grid = [
+        g for g in SENSITIVITY_GRID
+        if (ONLY_SLEEVE is None or g["sleeve"] == ONLY_SLEEVE)
+        and (ONLY_FLOOR  is None or g["floor"]  == ONLY_FLOOR)
+    ]
+    investors = {
+        k: v for k, v in INVESTOR_CONFIGS.items()
+        if ONLY_INVESTORS is None or k in ONLY_INVESTORS
+    }
+    total, run_n = len(grid) * len(investors), 0
 
-        satellite_tickers = [s.ticker for s in sector_specs]
-        allocation_cols   = ["^SP500TR", "LT09TRUU"] + satellite_tickers + [cfg.rf_col]
-
-        allocation_df = diff_data(
-            df,
-            cols=allocation_cols,
-            rf_col=cfg.rf_col,
-            monthly_cols=m_tickers,
-            rf_mode=cfg.rf_mode,
-            freq=cfg.freq,
+    for g in grid:
+        sleeve, floor = g["sleeve"], g["floor"]
+        alloc_cfg_run = AllocationConfig(
+            rebalance_frequency="ME",
+            top_n_satellites=2,
+            max_satellite_weight=sleeve,
+            fixed_core_weights=BENCHMARK_WEIGHTS,
+            long_only=True,
+            no_leverage=True,
+            transaction_cost_bps=5.0,
+            turnover_limit=None,
+            min_regime_obs=24,
+            shrinkage_intensity=0.0,
+            score_improvement_floor=floor,
+            export_file="allocation_results.xlsx",
+            equity_only_displacement=True,
+            equity_ticker="^SP500TR",
         )
+        alloc_cfg_run.validate()
 
-        # Apply filters
-        grid_to_run = [
-            g for g in sensitivity_grid
-            if (ONLY_SLEEVE is None or g["sleeve"] == ONLY_SLEEVE)
-            and (ONLY_FLOOR  is None or g["floor"]  == ONLY_FLOOR)
-        ]
-        investors_to_run = {
-            k: v for k, v in investor_configs.items()
-            if ONLY_INVESTORS is None or k in ONLY_INVESTORS
-        }
+        sleeve_tag = f"{int(sleeve*100)}pct"
+        floor_tag  = str(floor).replace("0.", "")
 
-        total = len(grid_to_run) * len(investors_to_run)
-        run_n = 0
+        for inv_key, investor_cfg in investors.items():
+            run_n += 1
+            tag = f"EW_{sleeve_tag}_floor{floor_tag}_{inv_key}"
+            print(f"\n[{run_n}/{total}] === {tag} ===")
 
-        for grid in grid_to_run:
-            sleeve = grid["sleeve"]
-            floor  = grid["floor"]
-
-            alloc_cfg_run = AllocationConfig(
-                rebalance_frequency="ME",
-                top_n_satellites=2,
-                max_satellite_weight=sleeve,
-                fixed_core_weights={"^SP500TR": 0.60, "LT09TRUU": 0.40},
-                long_only=True,
-                no_leverage=True,
-                transaction_cost_bps=5.0,
-                turnover_limit=None,
-                min_regime_obs=24,
-                shrinkage_intensity=0.0,
-                score_improvement_floor=floor,
-                export_file="allocation_results.xlsx",
-                equity_only_displacement=True,
-                equity_ticker="^SP500TR",
+            bt_ew = run_expanding_window_backtest(
+                res_core=res_core,
+                allocation_df=allocation_df,
+                hmm_cfg=HMM_CFG,
+                alloc_cfg=alloc_cfg_run,
+                investor_cfg=investor_cfg,
+                satellite_specs=SECTOR_SPECS,
+                benchmark_weights=BENCHMARK_WEIGHTS,
+                ew_cfg=ew_cfg,
+                signal_return_prefix="ExcessLog",
+                realized_return_prefix="Log",
+                periods_per_year=12,
+                store_candidate_scores=False,
+                cash_sleeve_cfg=CASH_SLEEVE,
             )
-            alloc_cfg_run.validate()
+            print(bt_ew.performance_summary)
 
-            sleeve_tag = f"{int(sleeve*100)}pct"
-            floor_tag  = str(floor).replace("0.", "")
-
-            for inv_key, investor_cfg in investors_to_run.items():
-                run_n += 1
-                tag = f"{sleeve_tag}_floor{floor_tag}_{inv_key}"
-                print(f"\n[{run_n}/{total}] === {tag} ===")
-
-                bt_ew = run_expanding_window_backtest(
-                    res_core=res_core,
-                    allocation_df=allocation_df,
-                    hmm_cfg=cfg,
+            if EXPORT_EXPANDING_WINDOW:
+                export_allocation_backtest_to_excel(
+                    backtest_res=bt_ew,
                     alloc_cfg=alloc_cfg_run,
                     investor_cfg=investor_cfg,
-                    satellite_specs=sector_specs,
-                    benchmark_weights=benchmark_weights,
-                    ew_cfg=ew_cfg,
-                    signal_return_prefix="ExcessLog",
-                    realized_return_prefix="Log",
-                    periods_per_year=12,
-                    store_candidate_scores=False,
-                    cash_sleeve_cfg=cash_sleeve,
+                    satellite_specs=SECTOR_SPECS,
+                    res_core=res_core,
+                    output_file=f"allocation_backtest_{tag}.xlsx",
                 )
 
-                print(bt_ew.performance_summary)
 
-                if EXPORT_EXPANDING_WINDOW:
-                    export_allocation_backtest_to_excel(
-                        backtest_res=bt_ew,
-                        alloc_cfg=alloc_cfg_run,
-                        investor_cfg=investor_cfg,
-                        satellite_specs=sector_specs,
-                        res_core=res_core,
-                        output_file=f"allocation_backtest_EW_{tag}.xlsx",
-                    )
+# ── Entry point ────────────────────────────────────────────────────────────
+
+def main():
+    df = clean_data(TICKERS_ALL, M_TICKERS, W_TICKERS)
+    results = run_hmm_models(df)
+    run_a1_backtest(results, df)
+    run_sensitivity_grid(results, df)
 
 
 if __name__ == "__main__":
-
     main()

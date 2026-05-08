@@ -388,14 +388,9 @@ are evaluated.
 
 \paragraph*{Rebalancing timeline and data construction.} All series are monthly end-of-month log returns from total-return adjusted prices. Bloomberg indices are total-return series. The no-look-ahead convention is strict: the HMM is estimated using returns through month $t$; predictive probabilities $\boldsymbol{\pi}_{t+1|t}$ are computed from the filtered state at $t$; weights are set at the close of month $t$ and earn returns in month $t+1$. Transaction costs of 5 basis points per side are deducted at rebalancing. The risk-free rate is aligned to the same month-end.
 
-\clearpage
-% ============================================================
-
-
-
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig0_asset_price_levels}
+  \includegraphics[width=\linewidth, height=0.52\textheight, keepaspectratio]{figures/fig1_asset_price_levels}
   \caption{Cumulative price levels of the core and satellite assets, rebased to 100 at
            February 2004. Shaded regions mark the four crisis episodes. Final index values
            are annotated at the right of each panel. XLK (Technology, 1247) and XAU
@@ -406,7 +401,12 @@ are evaluated.
   \label{fig:price_levels}
 \end{figure}
 
-\begin{table}[htbp]
+\clearpage
+% ============================================================
+
+
+
+\begin{table}[H]
 \centering
 \caption{Descriptive Statistics for Monthly Log Returns --- Full Sample (Feb 2004 -- Jan 2026)}
 \label{tab:data_stats}
@@ -445,7 +445,7 @@ XAU Gold           & 11.36 & 16.75 & 0.529 & $-$0.184 & 0.621 & $-$18.50 & 12.49
 \end{table}
 
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Pairwise Correlation Matrix of Monthly Log Returns (Feb 2004 -- Jan 2026)}
 \label{tab:correlations}
@@ -538,8 +538,9 @@ where $\boldsymbol{\mu}_k$ is the $(2\times 1)$ vector of state-conditional mean
 returns and $\boldsymbol{\Sigma}_k$ is the $(2\times 2)$ full covariance matrix for state
 $k$. The full covariance specification is essential: it allows the model to capture both
 state-specific volatility and state-specific cross-asset correlations, which are the
-mechanism through which the bear state generates the negative bond-equity correlation
-informing the defensive satellite selection logic.
+mechanism through which the model captures regime-dependent bond-equity co-movement.
+As shown in \textbf{Table~\ref{tab:summary_stats}}, this correlation varies substantially
+across regimes and does not follow a simple negative-in-bear pattern.
 
 The initial state distribution is parameterised as
 $\boldsymbol{\pi}_0 = (\pi_{0,0},\ldots,\pi_{0,K-1})^{\prime}$ and estimated alongside the
@@ -816,7 +817,7 @@ consistent with risk-on periods where both assets can be bid simultaneously.
 \begin{landscape}
 \begin{figure}[p]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig1_regime_probabilities}
+  \includegraphics[width=\linewidth]{figures/fig2_regime_probabilities}
   \caption{One-step-ahead predictive regime probabilities from the three-state HMM
            (rolling 60-month window, 2004--2026). Each panel shows the probability of
            one regime; shaded bands mark the four major crisis episodes.}
@@ -827,7 +828,7 @@ consistent with risk-on periods where both assets can be bid simultaneously.
 \begin{landscape}
 \begin{figure}[p]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig2_cumulative_wealth}
+  \includegraphics[width=\linewidth]{figures/fig3_cumulative_wealth}
   \caption{Cumulative wealth for all four investor types versus the 60/40 benchmark,
            45\% satellite sleeve, floor\,=\,0.001
            (February 2004 -- January 2026, \$1 invested). Shaded regions mark crisis episodes.}
@@ -838,7 +839,7 @@ consistent with risk-on periods where both assets can be bid simultaneously.
 \begin{landscape}
 \begin{figure}[p]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig3_satellite_weights_grid}
+  \includegraphics[width=\linewidth]{figures/fig4_satellite_weights_grid}
   \caption{Monthly satellite allocation weights by sector (MVS\_cons, 45\% sleeve,
            floor\,=\,0.001, 2004--2026).
            Bold frames: XLE (energy cycle 2004--09), XLK (technology cycle 2016--26),
@@ -850,7 +851,7 @@ consistent with risk-on periods where both assets can be bid simultaneously.
 \begin{landscape}
 \begin{figure}[p]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig4_drawdown}
+  \includegraphics[width=\linewidth]{figures/fig5_drawdown}
   \caption{Strategy drawdown vs 60/40 benchmark (45\% sleeve, floor\,=\,0.001,
            2004--2026). All four investor types shown.}
   \label{fig:drawdown}
@@ -1108,7 +1109,7 @@ constructed using only information available at the current rebalance date.
 \subsection{Candidate Enumeration and Scoring}
 
 The scoring engine enumerates all feasible candidate portfolios. For each sensitivity
-configuration, the total satellite sleeve cap $S \in \{20\%,30\%,35\%,40\%,45\%,50\%\}$
+configuration, the total satellite sleeve cap $S \in \{20\%,25\%,30\%,35\%,40\%,45\%,50\%\}$
 defines the maximum combined satellite allocation. Individual satellite weights are drawn
 from a discrete grid of $\{0\%,5\%,10\%,\ldots,S\}$ in 5\% increments, with up to two
 satellites selected simultaneously subject to the total cap. A single satellite may reach
@@ -1150,10 +1151,13 @@ the model only deviates from the benchmark when the regime-conditional expected 
 advantage of the satellite clearly justifies the operational cost and risk of the tilt.
 In the primary configuration, the floor is set at 0.001 in utility score units.
 
-Transaction costs are applied at a rate of 5 basis points per side on each portfolio
-rebalance. The average monthly turnover in the primary configuration is approximately 12.5\%,
-implying an annual transaction cost of approximately 15 basis points, which is consistent
-with institutional execution in liquid ETFs.
+Transaction costs are applied at a rate of 5 basis points per side (buy and sell) on each
+portfolio rebalance. In the primary configuration (45\% sleeve, floor = 0.001, MVS investor),
+average monthly portfolio turnover is approximately 29.3\%. At 5 basis points per side, the
+monthly transaction cost is approximately $0.293 \times 2 \times 5 = 2.93$ basis points, or
+roughly 35 basis points per annum. This is consistent with institutional execution costs in
+liquid US equity ETFs and Treasury indices. All reported performance figures are net of these
+transaction costs.
 
 \clearpage
 % ============================================================
@@ -1363,9 +1367,10 @@ problem.
 
 The higher-moment investor types produce measurably different outcomes from the MV baseline.
 The MVK investor achieves the lowest downside deviation across all primary configurations,
-recording 6.98\% versus the benchmark's 7.11\%, a 13 basis point improvement. The elimination
-of the 2016--2026 alpha drag is the clearest evidence that higher-moment preferences are doing
-economically meaningful work.
+recording 6.98\% versus the benchmark's 7.11\%, a 13 basis point improvement. As
+documented in Section~\ref{sec:findings}, the 2010--2015 sub-period provides the sharpest
+evidence of this: MVS and MVK are the only investor types to record positive alpha in that
+period, while MV and MVS\_cons remain negative.
 
 \subsection{Sensitivity Analysis}
 
@@ -1450,10 +1455,13 @@ epistemic honesty of using only information available at each rebalance date.
 
 The secondary finding concerns the value of higher-moment investor types. MVS and MVK
 investors consistently outperform the MV baseline on downside-focused metrics, with MVK
-achieving the lowest downside deviation in every configuration tested. The elimination of
-the 2016--2026 alpha drag observed in the MV investor is the clearest evidence that the
-kurtosis and skewness penalty terms in the scoring function are doing economically
-meaningful work.
+achieving the lowest downside deviation in every configuration tested. The most direct
+evidence comes from the 2010--2015 sub-period: MVS and MVK flip to positive alpha
+($+0.013\%$ and $+0.014\%$ per month) while MV and MVS\_cons remain negative
+($-0.035\%$ and $-0.012\%$), a sign reversal attributable to the skewness and kurtosis
+penalty terms systematically avoiding the stale energy positions that the mean-variance
+criterion continues to select. Across all three sub-periods, higher-moment investor types
+consistently match or exceed the MV baseline.
 
 The framework has important limitations. The backtest covers a single historical path, and
 the configuration search across sleeve sizes and floors constitutes a form of in-sample

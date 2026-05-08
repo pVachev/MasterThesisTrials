@@ -125,14 +125,14 @@ def _shade_crises(ax):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# FIGURE 1 — Predictive Regime Probability Stacked Area
+# FIGURE 2 — Predictive Regime Probability Stacked Area
 # Sheet: Predictive_Probabilities
 # Columns: "Regime 0 (Bear)", "Regime 1 (Transitional)", "Regime 2 (Bull)"
 #          (set by res.pp.regime_names in allocation_regime.py)
 # ══════════════════════════════════════════════════════════════════════════════
 
 def plot_fig1(path=PRIMARY_BACKTEST):
-    print("  fig1_regime_probabilities.png ...")
+    print("  fig2_regime_probabilities.png ...")
     df = _read_sheet(path, "Predictive_Probabilities")
 
     regime_cols = [c for c in df.columns if str(c).startswith("Regime")]
@@ -179,19 +179,19 @@ def plot_fig1(path=PRIMARY_BACKTEST):
 
     axes[-1].set_xlabel("")
     fig.suptitle(
-        "Figure 1 — One-Step-Ahead Predictive Regime Probabilities"
+        "Figure 2 — One-Step-Ahead Predictive Regime Probabilities"
         " (3-State HMM, Rolling 60-Month Window, 2004–2026)",
         fontsize=10, y=1.01)
 
     plt.tight_layout()
-    out = os.path.join(OUT_DIR, "fig1_regime_probabilities.png")
+    out = os.path.join(OUT_DIR, "fig2_regime_probabilities.png")
     plt.savefig(out, dpi=SAVE_DPI, bbox_inches="tight")
     plt.close()
     print(f"    saved {out}")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# FIGURE 2 — Cumulative Wealth
+# FIGURE 3 — Cumulative Wealth
 # Sheet: Wealth_Drawdown
 # Columns used: strategy_wealth, benchmark_wealth
 # ══════════════════════════════════════════════════════════════════════════════
@@ -223,18 +223,18 @@ def plot_fig2():
     ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"${x:.2f}"))
     ax.legend(loc="upper left", framealpha=0.9, fontsize=8.5)
     ax.set_title(
-        "Figure 2 — Cumulative Wealth: All Investor Types vs 60/40 Benchmark\n(45% sleeve, floor = 0.001, 2004–2026)",
+        "Figure 3 — Cumulative Wealth: All Investor Types vs 60/40 Benchmark\n(45% sleeve, floor = 0.001, 2004–2026)",
         fontsize=10)
 
     plt.tight_layout()
-    out = os.path.join(OUT_DIR, "fig2_cumulative_wealth.png")
+    out = os.path.join(OUT_DIR, "fig3_cumulative_wealth.png")
     plt.savefig(out, dpi=SAVE_DPI, bbox_inches="tight")
     plt.close()
     print(f"    saved {out}")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# FIGURE 3 — Satellite Weight Mini-Chart Grid
+# FIGURE 4 — Satellite Weight Mini-Chart Grid
 # Sheet: Weights
 # Columns: all portfolio tickers; we isolate the 9 sector ETFs + XAU
 # Layout: 2 rows × 5 cols; XAU, XLK, XLE get 1.6× wider panels
@@ -316,18 +316,18 @@ def plot_fig3(path=PRIMARY_BACKTEST):
         ax.set_ylabel("Weight (%)" if col_in_row == 0 else "", fontsize=7)
 
     fig.suptitle(
-        "Figure 3 — Monthly Satellite Allocation Weights by Sector (MVS_cons, 45% sleeve, floor=0.001, 2004–2026)\n"
+        "Figure 4 — Monthly Satellite Allocation Weights by Sector (MVS_cons, 45% sleeve, floor=0.001, 2004–2026)\n"
         "Bold frames: XLE (energy cycle 2004–09)  ·  XLK (tech cycle 2016–26)  ·  XAU (gold, crisis periods)",
         fontsize=10, y=1.02)
 
-    out = os.path.join(OUT_DIR, "fig3_satellite_weights_grid.png")
+    out = os.path.join(OUT_DIR, "fig4_satellite_weights_grid.png")
     plt.savefig(out, dpi=SAVE_DPI, bbox_inches="tight")
     plt.close()
     print(f"    saved {out}")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# FIGURE 4 — Drawdown
+# FIGURE 5 — Drawdown
 # Sheet: Wealth_Drawdown
 # Columns used: strategy_drawdown, benchmark_drawdown
 # ══════════════════════════════════════════════════════════════════════════════
@@ -359,10 +359,10 @@ def plot_fig4():
     ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"{x:.0f}%"))
     ax.legend(loc="lower left", framealpha=0.9, fontsize=8.5)
     ax.set_title(
-        "Figure 4 — Strategy Drawdown vs 60/40 Benchmark (2004–2026)", fontsize=10)
+        "Figure 5 — Strategy Drawdown vs 60/40 Benchmark (2004–2026)", fontsize=10)
 
     plt.tight_layout()
-    out = os.path.join(OUT_DIR, "fig4_drawdown.png")
+    out = os.path.join(OUT_DIR, "fig5_drawdown.png")
     plt.savefig(out, dpi=SAVE_DPI, bbox_inches="tight")
     plt.close()
     print(f"    saved {out}")
@@ -379,6 +379,6 @@ if __name__ == "__main__":
     plot_fig4()
     print("\nDone. LaTeX:")
     print(f"  \\graphicspath{{{{ThesisDoc/figures/}}}}")
-    for f in ["fig1_regime_probabilities", "fig2_cumulative_wealth",
-              "fig3_satellite_weights_grid", "fig4_drawdown"]:
+    for f in ["fig2_regime_probabilities", "fig3_cumulative_wealth",
+              "fig4_satellite_weights_grid", "fig5_drawdown"]:
         print(f"  \\includegraphics[width=\\textwidth]{{{f}}}")

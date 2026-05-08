@@ -543,7 +543,7 @@ def plot_asset_price_levels(
                         xytext=(5, 0), textcoords="offset points")
 
     fig.suptitle(
-        "Figure 0 — Cumulative Price Levels of Core and Satellite Assets (Feb 2004 = 100)",
+        "Figure 1 — Cumulative Price Levels of Core and Satellite Assets (Feb 2004 = 100)",
         fontsize=11, y=1.01
     )
 

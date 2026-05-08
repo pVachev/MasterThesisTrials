@@ -16,7 +16,7 @@ operates as a core-plus-satellite overlay on a fixed 60/40 benchmark.
 
 ```
 main.py                      — entry point: HMM estimation, A1 backtest, sensitivity grid
-generate_thesis_figures_1.py — generates all thesis figures from Excel outputs
+generate_thesis_figures.py — generates all thesis figures from Excel outputs
 model_selection.py           — K=2,3,5 model selection diagnostic (run once)
 requirements.txt             — Python dependencies
 ThesisDoc/                   — LaTeX thesis source and figures

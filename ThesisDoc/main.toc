@@ -22,7 +22,7 @@
 \contentsline {section}{\numberline {7}Allocation Tilts and Computational Elements}{28}{section.7}%
 \contentsline {subsection}{\numberline {7.1}Satellite Universe and Regime Styles}{28}{subsection.7.1}%
 \contentsline {subsection}{\numberline {7.2}Conviction Scalar}{28}{subsection.7.2}%
-\contentsline {subsection}{\numberline {7.3}Rolling Window Rationale and the Structural Break Problem}{28}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.3}Rolling Window Rationale and the Structural Break Problem}{29}{subsection.7.3}%
 \contentsline {section}{\numberline {8}Key Findings}{30}{section.8}%
 \contentsline {subsection}{\numberline {8.1}HMM Model Findings}{30}{subsection.8.1}%
 \contentsline {subsection}{\numberline {8.2}Primary Allocation Results}{30}{subsection.8.2}%

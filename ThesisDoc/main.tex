@@ -29,7 +29,8 @@
 \usepackage{float}
 \usepackage{enumitem}
 \usepackage{verbatim}
-\usepackage{placeins}           % \FloatBarrier
+\usepackage{placeins}
+\usepackage{fancyhdr}           % \FloatBarrier
 \usepackage{titlesec}
 \usepackage{parskip}
 % bibliography handled manually in References section
@@ -75,11 +76,27 @@
 % ============================================================
 \begin{document}
 
+% ── Footer ─────────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\small Vachev, P.}
+\fancyfoot[R]{\small \thepage}
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \renewcommand{\headrulewidth}{0pt}%
+  \fancyfoot[C]{\small Vachev, P.}%
+  \fancyfoot[R]{\small \thepage}%
+}
+
+
 % ── Title page ──────────────────────────────────────────────
 \begin{titlepage}
+  \thispagestyle{empty}
   \centering
   \vspace*{2cm}
-  {\small Vachev, P.\ --- Master Thesis Draft --- May 2026}\\[2.5cm]
+  {\small Vachev, P.\ --- Dissertation --- May 2026}\\[0.3cm]
+  {\small Defense: 3 June 2026, 2:00 PM CET}\\[2.2cm]
   {\LARGE\bfseries A Regime-Switching Framework for Tactical Sector Tilts\\[0.4em]
    under Higher-Moment Investor Preferences}\\[2cm]
   {\large\itshape Preslav Vachev}\\[0.5cm]
@@ -88,6 +105,28 @@
   \vfill
 \end{titlepage}
 \pagenumbering{roman}
+
+\clearpage
+\begin{center}
+  \vspace*{3cm}
+  {\large\bfseries Acknowledgements}
+\end{center}
+\vspace{1.5cm}
+
+\noindent
+I would like to thank the emlyon faculty for inspiring a lasting interest in mathematical application.
+
+\vspace{1cm}
+
+\noindent
+I would like to thank Professor Bertrand Tavin for his guidance and support throughout.
+
+\vspace{1cm}
+
+\noindent
+I would also like to thank my mother, Palmina, for pushing me to pursue higher education abroad.
+
+\clearpage
 
 % ── Abstract ────────────────────────────────────────────────
 \begin{abstract}
@@ -1178,12 +1217,22 @@ reflecting its historically low and regime-varying correlation with the equity m
 
 The inclusion of gold in the satellite universe is supported by Baur and Lucey (2010), who
 establish that gold acts as both a hedge and a safe haven for equity investors under normal
-conditions. However, this classification is not unconditional. Kinateder, Campbell, and
-Choudhury (2021), in a study primarily examining cryptocurrencies alongside precious metals
-and commodities, provide evidence that gold's diversification benefit was not uniform during
-the COVID-19 episode. In the model developed here, gold is treated as a conditional satellite
-rather than a permanent allocation: it is selected only when the regime signal and the scoring
-function jointly indicate that its inclusion improves the investor's expected utility.
+conditions. Echaust and Just (2022), using extreme value theory on 46 stock indices, find
+that gold reduced extreme downside risk during the GFC by shifting portfolio return tails
+from heavy Fr\'echet-type to thin Gumbel-type, but the same result did not hold during
+COVID-19, where portfolio tails remained heavy even after gold allocation. This
+crisis-specific conditionality directly motivates the regime-based treatment of gold in the
+present study. However, this classification is not unconditional. Kinateder, Gurrib, and
+Choudhury (2024), using the same SPDR sector ETF universe as the present study, find that
+gold provides safe-haven protection for financials, consumer discretionary, industrials,
+technology, and health care, but not for energy, materials, utilities, or consumer staples.
+This sector-specific conditionality directly motivates treating gold as a scored candidate
+rather than a permanent strategic allocation. Kinateder, Campbell, and Choudhury (2021),
+in a broader study covering cryptocurrencies alongside precious metals, provide additional
+evidence of crisis-specific variation in gold's tail-risk properties. In the model developed
+here, gold is treated as a conditional satellite: it is selected only when the regime signal
+and the scoring function jointly indicate that its inclusion improves the investor's expected
+utility.
 
 \subsection{Conviction Scalar}
 
@@ -1410,11 +1459,19 @@ asset. The results of several HMM runs, described in Section~\ref{sec:findings},
 illustrate this point.
 
 Baur and Lucey (2010) establish that gold is a hedge and a safe haven for stocks in the US
-and UK markets under normal conditions. Kinateder, Campbell, and Choudhury (2021), in a
-broad study covering cryptocurrencies, precious metals, and commodities, provide evidence
-that gold's tail-risk reduction properties were not consistent during the COVID-19 episode,
-though their primary focus is on the cryptocurrency universe. The present study adds a
-regime-switching dimension to this debate.
+and UK markets under normal conditions. Echaust and Just (2022) provide complementary
+evidence using extreme value theory: applying the block maxima method to 46 stock indices,
+they show that gold shifted portfolio return tails from Fr\'echet-type (heavy) to Gumbel-type
+(thin) during the GFC, but failed to do so during COVID-19, where tails remained heavy
+regardless of gold allocation. This asymmetry --- gold as a genuine tail hedge in some crises
+but not others --- is precisely what motivates the conditional, regime-dependent treatment
+of gold in the present study. Kinateder, Gurrib, and Choudhury (2024), using the same SPDR sector ETF universe,
+find that gold's safe-haven role is sector-specific: it protects financials, technology,
+and health care but not energy, materials, or utilities --- a finding consistent with the
+sector-rotation dynamics documented in Section~\ref{sec:findings}. Kinateder, Campbell,
+and Choudhury (2021) document crisis-specific variation in gold's tail-risk properties
+across a broader asset universe. The present study adds a regime-switching dimension to
+this debate.
 
 The rolling window HMM identifies periods in which gold's correlation with the
 broad equity market deteriorates. In the 2013--2019 period, which corresponds to gold's
@@ -1503,6 +1560,8 @@ outcomes.
 \item Ang, A. and Timmermann, A. (2012). Regime changes and financial markets.
   \textit{Annual Review of Financial Economics}, 4, 313--337.
 
+\item Echaust, K. and Just, M. (2022). Is gold still a safe haven for stock markets? New insights through the tail thickness of portfolio return distributions. \textit{Research in International Business and Finance}, 63, 101788.
+
 \item Baur, D.G. and Lucey, B.M. (2010). Is gold a hedge or a safe haven? An analysis of
   stocks, bonds and gold. \textit{Financial Review}, 45(2), 217--229.
 
@@ -1534,6 +1593,8 @@ outcomes.
 \item Kim, W., Fabozzi, F., Cheridito, P. and Fox, C. (2014). Controlling portfolio skewness
   and kurtosis without directly optimizing third and fourth moments.
   \textit{Economics Letters}, 122(2), 154--158.
+
+\item Kinateder, H., Gurrib, I. and Choudhury, T. (2024). Navigating crises: Gold's role as a safe haven for U.S. sectors. \textit{Finance Research Letters}, 69, 106210.
 
 \item Kinateder, H., Campbell, R. and Choudhury, T. (2021). Safe haven in GFC versus
   COVID-19: 100 old and new cryptocurrencies, precious metals and commodities.

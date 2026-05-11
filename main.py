@@ -139,6 +139,7 @@ STORE_CANDIDATE_SCORES  = True
 
 RUN_EXPANDING_WINDOW    = True   # Full sensitivity grid
 EXPORT_EXPANDING_WINDOW = True
+EXPORT_ASSET_PRICES = False
 
 ONLY_SLEEVE    = None   # e.g. 0.45
 ONLY_FLOOR     = None   # e.g. 0.001
@@ -177,10 +178,12 @@ def run_hmm_models(df: pd.DataFrame) -> list:
         plot_requested_distributions(results)
 
     # Regenerate thesis Figure 1 (price level plot)
-    # plot_asset_price_levels(
-    #     backtest_excel_path="allocation_backtest_EW_45pct_floor001_MVS_cons.xlsx",
-    #     out_path="ThesisDoc/figures/fig1_asset_price_levels.png",
-    # )
+
+    if EXPORT_ASSET_PRICES:
+        plot_asset_price_levels(
+            backtest_excel_path="allocation_backtest_EW_45pct_floor001_MVS_cons.xlsx",
+            out_path="ThesisDoc/figures/fig1_asset_price_levels.png",
+        )
 
     return results
 

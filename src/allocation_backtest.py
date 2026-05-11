@@ -1,22 +1,28 @@
 import numpy as np
 import pandas as pd
+from dataclasses import dataclass as _dataclass
+from typing import TYPE_CHECKING
 
 from src.allocation_regime import (
     fit_hmm_train_only_for_allocation,
     filter_test_probabilities_fixed_params,
     build_test_predictive_probability_panel,
+    _extract_filtered_probabilities_from_dfm,
+    _reorder_hmm_params,
+    forward_filter_fixed_hmm,
+    predictive_regime_probabilities_from_filtered,
 )
 from src.allocation_scoring import (
     build_candidate_library_from_train,
     select_best_tilt_at_date_from_library,
     apply_cash_sleeve,
 )
-from src.allocation_config import BacktestResult
-from typing import TYPE_CHECKING
+from src.hmm import hmm_sweep_seeds
+from src.postprocess import RegimePostProcessor
+from src.allocation_config import BacktestResult, FrozenHMMState
 
 if TYPE_CHECKING:
     from src.runner import ModelRunResult
-
 
 def _extract_return_panel(
     allocation_df: pd.DataFrame,
@@ -205,7 +211,7 @@ def run_regime_allocation_backtest(
     BacktestResult
     """
     # 1) predictive regime probabilities
-    pred_probs = build_predictive_probability_panel(res, steps_ahead=1)
+    pred_probs = build_predictive_probability_panel(res, steps_ahead=1) # deprecated
  
     # 2) build the tradable asset universe
     core_assets = list(alloc_cfg.fixed_core_weights.keys())
@@ -238,7 +244,7 @@ def run_regime_allocation_backtest(
         rebalance_date = common_dates[i]
         realized_date = common_dates[i + 1]
  
-        decision, candidate_table = select_best_tilt_at_date(
+        decision, candidate_table = select_best_tilt_at_date( # deprecated 
             res=res,
             allocation_df=allocation_df,
             alloc_cfg=alloc_cfg,
@@ -734,23 +740,7 @@ def run_expanding_window_backtest(
         in decision metadata recording how many observations were used
         at each re-fit.
     """
-    from src.allocation_regime import (
-        fit_hmm_train_only_for_allocation,
-        filter_test_probabilities_fixed_params,
-        build_test_predictive_probability_panel,
-        _extract_filtered_probabilities_from_dfm,
-        _reorder_hmm_params,
-        forward_filter_fixed_hmm,
-        predictive_regime_probabilities_from_filtered,
-    )
-    from src.allocation_scoring import (
-        build_candidate_library_from_train,
-        select_best_tilt_at_date_from_library,
-    )
-    from src.hmm import hmm_sweep_seeds
-    from src.postprocess import RegimePostProcessor
-    from src.allocation_config import FrozenHMMState
- 
+
     if ew_cfg is None:
         ew_cfg = ExpandingWindowConfig()
  

@@ -19,62 +19,49 @@ def compute_investor_score(
     kurtosis: float,
 ) -> float:
     """
-    Compute the investor's certainty-equivalent score for one candidate portfolio,
-    using a Taylor expansion of expected utility around the portfolio return
-    distribution (Jondeau & Rockinger, 2006, European Financial Management).
- 
-    The Taylor expansion of E[U(R)] around the mean gives:
- 
-        E[U(R)] ≈ U(μ) + (1/2) U''(μ) σ²
-                         + (1/6) U'''(μ) μ₃
-                         + (1/24) U''''(μ) μ₄  + ...
- 
-    For an investor with constant absolute risk aversion (CARA), the
-    derivatives map to the signed moment preferences as follows:
- 
-        U(μ)       = μ                          (return, 1st moment)
-        (1/2)U''   = -λ                         (variance aversion)
-        (1/6)U'''  = +(1/6) γ                   (skewness preference)
-        (1/24)U'''' = -(1/24) δ                 (excess kurtosis aversion)
- 
-    This gives the three investor types:
- 
-    MV  (truncate at 2nd order):
-        Score = μ_p - λ · σ²_p
- 
-    MVS (truncate at 3rd order):
-        Score = μ_p - λ · σ²_p + (1/6) · γ · skew_p
- 
-    MVK (truncate at 4th order):
-        Score = μ_p - λ · σ²_p + (1/6) · γ · skew_p - (1/24) · δ · (kurt_p - 3)
- 
-    Notes
-    -----
-    - The (1/6) and (1/24) factorial denominators are the key correction
-      versus a naive linear weighting. Without them, γ and δ are 6× and
-      24× too large relative to λ, causing the higher-moment terms to
-      dominate the score entirely (verified empirically on this dataset).
- 
-    - kurtosis is entered as raw kurtosis (not excess). The subtraction
-      of 3 in the MVK formula removes the normal baseline, so only the
-      *excess* kurtosis — the fat-tail component — penalises the score.
-      A normally distributed portfolio receives zero kurtosis penalty.
- 
-    - Parameters λ, γ, δ are all expressed in the same utility scale.
-      Recommended calibrated values for this project (monthly log excess
-      returns, 60/40 core):
-          λ = 3.0   (well-calibrated: variance term ≈ 114% of mean return)
-          γ = 0.001  (skewness term ≈ 10–25% of variance term)
-          δ = 0.001  (excess kurtosis term ≈ 10–25% of variance term)
- 
-    References
-    ----------
-    Jondeau, E. & Rockinger, M. (2006). Optimal Portfolio Allocation Under
-        Higher Moments. European Financial Management, 12(1), 29–55.
- 
-    Guidolin, M. & Timmermann, A. (2008). International Asset Allocation
-        under Regime Switching, Skew and Kurtosis Preferences.
-        Review of Financial Studies, 21(2), 889–935.
+Compute the investor's certainty-equivalent score for one candidate portfolio.
+
+Scoring functions by investor type
+-----------------------------------
+MV  (mean-variance only):
+    Score = μ_p - λ · σ²_p
+
+MVS (mean-variance-skewness):
+    Score = μ_p - λ · σ²_p + γ · skew_p
+
+MVK (mean-variance-skewness-kurtosis):
+    Score = μ_p - λ · σ²_p + γ · skew_p - δ · (kurt_p - 3)
+
+The structure follows the Taylor-expanded expected utility framework of
+Jondeau and Rockinger (2006), but γ and δ are treated as free preference
+weights calibrated by moment-contribution targeting rather than as
+utility derivatives with their Taylor factorial denominators (1/6, 1/24).
+
+Calibration rationale
+---------------------
+At the unconditional moments of the 60/40 benchmark (λ=3, σ²=0.000672,
+skew=−0.70, excess kurtosis=1.95, μ=0.006543), the variance penalty
+λ·σ² represents approximately 31% of the mean return contribution.
+γ and δ are calibrated so that the skewness and kurtosis terms each
+represent approximately 15–20% of the variance term, keeping higher
+moments as secondary tiebreakers rather than primary drivers.
+
+Calibrated values used in this study:
+    λ = 3.0        (variance aversion; moderate risk aversion)
+    γ_cons = 0.000431  (conservative MVS; skewness term ≈ 15% of variance term)
+    γ_mod  = 0.000574  (moderate MVS; skewness term ≈ 20% of variance term)
+    δ_mod  = 0.000207  (moderate MVK; kurtosis term ≈ 20% of variance term)
+
+Note: kurtosis is entered as raw kurtosis. The subtraction of 3 removes
+the normal baseline so only excess kurtosis penalises the score.
+
+References
+----------
+Jondeau, E. & Rockinger, M. (2006). Optimal Portfolio Allocation Under
+    Higher Moments. European Financial Management, 12(1), 29–55.
+Scott, R.C. & Horvath, P.A. (1980). On the Direction of Preference for
+    Moments of Higher Order than the Variance. Journal of Finance, 35(4),
+    915–919.
     """
     if investor_cfg.investor_type == "MV":
         return (
@@ -176,7 +163,7 @@ def evaluate_candidate_scores_at_date(
     candidates = enumerate_candidate_tilts(satellite_specs, alloc_cfg)
 
     # Evaluate baseline first
-    baseline_payload = evaluate_candidate_tilt_moments(
+    baseline_payload = evaluate_candidate_tilt_moments( # deprecated
         res=res,
         allocation_df=allocation_df,
         alloc_cfg=alloc_cfg,
@@ -198,7 +185,7 @@ def evaluate_candidate_scores_at_date(
     rows = []
 
     for i, sat_weights in enumerate(candidates):
-        payload = evaluate_candidate_tilt_moments(
+        payload = evaluate_candidate_tilt_moments( # deprecated 
             res=res,
             allocation_df=allocation_df,
             alloc_cfg=alloc_cfg,

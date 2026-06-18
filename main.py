@@ -108,7 +108,7 @@ SECTOR_SPECS = [
 
 BENCHMARK_WEIGHTS = {"^SP500TR": 0.60, "LT09TRUU": 0.40}
 
-CASH_SLEEVE = CashSleeveConfig( # deprecated but functional 
+CASH_SLEEVE = CashSleeveConfig(
     enabled=False,
     activation_threshold=0.55,
     max_cash_weight=0.40,
@@ -132,21 +132,19 @@ SENSITIVITY_GRID = [
 
 
 # ── Run flags ──────────────────────────────────────────────────────────────
-RUN_ALLOCATION          = True   # A1 honest train/test backtest
-EXPORT_ALLOCATION       = True
-PLOT_ALLOCATION         = True
-STORE_CANDIDATE_SCORES  = True
+RUN_ALLOCATION          = False   # A1 honest train/test backtest
+EXPORT_ALLOCATION       = False
+PLOT_ALLOCATION         = False
+STORE_CANDIDATE_SCORES  = False
 
 RUN_EXPANDING_WINDOW    = True   # Full sensitivity grid
 EXPORT_EXPANDING_WINDOW = True
-EXPORT_ASSET_PRICES = False
 
-ONLY_SLEEVE    = None   # e.g. 0.45
+ONLY_SLEEVE    = 0.2   # e.g. 0.45
 ONLY_FLOOR     = None   # e.g. 0.001
 ONLY_INVESTORS = None   # e.g. ["MV", "MVS"]
 
 CORE_MODEL_CODE = "A"
-
 
 # ── Pipeline functions ─────────────────────────────────────────────────────
 
@@ -178,12 +176,10 @@ def run_hmm_models(df: pd.DataFrame) -> list:
         plot_requested_distributions(results)
 
     # Regenerate thesis Figure 1 (price level plot)
-
-    if EXPORT_ASSET_PRICES:
-        plot_asset_price_levels(
-            backtest_excel_path="allocation_backtest_EW_45pct_floor001_MVS_cons.xlsx",
-            out_path="ThesisDoc/figures/fig1_asset_price_levels.png",
-        )
+    # plot_asset_price_levels(
+    #     backtest_excel_path="allocation_backtest_EW_45pct_floor001_MVS_cons.xlsx",
+    #     out_path="ThesisDoc/figures/fig1_asset_price_levels.png",
+    # )
 
     return results
 
@@ -324,7 +320,7 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
             shrinkage_intensity=0.0,
             score_improvement_floor=floor,
             export_file="allocation_results.xlsx",
-            equity_only_displacement=True,
+            equity_only_displacement=False,
             equity_ticker="^SP500TR",
         )
         alloc_cfg_run.validate()

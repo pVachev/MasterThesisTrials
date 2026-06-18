@@ -3,4 +3,13 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
-.xlsx
+
+# Excel files
+*.xlsx
+*.xls
+*.xlsm
+*.xlsb
+~$*.xlsx
+~$*.xls
+~$*.xlsm
+~$*.xlsb

@@ -223,10 +223,14 @@ class AllocationConfig:
     export_file:
         Separate Excel output for allocation results.
     """
- 
+    
     rebalance_frequency: str = "ME"
     top_n_satellites: int = 1
     max_satellite_weight: float = 0.20
+
+    min_satellite_weight: float = 0.03   # drop any satellite whose APPLIED weight < this (0 = off)
+    core_split_kappa: float = 0.0        # rho-sensitivity of the core equity:bond split (0 = fixed 60/40)
+    core_split_bond_bounds: tuple[float, float] = (0.20, 0.60)
  
     fixed_core_weights: dict[str, float] = field(default_factory=dict)
  

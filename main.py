@@ -140,9 +140,9 @@ STORE_CANDIDATE_SCORES  = False
 RUN_EXPANDING_WINDOW    = True   # Full sensitivity grid
 EXPORT_EXPANDING_WINDOW = True
 
-ONLY_SLEEVE    = 0.2   # e.g. 0.45
-ONLY_FLOOR     = None   # e.g. 0.001
-ONLY_INVESTORS = None   # e.g. ["MV", "MVS"]
+ONLY_SLEEVE    = 0.45   # e.g. 0.45
+ONLY_FLOOR     = 0.001   # e.g. 0.001
+ONLY_INVESTORS = "MVK"  # e.g. ["MV", "MVS"]
 
 CORE_MODEL_CODE = "A"
 
@@ -327,10 +327,11 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
 
         sleeve_tag = f"{int(sleeve*100)}pct"
         floor_tag  = str(floor).replace("0.", "")
+        equity_displ_key = "equity_only" if alloc_cfg_run.equity_only_displacement == True else "core_repl"
 
         for inv_key, investor_cfg in investors.items():
             run_n += 1
-            tag = f"EW_{sleeve_tag}_floor{floor_tag}_{inv_key}"
+            tag = f"EW_{sleeve_tag}_floor{floor_tag}_{inv_key}_{equity_displ_key}"
             print(f"\n[{run_n}/{total}] === {tag} ===")
 
             bt_ew = run_expanding_window_backtest(

@@ -20,8 +20,14 @@ if TYPE_CHECKING:
 def build_total_portfolio_weights(
     alloc_cfg,
     satellite_weights: dict[str, float] | None = None,
+    core_weights_override: dict[str, float] | None = None,   # NEW
 ) -> dict[str, float]:
     satellite_weights = satellite_weights or {}
+
+    # NEW: drop dust positions below the per-satellite minimum (weight returns to core)
+    min_sat = getattr(alloc_cfg, "min_satellite_weight", 0.0) or 0.0
+    if min_sat > 0.0:
+        satellite_weights = {k: v for k, v in satellite_weights.items() if v >= min_sat}
  
     sat_total = float(sum(satellite_weights.values()))
     if sat_total > alloc_cfg.max_satellite_weight + 1e-12:
@@ -46,9 +52,10 @@ def build_total_portfolio_weights(
         total_weights = dict(alloc_cfg.fixed_core_weights)
         total_weights[equity_tk] = max(equity_w, 0.0)
     else:
-        # Default: scale all core weights down proportionally.
+            # Default: scale all core weights down proportionally.
+        core = core_weights_override if core_weights_override is not None else alloc_cfg.fixed_core_weights
         core_scale = 1.0 - sat_total
-        total_weights = {k: core_scale * v for k, v in alloc_cfg.fixed_core_weights.items()}
+        total_weights = {k: core_scale * v for k, v in core.items()}
  
     for k, v in satellite_weights.items():
         total_weights[k] = total_weights.get(k, 0.0) + v

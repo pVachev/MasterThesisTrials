@@ -3,6 +3,8 @@ import pandas as pd
 from dataclasses import dataclass as _dataclass
 from typing import TYPE_CHECKING
 
+from src.corr_core_split import predictive_bond_equity_corr, corr_adjusted_core_split
+
 from src.allocation_regime import (
     fit_hmm_train_only_for_allocation,
     filter_test_probabilities_fixed_params,
@@ -912,6 +914,23 @@ def run_expanding_window_backtest(
         pred_vec = pred_vec / pred_vec.sum()
  
         pred_row = pd.Series(pred_vec, index=frozen.regime_names)
+
+        core_override = None
+        if getattr(alloc_cfg, "core_split_kappa", 0.0) and not alloc_cfg.equity_only_displacement:
+            eq_tk = alloc_cfg.equity_ticker
+            bond_tk = next(t for t in alloc_cfg.fixed_core_weights if t != eq_tk)
+            rho = predictive_bond_equity_corr(
+                state_series=frozen.train_df_m["state"],
+                eq_ret=allocation_df[f"{signal_return_prefix}{eq_tk}"],
+                bond_ret=allocation_df[f"{signal_return_prefix}{bond_tk}"],
+                predictive_probabilities_row=pred_row,
+            )
+            core_override = corr_adjusted_core_split(
+                rho=rho, base_core_weights=alloc_cfg.fixed_core_weights,
+                equity_ticker=eq_tk, bond_ticker=bond_tk,
+                kappa=alloc_cfg.core_split_kappa,
+                bond_bounds=alloc_cfg.core_split_bond_bounds,
+            )
  
         # ── tilt selection ────────────────────────────────────────────
         decision, candidate_table = select_best_tilt_at_date_from_library(
@@ -921,6 +940,7 @@ def run_expanding_window_backtest(
             alloc_cfg=alloc_cfg,
             rebalance_date=rebalance_date,
             satellite_specs=satellite_specs,
+            core_weights_override=core_override,
         )
  
         # ── cash sleeve ──────────────────────────────────────────

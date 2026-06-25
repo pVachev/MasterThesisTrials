@@ -140,9 +140,9 @@ STORE_CANDIDATE_SCORES  = False
 RUN_EXPANDING_WINDOW    = True   # Full sensitivity grid
 EXPORT_EXPANDING_WINDOW = True
 
-ONLY_SLEEVE    = 0.45   # e.g. 0.45
+ONLY_SLEEVE    = 0.2   # e.g. 0.45
 ONLY_FLOOR     = 0.001   # e.g. 0.001
-ONLY_INVESTORS = "MVK"  # e.g. ["MV", "MVS"]
+ONLY_INVESTORS = None  # e.g. ["MV", "MVS"]
 
 CORE_MODEL_CODE = "A"
 

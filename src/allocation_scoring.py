@@ -495,6 +495,7 @@ def select_best_tilt_at_date_from_library(
     alloc_cfg,
     rebalance_date: pd.Timestamp,
     satellite_specs: list | None = None,
+    core_weights_override: dict[str, float] | None = None,
 ) -> tuple[TiltDecision, pd.DataFrame]:
     """
     Honest A1 / EW selector with optional regime conviction scaling.
@@ -609,6 +610,7 @@ def select_best_tilt_at_date_from_library(
     final_total_weights = build_total_portfolio_weights(
         alloc_cfg=alloc_cfg,
         satellite_weights=scaled_weights,
+        core_weights_override=core_weights_override,
     )
  
     decision = TiltDecision(

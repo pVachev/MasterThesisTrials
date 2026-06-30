@@ -105,7 +105,7 @@ def corr_adjusted_core_split(
     base_core_weights: dict[str, float],
     equity_ticker: str,
     bond_ticker: str,
-    kappa: float = 0.0,
+    kappa: float = 0.2,
     bond_bounds: tuple[float, float] = (0.20, 0.60),
 ) -> dict[str, float]:
     """Return the rho-adjusted INTERNAL core split {equity: w, bond: 1-w} (sums to 1).

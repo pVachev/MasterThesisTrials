@@ -140,9 +140,9 @@ STORE_CANDIDATE_SCORES  = False
 RUN_EXPANDING_WINDOW    = True   # Full sensitivity grid
 EXPORT_EXPANDING_WINDOW = True
 
-ONLY_SLEEVE    = 0.2   # e.g. 0.45
+ONLY_SLEEVE    = 0.45   # e.g. 0.45
 ONLY_FLOOR     = 0.001   # e.g. 0.001
-ONLY_INVESTORS = None  # e.g. ["MV", "MVS"]
+ONLY_INVESTORS = ["MVS", "MVS_cons", "MVK"]  # e.g. ["MV", "MVS"]
 
 CORE_MODEL_CODE = "A"
 
@@ -322,6 +322,7 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
             export_file="allocation_results.xlsx",
             equity_only_displacement=False,
             equity_ticker="^SP500TR",
+            core_split_kappa=0.4,
         )
         alloc_cfg_run.validate()
 

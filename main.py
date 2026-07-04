@@ -322,7 +322,7 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
             export_file="allocation_results.xlsx",
             equity_only_displacement=False,
             equity_ticker="^SP500TR",
-            core_split_kappa=0.4,
+            core_split_kappa=0.2,
         )
         alloc_cfg_run.validate()
 

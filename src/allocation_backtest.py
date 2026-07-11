@@ -4,6 +4,7 @@ from dataclasses import dataclass as _dataclass
 from typing import TYPE_CHECKING
 
 from src.corr_core_split import predictive_bond_equity_corr, corr_adjusted_core_split
+from src.vol_signal import effective_bear_probability
 
 from src.allocation_regime import (
     fit_hmm_train_only_for_allocation,
@@ -387,6 +388,7 @@ def run_fixed_parameter_train_test_backtest(
     periods_per_year: int = 12,
     store_candidate_scores: bool = True,
     cash_sleeve_cfg=None,
+    vol_z: "pd.Series | None" = None,
 ) -> tuple[BacktestResult, object]:
     """
     Honest A1 regime-allocation backtest.
@@ -465,6 +467,18 @@ def run_fixed_parameter_train_test_backtest(
         realized_date = test_dates[i + 1]
  
         pred_row = pred_test.loc[rebalance_date]
+
+        # ── Channel A: vol-sharpened bear probability (sizing-only) ──
+        # p_eff feeds compute_regime_conviction_weights via p_bear_override.
+        # Stage-1 scoring consumes the untouched pred_row.
+        p_bear_override = None
+        z_t = float("nan")
+        if getattr(alloc_cfg, "vol_signal_enabled", False) and vol_z is not None:
+            z_t = float(vol_z.get(rebalance_date, float("nan")))
+            p_bear_override = effective_bear_probability(
+                float(pred_row.iloc[0]), z_t,
+                alloc_cfg.vol_eta, alloc_cfg.vol_z_star, alloc_cfg.vol_p_cap,
+            )
  
         decision, candidate_table = select_best_tilt_at_date_from_library(
             candidate_library=candidate_library,
@@ -473,6 +487,7 @@ def run_fixed_parameter_train_test_backtest(
             alloc_cfg=alloc_cfg,
             rebalance_date=rebalance_date,
             satellite_specs=satellite_specs,
+            p_bear_override=p_bear_override,
         )
 
         # ── cash sleeve ──────────────────────────────────────────
@@ -673,6 +688,7 @@ def run_expanding_window_backtest(
     periods_per_year: int = 12,
     store_candidate_scores: bool = False,
     cash_sleeve_cfg=None,
+    vol_z: "pd.Series | None" = None,
 ) -> "BacktestResult":
     """
     Expanding-window in-sample backtest.
@@ -915,6 +931,18 @@ def run_expanding_window_backtest(
  
         pred_row = pd.Series(pred_vec, index=frozen.regime_names)
 
+        # ── Channel A: vol-sharpened bear probability (sizing-only) ──
+        # p_eff feeds compute_regime_conviction_weights via p_bear_override.
+        # Stage-1 scoring consumes the untouched pred_row.
+        p_bear_override = None
+        z_t = float("nan")
+        if getattr(alloc_cfg, "vol_signal_enabled", False) and vol_z is not None:
+            z_t = float(vol_z.get(rebalance_date, float("nan")))
+            p_bear_override = effective_bear_probability(
+                float(pred_row.iloc[0]), z_t,
+                alloc_cfg.vol_eta, alloc_cfg.vol_z_star, alloc_cfg.vol_p_cap,
+            )
+
         core_override = None
         if getattr(alloc_cfg, "core_split_kappa", 0.0) and not alloc_cfg.equity_only_displacement:
             eq_tk = alloc_cfg.equity_ticker
@@ -941,6 +969,7 @@ def run_expanding_window_backtest(
             rebalance_date=rebalance_date,
             satellite_specs=satellite_specs,
             core_weights_override=core_override,
+            p_bear_override=p_bear_override,
         )
  
         # ── cash sleeve ──────────────────────────────────────────
@@ -973,6 +1002,7 @@ def run_expanding_window_backtest(
         decision.metadata = {
             **decision.metadata,
             "realized_date":                       realized_date,
+            "vol_z":                               z_t,
             "applied_weights_after_turnover_limit": applied_weights,
             "turnover":                            realized_turnover,
             "transaction_cost":                    transaction_cost,

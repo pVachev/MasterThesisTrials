@@ -372,6 +372,7 @@ def compute_regime_conviction_weights(
     base_satellite_weights: dict[str, float],
     satellite_specs: list,
     predictive_probabilities_row: pd.Series,
+    p_bear_override: float | None = None,
 ) -> tuple[dict[str, float], dict[str, float]]:
     """
     Scale satellite weights by regime conviction.
@@ -422,6 +423,9 @@ def compute_regime_conviction_weights(
     # Bear regime = lowest mean return = first entry after RegimePostProcessor
     bear_regime = predictive_probabilities_row.index[0]
     p_bear = float(predictive_probabilities_row.iloc[0])
+    if p_bear_override is not None:
+        # Channel A: vol-sharpened effective bear probability (sizing only).
+        p_bear = float(p_bear_override)
  
     style_map = {s.ticker: getattr(s, "style", "cyclical") for s in satellite_specs}
  
@@ -496,6 +500,7 @@ def select_best_tilt_at_date_from_library(
     rebalance_date: pd.Timestamp,
     satellite_specs: list | None = None,
     core_weights_override: dict[str, float] | None = None,
+    p_bear_override: float | None = None,
 ) -> tuple[TiltDecision, pd.DataFrame]:
     """
     Honest A1 / EW selector with optional regime conviction scaling.
@@ -602,6 +607,7 @@ def select_best_tilt_at_date_from_library(
             base_satellite_weights=base_satellite_weights,
             satellite_specs=satellite_specs,
             predictive_probabilities_row=predictive_probabilities_row,
+            p_bear_override=p_bear_override,
         )
     else:
         scaled_weights = base_satellite_weights
@@ -632,6 +638,11 @@ def select_best_tilt_at_date_from_library(
             "candidate_id": int(chosen["candidate_id"]),
             "base_satellite_weights": base_satellite_weights,
             "conviction_scalar": conviction_scalar,
+            "p_bear_effective": (
+                float(p_bear_override)
+                if p_bear_override is not None
+                else float(predictive_probabilities_row.iloc[0])
+            ),
         },
     )
  

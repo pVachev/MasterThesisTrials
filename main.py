@@ -24,6 +24,7 @@ from src.allocation_backtest import (
     ExpandingWindowConfig,
 )
 from src.allocation_export import export_allocation_backtest_to_excel, export_model_results_to_excel
+from src.vol_signal import build_monthly_vol_signal
 from src.allocation_plot import plot_allocation_dashboard, plot_distribution_comparison
 
 
@@ -115,6 +116,23 @@ CASH_SLEEVE = CashSleeveConfig(
     rf_ticker="RF",
 )
 
+# ── Channel A: vol-sharpened bear probability (sizing-only overlay) ────────
+# Flip VOL_SIGNAL_ENABLED only after vol_signal_study.py validates locally.
+# Empirical z quantiles 2004+: 1.5 ~ 74th pct, 2.0 ~ 85th pct (Z_Distribution).
+VOL_SIGNAL_ENABLED = True
+VOL_ETA            = 0.3
+VOL_Z_STAR         = 2.0
+DAILY_EQUITY_CSV   = "data/raw/^SP500TR.csv"
+
+# ── Correlation-conditioned core split ─────────────────────────────────────
+# Ablation (Jul 2026, 20pct MV core-repl, vol on): kappa 0->0.2 is worth
+# +0.033 Sharpe, -7.7pp DownCapture, +2.7pp MaxDD for -12bp CAGR — the
+# largest single Stage-2 marginal. Mechanism = persistent bond ballast
+# (mixture rho < 0 most months) + sign-timing at the 2022 rate shock.
+# Estimation caveats (mixture-rho sign flips, thin regimes, no shrinkage)
+# remain; Channel B will replace/blend with realized daily bond-equity corr.
+CORE_SPLIT_KAPPA = 0.0
+
 SENSITIVITY_GRID = [
     {"sleeve": 0.20, "floor": 0.001},
     {"sleeve": 0.20, "floor": 0.002},
@@ -142,7 +160,7 @@ EXPORT_EXPANDING_WINDOW = True
 
 ONLY_SLEEVE    = 0.45   # e.g. 0.45
 ONLY_FLOOR     = 0.001   # e.g. 0.001
-ONLY_INVESTORS = ["MVS", "MVS_cons", "MVK"]  # e.g. ["MV", "MVS"]
+ONLY_INVESTORS = ["MVS"]  # e.g. ["MV", "MVS"]
 
 CORE_MODEL_CODE = "A"
 
@@ -294,6 +312,12 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
         rolling_window=60,
     )
 
+    vol_z = None
+    if VOL_SIGNAL_ENABLED:
+        vol_z = build_monthly_vol_signal(DAILY_EQUITY_CSV)["z"]
+        print(f"vol signal: {vol_z.notna().sum()} usable months, "
+              f"eta={VOL_ETA}, z*={VOL_Z_STAR}")
+
     grid = [
         g for g in SENSITIVITY_GRID
         if (ONLY_SLEEVE is None or g["sleeve"] == ONLY_SLEEVE)
@@ -320,19 +344,24 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
             shrinkage_intensity=0.0,
             score_improvement_floor=floor,
             export_file="allocation_results.xlsx",
-            equity_only_displacement=False,
+            equity_only_displacement=True,
             equity_ticker="^SP500TR",
-            core_split_kappa=0.2,
+            core_split_kappa=CORE_SPLIT_KAPPA,
+            vol_signal_enabled=VOL_SIGNAL_ENABLED,
+            vol_eta=VOL_ETA,
+            vol_z_star=VOL_Z_STAR,
         )
         alloc_cfg_run.validate()
 
         sleeve_tag = f"{int(sleeve*100)}pct"
         floor_tag  = str(floor).replace("0.", "")
         equity_displ_key = "equity_only" if alloc_cfg_run.equity_only_displacement == True else "core_repl"
+        vol_tag = f"_volA_e{VOL_ETA}_z{VOL_Z_STAR}".replace(".", "") if VOL_SIGNAL_ENABLED else ""
+        ck_tag = "" if CORE_SPLIT_KAPPA == 0.2 else f"_ck{CORE_SPLIT_KAPPA:g}".replace(".", "")
 
         for inv_key, investor_cfg in investors.items():
             run_n += 1
-            tag = f"EW_{sleeve_tag}_floor{floor_tag}_{inv_key}_{equity_displ_key}"
+            tag = f"EW_{sleeve_tag}_floor{floor_tag}_{inv_key}_{equity_displ_key}{vol_tag}{ck_tag}"
             print(f"\n[{run_n}/{total}] === {tag} ===")
 
             bt_ew = run_expanding_window_backtest(
@@ -349,6 +378,7 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
                 periods_per_year=12,
                 store_candidate_scores=False,
                 cash_sleeve_cfg=CASH_SLEEVE,
+                vol_z=vol_z,
             )
             print(bt_ew.performance_summary)
 

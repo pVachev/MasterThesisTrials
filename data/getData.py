@@ -51,5 +51,3 @@ def fetch_data(
             if verbose:
                 print(f"{ticker} downloaded and saved in {path}")
 
-
-

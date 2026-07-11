@@ -38,7 +38,13 @@ def read_run(path):
     floor  = float(cfg[("allocation_config","score_improvement_floor")])
     tcbps  = float(cfg[("allocation_config","transaction_cost_bps")])
     eq_only= str(cfg[("allocation_config","equity_only_displacement")]).strip().lower()=="true"
+    vol_on = str(cfg.get(("allocation_config","vol_signal_enabled"), "False")).strip().lower()=="true"
+    vol_lab = (f"e{cfg[('allocation_config','vol_eta')]}/z{cfg[('allocation_config','vol_z_star')]}"
+               if vol_on else "off")
+    kappa = float(cfg.get(("allocation_config","core_split_kappa"), float("nan")))
     inv    = str(cfg[("investor_config","investor_type")])
+    if "conservative" in str(cfg.get(("investor_config","name"),"")).lower():
+        inv = inv + "_cons"
     core   = _to_dict(cfg[("allocation_config","fixed_core_weights")])
 
     perf = sheets["Performance"]
@@ -53,7 +59,7 @@ def read_run(path):
     dl["pp"]     = dl["predictive_probabilities"].apply(_to_dict)
     dl["p_bear"] = dl["pp"].apply(lambda d: float(list(d.values())[0]) if d else np.nan)
     dl = dl.set_index("realized_date")
-    return dict(path=path, inv=inv, sleeve=sleeve, floor=floor, tcbps=tcbps, eq_only=eq_only,
+    return dict(path=path, inv=inv, sleeve=sleeve, floor=floor, tcbps=tcbps, eq_only=eq_only, vol=vol_lab, kappa=kappa,
                 core=core, srow=srow, brow=brow, wd=wd, ar=ar, dl=dl)
 
 def _funding(arr, eq_only, core):
@@ -131,6 +137,8 @@ def metrics_row(r):
     row={
         "investor":r["inv"], "sleeve":r["sleeve"], "floor":r["floor"],
         "displacement":"core-repl" if not r["eq_only"] else "equity-only",
+        "vol":r["vol"],
+        "kappa":r["kappa"],
         "tc_bps":r["tcbps"],
         "CAGR":float(r["srow"].CAGR), "Vol":float(r["srow"].Volatility), "Sharpe":float(r["srow"].Sharpe),
         "Sortino":sortino, "MaxDD":float(r["srow"].Max_Drawdown), "DownsideDev":float(r["srow"].Downside_Deviation),
@@ -196,10 +204,10 @@ def main():
         ps=pd.DataFrame([{"run":f"{row['investor']}_{int(row['sleeve']*100)}_{row['displacement']}",
                           "ticker":t,"hit_rate":h,"n_selected":n} for t,(h,n) in persat.items() if n>0])
         persat_all.append(ps)
-        print(f"  parsed {f.split('/')[-1]}: {row['investor']} {row['displacement']} CAGR={row['CAGR']:.2%} Sharpe={row['Sharpe']:.3f} DownCap={row['DownCapture']:.2f}")
+        print(f"  parsed {f.split('/')[-1]}: {row['investor']} {row['displacement']} vol={row['vol']} k={row['kappa']} CAGR={row['CAGR']:.2%} Sharpe={row['Sharpe']:.3f} DownCap={row['DownCapture']:.2f}")
     df=write_workbook(rows, eps_all, persat_all, a.out)
     print(f"\nwrote {a.out}")
-    show=["investor","displacement","CAGR","Sharpe","MaxDD","DownsideDev","UpCapture","DownCapture","SelectionHit","Rate2022_prot"]
+    show=["investor","displacement","vol","kappa","CAGR","Sharpe","MaxDD","DownsideDev","UpCapture","DownCapture","SelectionHit","Rate2022_prot"]
     print(df[show].to_string(index=False))
 
 if __name__=="__main__": main()

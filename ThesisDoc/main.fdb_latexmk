@@ -1,6 +1,6 @@
 # Fdb version 4
-["pdflatex"] 1778481583.65825 "c:/Users/PreslavVachev/Desktop/hmmvenv/MasterThesisTrials/ThesisDoc/main.tex" "main.pdf" "main" 1778481590.65107 0
-  "c:/Users/PreslavVachev/Desktop/hmmvenv/MasterThesisTrials/ThesisDoc/main.tex" 1778481571 108830 9ab0d8cce10b7c254e40a4702e7a28fc ""
+["pdflatex"] 1779371880.69467 "c:/Users/PreslavVachev/Desktop/hmmvenv/MasterThesisTrials/ThesisDoc/main.tex" "main.pdf" "main" 1779371888.72988 0
+  "c:/Users/PreslavVachev/Desktop/hmmvenv/MasterThesisTrials/ThesisDoc/main.tex" 1779371877 108775 faecc637b2e1f8e83e94a21a72b5fbed ""
   "c:/texlive/2026/texmf-dist/fonts/enc/dvips/base/8r.enc" 1775733430 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "c:/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc" 1775732946 2971 def0b6c1f0b107b3b936def894055589 ""
   "c:/texlive/2026/texmf-dist/fonts/map/fontname/texfonts.map" 1775733884 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -208,10 +208,10 @@
   "figures/fig3_cumulative_wealth.png" 1778229718 429999 7cb893f2370a07e3d34a8a511e942590 ""
   "figures/fig4_satellite_weights_grid.png" 1778229719 434381 eb9bec52ec820b5f85d5162d56e32ab6 ""
   "figures/fig5_drawdown.png" 1778229719 454769 cac6743d1f8bc0606ee3ee39352b2dec ""
-  "main.aux" 1778481590 12936 825d832c3c9158cc74a0b477525a909d "pdflatex"
-  "main.out" 1778481590 7717 0368adc63a04b914451f7b00515feb6f "pdflatex"
-  "main.tex" 1778481571 108830 9ab0d8cce10b7c254e40a4702e7a28fc ""
-  "main.toc" 1778481590 3374 9b80a1fa30512832aa63a4c4511e3ba0 "pdflatex"
+  "main.aux" 1779371888 12936 825d832c3c9158cc74a0b477525a909d "pdflatex"
+  "main.out" 1779371888 7717 0368adc63a04b914451f7b00515feb6f "pdflatex"
+  "main.tex" 1779371877 108775 faecc637b2e1f8e83e94a21a72b5fbed ""
+  "main.toc" 1779371888 3374 9b80a1fa30512832aa63a4c4511e3ba0 "pdflatex"
   (generated)
   "main.aux"
   "main.log"

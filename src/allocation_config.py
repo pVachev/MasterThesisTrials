@@ -231,6 +231,16 @@ class AllocationConfig:
     min_satellite_weight: float = 0.03   # drop any satellite whose APPLIED weight < this (0 = off)
     core_split_kappa: float = 0.0        # rho-sensitivity of the core equity:bond split (0 = fixed 60/40)
     core_split_bond_bounds: tuple[float, float] = (0.20, 0.60)
+
+    # ── Channel A: vol-sharpened bear probability (sizing-only overlay) ──
+    # p_eff = min(vol_p_cap, p_bear + vol_eta * max(0, z_t - vol_z_star)),
+    # z_t = month-t downside realized vol / trailing 60m median (src/vol_signal.py).
+    # Consumed ONLY by compute_regime_conviction_weights via p_bear_override;
+    # Stage-1 selection and the predictive probability row are untouched.
+    vol_signal_enabled: bool = False
+    vol_eta: float = 0.3
+    vol_z_star: float = 2.0
+    vol_p_cap: float = 1.0
  
     fixed_core_weights: dict[str, float] = field(default_factory=dict)
  

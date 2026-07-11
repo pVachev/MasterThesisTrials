@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.9)  11 MAY 2026 09:39
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.9)  21 MAY 2026 16:58
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -758,32 +758,32 @@ Package hyperref Info: Link coloring ON on input line 77.
 {c:/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{c:/texlive/2026/texmf-dist/fonts/enc/dvips/base/8r.enc}] [1
 
 ]
-LaTeX Font Info:    Trying to load font information for OT1+ztmcm on input line 154.
+LaTeX Font Info:    Trying to load font information for OT1+ztmcm on input line 153.
  (c:/texlive/2026/texmf-dist/tex/latex/psnfss/ot1ztmcm.fd
 File: ot1ztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OT1/ztmcm.
 )
-LaTeX Font Info:    Trying to load font information for OML+ztmcm on input line 154.
+LaTeX Font Info:    Trying to load font information for OML+ztmcm on input line 153.
  (c:/texlive/2026/texmf-dist/tex/latex/psnfss/omlztmcm.fd
 File: omlztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OML/ztmcm.
 )
-LaTeX Font Info:    Trying to load font information for OMS+ztmcm on input line 154.
+LaTeX Font Info:    Trying to load font information for OMS+ztmcm on input line 153.
  (c:/texlive/2026/texmf-dist/tex/latex/psnfss/omsztmcm.fd
 File: omsztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMS/ztmcm.
 )
-LaTeX Font Info:    Trying to load font information for OMX+ztmcm on input line 154.
+LaTeX Font Info:    Trying to load font information for OMX+ztmcm on input line 153.
  (c:/texlive/2026/texmf-dist/tex/latex/psnfss/omxztmcm.fd
 File: omxztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMX/ztmcm.
 )
-LaTeX Font Info:    Trying to load font information for OT1+ptm on input line 154.
+LaTeX Font Info:    Trying to load font information for OT1+ptm on input line 153.
  (c:/texlive/2026/texmf-dist/tex/latex/psnfss/ot1ptm.fd
 File: ot1ptm.fd 2001/06/04 font definitions for OT1/ptm.
 )
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <12> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 154.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 153.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 154.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 153.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 154.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 153.
  [2
 
 ] (./main.toc [3])
@@ -794,7 +794,7 @@ LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7> not available
 pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.220 
+l.219 
        [1
 
 
@@ -808,26 +808,26 @@ l.220
 <figures/fig1_asset_price_levels.png, id=254, 1078.0275pt x 751.8489pt>
 File: figures/fig1_asset_price_levels.png Graphic file (type png)
 <use figures/fig1_asset_price_levels.png>
-Package pdftex.def Info: figures/fig1_asset_price_levels.png  used on input line 432.
+Package pdftex.def Info: figures/fig1_asset_price_levels.png  used on input line 431.
 (pdftex.def)             Requested size: 441.02362pt x 307.58318pt.
  [8 <./figures/fig1_asset_price_levels.png>]
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 479.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 478.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7.4> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 479.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 478.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <6> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 479.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 478.
  [9
 
 {c:/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}] [10] [11
 
 ] [12] [13]
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10.95> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 711.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 710.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <8> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 711.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 710.
 
-Overfull \hbox (7.40741pt too wide) in paragraph at lines 715--732
+Overfull \hbox (7.40741pt too wide) in paragraph at lines 714--731
  [][] 
  []
 
@@ -835,29 +835,29 @@ Overfull \hbox (7.40741pt too wide) in paragraph at lines 715--732
 <figures/fig2_regime_probabilities.png, id=331, 1079.4729pt x 479.1501pt>
 File: figures/fig2_regime_probabilities.png Graphic file (type png)
 <use figures/fig2_regime_probabilities.png>
-Package pdftex.def Info: figures/fig2_regime_probabilities.png  used on input line 859.
+Package pdftex.def Info: figures/fig2_regime_probabilities.png  used on input line 858.
 (pdftex.def)             Requested size: 702.78308pt x 311.95566pt.
  [18 <./figures/fig2_regime_probabilities.png>]
 <figures/fig3_cumulative_wealth.png, id=337, 1078.9911pt x 428.802pt>
 File: figures/fig3_cumulative_wealth.png Graphic file (type png)
 <use figures/fig3_cumulative_wealth.png>
-Package pdftex.def Info: figures/fig3_cumulative_wealth.png  used on input line 870.
+Package pdftex.def Info: figures/fig3_cumulative_wealth.png  used on input line 869.
 (pdftex.def)             Requested size: 702.78308pt x 279.30032pt.
  [19 <./figures/fig3_cumulative_wealth.png>]
 <figures/fig4_satellite_weights_grid.png, id=344, 944.0871pt x 562.2606pt>
 File: figures/fig4_satellite_weights_grid.png Graphic file (type png)
 <use figures/fig4_satellite_weights_grid.png>
-Package pdftex.def Info: figures/fig4_satellite_weights_grid.png  used on input line 881.
+Package pdftex.def Info: figures/fig4_satellite_weights_grid.png  used on input line 880.
 (pdftex.def)             Requested size: 702.78308pt x 418.55435pt.
 
 
-LaTeX Warning: Float too large for page by 8.73662pt on input line 887.
+LaTeX Warning: Float too large for page by 8.73662pt on input line 886.
 
 [20 <./figures/fig4_satellite_weights_grid.png>]
 <figures/fig5_drawdown.png, id=352, 1079.232pt x 356.0502pt>
 File: figures/fig5_drawdown.png Graphic file (type png)
 <use figures/fig5_drawdown.png>
-Package pdftex.def Info: figures/fig5_drawdown.png  used on input line 893.
+Package pdftex.def Info: figures/fig5_drawdown.png  used on input line 892.
 (pdftex.def)             Requested size: 702.78308pt x 231.8645pt.
  [21 <./figures/fig5_drawdown.png>] [22
 
@@ -872,7 +872,7 @@ Package pdftex.def Info: figures/fig5_drawdown.png  used on input line 893.
 
 
 ]
-Overfull \hbox (31.57175pt too wide) in paragraph at lines 967--971
+Overfull \hbox (31.57175pt too wide) in paragraph at lines 966--970
 \T1/ptm/m/n/12 2002; Guidolin and Tim-mer-mann, 2007) are cer-tainty equiv-a-lent dif-fer-ences: $\OT1/ztmcm/m/n/12 ^^A[] = [](\OT1/ptm/b/n/12 w[]\OT1/ztmcm/m/n/12 ) \OMS/ztmcm/m/n/12 ^^@
  []
 
@@ -896,7 +896,7 @@ Overfull \hbox (31.57175pt too wide) in paragraph at lines 967--971
 ignored: Infinite glue shrinkage found in box being split [39
 
 ]
-Underfull \hbox (badness 10000) in paragraph at lines 1708--1712
+Underfull \hbox (badness 10000) in paragraph at lines 1707--1711
 []\T1/ptm/m/it/10 Notes: \T1/ptm/m/n/10 Bench-mark (60/40): CAGR=7.71%, Sharpe=0.875, MaxDD=$\OMS/ztmcm/m/n/10 ^^@$\T1/ptm/m/n/10 30.61%, Down-
  []
 
@@ -917,7 +917,7 @@ Here is how much of TeX's memory you used:
  1141 hyphenation exceptions out of 8191
  98i,15n,108p,1261b,646s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/rsfs/rsfs10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt1200.pfb><c:/texlive/2026/texmf-dist/fonts/type1/urw/symbol/usyr.pfb><c:/texlive/2026/texmf-dist/fonts/type1/urw/symbol/usyr.pfb><c:/texlive/2026/texmf-dist/fonts/type1/urw/times/utmb8a.pfb><c:/texlive/2026/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb><c:/texlive/2026/texmf-dist/fonts/type1/urw/times/utmr8a.pfb><c:/texlive/2026/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on main.pdf (45 pages, 3354095 bytes).
+Output written on main.pdf (45 pages, 3354059 bytes).
 PDF statistics:
  566 PDF objects out of 1000 (max. 8388607)
  476 compressed objects within 5 object streams

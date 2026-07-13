@@ -42,6 +42,11 @@ def read_run(path):
     vol_lab = (f"e{cfg[('allocation_config','vol_eta')]}/z{cfg[('allocation_config','vol_z_star')]}"
                if vol_on else "off")
     kappa = float(cfg.get(("allocation_config","core_split_kappa"), float("nan")))
+    hyb = str(cfg.get(("allocation_config","hybrid_displacement"), "False")).strip().lower()=="true"
+    hyb_var = str(cfg.get(("allocation_config","hybrid_variant"), "A")).strip().upper()
+    cbw = float(cfg.get(("allocation_config","corr_blend_w"), 0.0))
+    clam = float(cfg.get(("allocation_config","corr_lambda"), 0.0))
+    corr_lab = "mix" if (cbw == 0 and clam == 0) else f"b{cbw:g}/l{clam:g}"
     inv    = str(cfg[("investor_config","investor_type")])
     if "conservative" in str(cfg.get(("investor_config","name"),"")).lower():
         inv = inv + "_cons"
@@ -59,7 +64,7 @@ def read_run(path):
     dl["pp"]     = dl["predictive_probabilities"].apply(_to_dict)
     dl["p_bear"] = dl["pp"].apply(lambda d: float(list(d.values())[0]) if d else np.nan)
     dl = dl.set_index("realized_date")
-    return dict(path=path, inv=inv, sleeve=sleeve, floor=floor, tcbps=tcbps, eq_only=eq_only, vol=vol_lab, kappa=kappa,
+    return dict(path=path, inv=inv, sleeve=sleeve, floor=floor, tcbps=tcbps, eq_only=eq_only, vol=vol_lab, kappa=kappa, hyb=hyb, hyb_var=hyb_var, corr=corr_lab,
                 core=core, srow=srow, brow=brow, wd=wd, ar=ar, dl=dl)
 
 def _funding(arr, eq_only, core):
@@ -136,9 +141,10 @@ def metrics_row(r):
     sortino=(s.mean()*12)/ (s[s<0].std(ddof=0)*np.sqrt(12)) if (s<0).any() else np.nan
     row={
         "investor":r["inv"], "sleeve":r["sleeve"], "floor":r["floor"],
-        "displacement":"core-repl" if not r["eq_only"] else "equity-only",
+        "displacement":("equity-only" if r["eq_only"] else (f"core-repl-hyb{r.get('hyb_var','A')}" if r.get("hyb") else "core-repl")),
         "vol":r["vol"],
         "kappa":r["kappa"],
+        "corr":r["corr"],
         "tc_bps":r["tcbps"],
         "CAGR":float(r["srow"].CAGR), "Vol":float(r["srow"].Volatility), "Sharpe":float(r["srow"].Sharpe),
         "Sortino":sortino, "MaxDD":float(r["srow"].Max_Drawdown), "DownsideDev":float(r["srow"].Downside_Deviation),
@@ -207,7 +213,7 @@ def main():
         print(f"  parsed {f.split('/')[-1]}: {row['investor']} {row['displacement']} vol={row['vol']} k={row['kappa']} CAGR={row['CAGR']:.2%} Sharpe={row['Sharpe']:.3f} DownCap={row['DownCapture']:.2f}")
     df=write_workbook(rows, eps_all, persat_all, a.out)
     print(f"\nwrote {a.out}")
-    show=["investor","displacement","vol","kappa","CAGR","Sharpe","MaxDD","DownsideDev","UpCapture","DownCapture","SelectionHit","Rate2022_prot"]
+    show=["investor","displacement","vol","kappa","corr","CAGR","Sharpe","MaxDD","DownsideDev","UpCapture","DownCapture","SelectionHit","Rate2022_prot"]
     print(df[show].to_string(index=False))
 
 if __name__=="__main__": main()

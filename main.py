@@ -25,6 +25,7 @@ from src.allocation_backtest import (
 )
 from src.allocation_export import export_allocation_backtest_to_excel, export_model_results_to_excel
 from src.vol_signal import build_monthly_vol_signal
+from src.corr_signal import build_monthly_horizon_corr
 from src.allocation_plot import plot_allocation_dashboard, plot_distribution_comparison
 
 
@@ -119,7 +120,7 @@ CASH_SLEEVE = CashSleeveConfig(
 # ── Channel A: vol-sharpened bear probability (sizing-only overlay) ────────
 # Flip VOL_SIGNAL_ENABLED only after vol_signal_study.py validates locally.
 # Empirical z quantiles 2004+: 1.5 ~ 74th pct, 2.0 ~ 85th pct (Z_Distribution).
-VOL_SIGNAL_ENABLED = True
+VOL_SIGNAL_ENABLED = False
 VOL_ETA            = 0.3
 VOL_Z_STAR         = 2.0
 DAILY_EQUITY_CSV   = "data/raw/^SP500TR.csv"
@@ -131,7 +132,21 @@ DAILY_EQUITY_CSV   = "data/raw/^SP500TR.csv"
 # (mixture rho < 0 most months) + sign-timing at the 2022 rate shock.
 # Estimation caveats (mixture-rho sign flips, thin regimes, no shrinkage)
 # remain; Channel B will replace/blend with realized daily bond-equity corr.
-CORE_SPLIT_KAPPA = 0.0
+CORE_SPLIT_KAPPA = 0.2
+
+# ── Hybrid displacement (core-repl refinement) ─────────────────────────────
+# Cyclicals fund from equity only; defensives fund pro-rata. Ship dark;
+# flip per run and compare against hybrid-off at matched configs (ablation).
+HYBRID_DISPLACEMENT = False
+HYBRID_VARIANT     = "B"   # "A" or "B"; see AllocationConfig.hybrid_variant
+
+# ── Channel B: realized horizon-matched bond-equity correlation ────────────
+# rho_h21x252 from daily SP500TR + IEF proxy (corr 0.998 with LT09TRUU).
+# CORR_BLEND_W shrinks the kappa term's mixture rho toward it; CORR_LAMBDA
+# is the armed-state amplifier (two-sided, gated by z >= VOL_Z_STAR).
+DAILY_BOND_CSV = "data/raw/IEF.csv"
+CORR_BLEND_W   = 0.0
+CORR_LAMBDA    = 0.0
 
 SENSITIVITY_GRID = [
     {"sleeve": 0.20, "floor": 0.001},
@@ -160,7 +175,7 @@ EXPORT_EXPANDING_WINDOW = True
 
 ONLY_SLEEVE    = 0.45   # e.g. 0.45
 ONLY_FLOOR     = 0.001   # e.g. 0.001
-ONLY_INVESTORS = ["MVS"]  # e.g. ["MV", "MVS"]
+ONLY_INVESTORS = ["MVS", "MVS_cons", "MVK"]  # e.g. ["MV", "MVS"]
 
 CORE_MODEL_CODE = "A"
 
@@ -318,6 +333,12 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
         print(f"vol signal: {vol_z.notna().sum()} usable months, "
               f"eta={VOL_ETA}, z*={VOL_Z_STAR}")
 
+    rho_realized = None
+    if CORR_BLEND_W > 0 or CORR_LAMBDA != 0:
+        rho_realized = build_monthly_horizon_corr(DAILY_EQUITY_CSV, DAILY_BOND_CSV)
+        print(f"corr signal: {rho_realized.notna().sum()} usable months, "
+              f"blend_w={CORR_BLEND_W}, lambda={CORR_LAMBDA}")
+
     grid = [
         g for g in SENSITIVITY_GRID
         if (ONLY_SLEEVE is None or g["sleeve"] == ONLY_SLEEVE)
@@ -344,12 +365,16 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
             shrinkage_intensity=0.0,
             score_improvement_floor=floor,
             export_file="allocation_results.xlsx",
-            equity_only_displacement=True,
+            equity_only_displacement=False,
             equity_ticker="^SP500TR",
             core_split_kappa=CORE_SPLIT_KAPPA,
             vol_signal_enabled=VOL_SIGNAL_ENABLED,
             vol_eta=VOL_ETA,
             vol_z_star=VOL_Z_STAR,
+            hybrid_displacement=HYBRID_DISPLACEMENT,
+            hybrid_variant=HYBRID_VARIANT,
+            corr_blend_w=CORR_BLEND_W,
+            corr_lambda=CORR_LAMBDA,
         )
         alloc_cfg_run.validate()
 
@@ -358,10 +383,13 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
         equity_displ_key = "equity_only" if alloc_cfg_run.equity_only_displacement == True else "core_repl"
         vol_tag = f"_volA_e{VOL_ETA}_z{VOL_Z_STAR}".replace(".", "") if VOL_SIGNAL_ENABLED else ""
         ck_tag = "" if CORE_SPLIT_KAPPA == 0.2 else f"_ck{CORE_SPLIT_KAPPA:g}".replace(".", "")
+        hyb_tag = f"_hyb{HYBRID_VARIANT}" if HYBRID_DISPLACEMENT else ""
+        corr_tag = ((f"_rb{int(CORR_BLEND_W*100)}" if CORR_BLEND_W > 0 else "")
+                    + (f"_lam{CORR_LAMBDA:g}".replace(".", "") if CORR_LAMBDA != 0 else ""))
 
         for inv_key, investor_cfg in investors.items():
             run_n += 1
-            tag = f"EW_{sleeve_tag}_floor{floor_tag}_{inv_key}_{equity_displ_key}{vol_tag}{ck_tag}"
+            tag = f"EW_{sleeve_tag}_floor{floor_tag}_{inv_key}_{equity_displ_key}{vol_tag}{ck_tag}{hyb_tag}{corr_tag}"
             print(f"\n[{run_n}/{total}] === {tag} ===")
 
             bt_ew = run_expanding_window_backtest(
@@ -379,6 +407,7 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
                 store_candidate_scores=False,
                 cash_sleeve_cfg=CASH_SLEEVE,
                 vol_z=vol_z,
+                rho_realized=rho_realized,
             )
             print(bt_ew.performance_summary)
 

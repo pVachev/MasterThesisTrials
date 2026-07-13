@@ -341,12 +341,14 @@ def build_candidate_library_from_train(
     - test-time decisions only update predictive regime probabilities
     """
     candidates = enumerate_candidate_tilts(satellite_specs, alloc_cfg)
+    style_map = {s.ticker: s.style for s in satellite_specs}
     library = []
 
     for i, sat_weights in enumerate(candidates):
         total_weights = build_total_portfolio_weights(
             alloc_cfg=alloc_cfg,
             satellite_weights=sat_weights,
+            satellite_styles=style_map,
         )
 
         state_moment_table = estimate_state_conditional_portfolio_moments_from_sample(
@@ -617,6 +619,8 @@ def select_best_tilt_at_date_from_library(
         alloc_cfg=alloc_cfg,
         satellite_weights=scaled_weights,
         core_weights_override=core_weights_override,
+        satellite_styles=({s.ticker: s.style for s in satellite_specs}
+                          if satellite_specs is not None else None),
     )
  
     decision = TiltDecision(

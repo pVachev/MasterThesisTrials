@@ -689,6 +689,7 @@ def run_expanding_window_backtest(
     store_candidate_scores: bool = False,
     cash_sleeve_cfg=None,
     vol_z: "pd.Series | None" = None,
+    rho_realized: "pd.Series | None" = None,
 ) -> "BacktestResult":
     """
     Expanding-window in-sample backtest.
@@ -944,7 +945,13 @@ def run_expanding_window_backtest(
             )
 
         core_override = None
-        if getattr(alloc_cfg, "core_split_kappa", 0.0) and not alloc_cfg.equity_only_displacement:
+        rho = float("nan")
+        rr_t = float("nan")
+        if rho_realized is not None:
+            rr_t = float(rho_realized.get(rebalance_date, float("nan")))
+        _corr_active = (getattr(alloc_cfg, "core_split_kappa", 0.0)
+                        or getattr(alloc_cfg, "corr_lambda", 0.0))
+        if _corr_active and not alloc_cfg.equity_only_displacement:
             eq_tk = alloc_cfg.equity_ticker
             bond_tk = next(t for t in alloc_cfg.fixed_core_weights if t != eq_tk)
             rho = predictive_bond_equity_corr(
@@ -958,6 +965,11 @@ def run_expanding_window_backtest(
                 equity_ticker=eq_tk, bond_ticker=bond_tk,
                 kappa=alloc_cfg.core_split_kappa,
                 bond_bounds=alloc_cfg.core_split_bond_bounds,
+                rho_realized=rr_t,
+                blend_w=getattr(alloc_cfg, "corr_blend_w", 0.0),
+                lam=getattr(alloc_cfg, "corr_lambda", 0.0),
+                z=z_t,
+                z_star=getattr(alloc_cfg, "vol_z_star", 2.0),
             )
  
         # ── tilt selection ────────────────────────────────────────────
@@ -1003,6 +1015,8 @@ def run_expanding_window_backtest(
             **decision.metadata,
             "realized_date":                       realized_date,
             "vol_z":                               z_t,
+            "corr_rho_mixture":                    rho,
+            "corr_rho_realized":                   rr_t,
             "applied_weights_after_turnover_limit": applied_weights,
             "turnover":                            realized_turnover,
             "transaction_cost":                    transaction_cost,

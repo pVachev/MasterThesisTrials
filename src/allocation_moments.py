@@ -21,6 +21,7 @@ def build_total_portfolio_weights(
     alloc_cfg,
     satellite_weights: dict[str, float] | None = None,
     core_weights_override: dict[str, float] | None = None,   # NEW
+    satellite_styles: dict[str, str] | None = None,          # required for hybrid
 ) -> dict[str, float]:
     satellite_weights = satellite_weights or {}
 
@@ -51,6 +52,42 @@ def build_total_portfolio_weights(
             )
         total_weights = dict(alloc_cfg.fixed_core_weights)
         total_weights[equity_tk] = max(equity_w, 0.0)
+    elif getattr(alloc_cfg, 'hybrid_displacement', False):
+        # Hybrid funding: cyclical legs displace EQUITY only; defensive legs
+        # displace the core PRO-RATA. Invariant: the bond weight equals
+        # (1 - defensive_total) * core_bond — bonds are touched only by
+        # defensive legs, never by cyclicals.
+        if satellite_styles is None:
+            raise ValueError(
+                "hybrid_displacement=True requires satellite_styles "
+                "(ticker -> 'cyclical'|'defensive')."
+            )
+        unknown = [k for k in satellite_weights if k not in satellite_styles]
+        if unknown:
+            raise ValueError(f"hybrid_displacement: no style for {unknown}")
+        core = core_weights_override if core_weights_override is not None else alloc_cfg.fixed_core_weights
+        equity_tk = alloc_cfg.equity_ticker
+        cyc_total = float(sum(v for k, v in satellite_weights.items()
+                              if satellite_styles[k] == "cyclical"))
+        def_total = sat_total - cyc_total
+        variant = str(getattr(alloc_cfg, "hybrid_variant", "A")).upper()
+        if variant == "B":
+            # B: cyclicals PRO-RATA (beta engine intact); defensives EQUITY-ONLY
+            # (bond block untouched in risk-off months). Invariant:
+            # bond weight = (1 - cyclical_total) * core_bond.
+            pro_rata_total, equity_funded = cyc_total, def_total
+        else:
+            # A: cyclicals EQUITY-ONLY; defensives PRO-RATA. Invariant:
+            # bond weight = (1 - defensive_total) * core_bond.
+            pro_rata_total, equity_funded = def_total, cyc_total
+        total_weights = {k: (1.0 - pro_rata_total) * v for k, v in core.items()}
+        eq_after = total_weights.get(equity_tk, 0.0) - equity_funded
+        if eq_after < -1e-9:
+            raise ValueError(
+                f"hybrid_displacement({variant}): equity-funded total {equity_funded:.4f} "
+                f"exceeds remaining equity {total_weights.get(equity_tk, 0.0):.4f}."
+            )
+        total_weights[equity_tk] = max(eq_after, 0.0)
     else:
             # Default: scale all core weights down proportionally.
         core = core_weights_override if core_weights_override is not None else alloc_cfg.fixed_core_weights

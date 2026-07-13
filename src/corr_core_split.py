@@ -107,16 +107,44 @@ def corr_adjusted_core_split(
     bond_ticker: str,
     kappa: float = 0.2,
     bond_bounds: tuple[float, float] = (0.20, 0.60),
+    rho_realized: float | None = None,
+    blend_w: float = 0.0,
+    lam: float = 0.0,
+    z: float | None = None,
+    z_star: float = 2.0,
 ) -> dict[str, float]:
     """Return the rho-adjusted INTERNAL core split {equity: w, bond: 1-w} (sums to 1).
 
     kappa = 0.0  -> returns the fixed base split (no-op).
     """
     base_bond = float(base_core_weights[bond_ticker])
-    if not kappa or rho is None or (isinstance(rho, float) and np.isnan(rho)):
+
+    # effective rho for the standing kappa term: optional shrink of the
+    # mixture rho toward the realized (horizon-matched) estimate.
+    rho_mix = float("nan") if rho is None else float(rho)
+    rho_rlz = float("nan") if rho_realized is None else float(rho_realized)
+    if blend_w and np.isfinite(rho_rlz) and np.isfinite(rho_mix):
+        rho_eff = blend_w * rho_rlz + (1.0 - blend_w) * rho_mix
+    elif blend_w and np.isfinite(rho_rlz):
+        rho_eff = rho_rlz
+    else:
+        rho_eff = rho_mix
+
+    # armed-state amplifier (validated on fired x rho cells: bonds pay
+    # +0.85%/mo when armed & rho<0, lose -1.10%/mo when armed & rho>=0):
+    # when the vol channel is armed, trust the correlation tilt harder.
+    # Uses the REALIZED (horizon-matched) rho; inactive if z or rho_rlz NaN.
+    kappa_eff = kappa
+    rho_for_lam = rho_rlz if np.isfinite(rho_rlz) else rho_eff
+    armed = (lam != 0.0 and z is not None and np.isfinite(z) and z >= z_star
+             and np.isfinite(rho_for_lam))
+
+    if (not kappa_eff and not armed) or not np.isfinite(rho_eff):
         bond_w = base_bond
     else:
-        bond_w = base_bond - kappa * rho
+        bond_w = base_bond - kappa_eff * rho_eff
+        if armed:
+            bond_w -= lam * rho_for_lam
         lo, hi = bond_bounds
         bond_w = min(max(bond_w, lo), hi)
     return {equity_ticker: 1.0 - bond_w, bond_ticker: bond_w}
@@ -181,6 +209,22 @@ def _test():
     print("rho(all-A) =", round(rhoA, 3), " rho(all-B) =", round(rhoB, 3), " rho(50/50) =", round(rhoM, 3))
     print("split(rho=-0.5,k=.2) =", {k: round(v, 3) for k, v in s1.items()})
     print("split(rho=+0.25,k=.2) =", {k: round(v, 3) for k, v in s2.items()})
+    # ── blend + armed amplifier ──
+    # blend: 0.5 between -0.5 (mix) and +0.3 (realized) -> rho_eff=-0.1 -> bond 0.42
+    s4 = corr_adjusted_core_split(-0.5, base, "^SP500TR", "LT09TRUU", kappa=0.20,
+                                  rho_realized=0.3, blend_w=0.5)
+    assert abs(s4["LT09TRUU"] - 0.42) < 1e-9, s4
+    # armed amplifier: z=3>=2, lam=0.2, rho_rlz=+0.4 -> bond 0.40 -0.2*0.4 -0.2*0.4 = 0.24
+    s5 = corr_adjusted_core_split(0.4, base, "^SP500TR", "LT09TRUU", kappa=0.20,
+                                  rho_realized=0.4, lam=0.2, z=3.0, z_star=2.0)
+    assert abs(s5["LT09TRUU"] - 0.24) < 1e-9, s5
+    # not armed (z below gate): amplifier silent
+    s6 = corr_adjusted_core_split(0.4, base, "^SP500TR", "LT09TRUU", kappa=0.20,
+                                  rho_realized=0.4, lam=0.2, z=1.0, z_star=2.0)
+    assert abs(s6["LT09TRUU"] - 0.32) < 1e-9, s6
+    # defaults byte-identical to legacy
+    s7 = corr_adjusted_core_split(-0.5, base, "^SP500TR", "LT09TRUU", kappa=0.20)
+    assert abs(s7["LT09TRUU"] - s1["LT09TRUU"]) < 1e-12
     print("ALL TESTS PASSED")
 
 

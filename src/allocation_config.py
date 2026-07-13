@@ -241,6 +241,17 @@ class AllocationConfig:
     vol_eta: float = 0.3
     vol_z_star: float = 2.0
     vol_p_cap: float = 1.0
+
+    # ── Channel B: realized (horizon-matched) bond-equity correlation ──
+    # corr_blend_w: shrink the kappa term's mixture rho toward the realized
+    #   h21x252 estimate (0.0 = mixture only, current behavior).
+    # corr_lambda: armed-state amplifier — when the vol channel is armed
+    #   (z >= vol_z_star), deepen the corr tilt by lambda * rho_realized,
+    #   two-sided (fired x rho cells: bonds +0.85%/mo at rho<0, -1.10%/mo
+    #   at rho>=0; Jul 2026 study). Requires vol_signal_enabled for the gate.
+    # Both default OFF; the rho_realized series is passed to the runner.
+    corr_blend_w: float = 0.0
+    corr_lambda: float = 0.0
  
     fixed_core_weights: dict[str, float] = field(default_factory=dict)
  
@@ -268,6 +279,18 @@ class AllocationConfig:
     #   Default (False): SP500=0.51, Bond=0.34, XLE=0.15  (both scaled down)
     #   Equity-only (True): SP500=0.45, Bond=0.40, XLE=0.15  (bond unchanged)
     equity_only_displacement: bool = False
+    # Hybrid funding (core-repl refinement, active only when
+    # equity_only_displacement=False): CYCLICAL satellites displace the
+    # equity ticker only (bond floor untouched); DEFENSIVE satellites
+    # displace the core pro-rata. Style is a static SatelliteSpec attribute,
+    # so candidate definitions remain signal-independent (Stage-1 safe).
+    hybrid_displacement: bool = False
+    # Variant A: cyclicals -> equity-only, defensives -> pro-rata (static floor;
+    #   empirically over-corrects: kills beta premium AND armed rotation).
+    # Variant B: cyclicals -> pro-rata, defensives -> equity-only (risk-off
+    #   substitution: champion CAGR engine in cyclical months, equity-only
+    #   fortress in defensive months).
+    hybrid_variant: str = "B"
     equity_ticker: str = "^SP500TR"
  
     def validate(self) -> None:

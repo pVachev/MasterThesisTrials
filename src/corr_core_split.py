@@ -130,21 +130,22 @@ def corr_adjusted_core_split(
     else:
         rho_eff = rho_mix
 
-    # armed-state amplifier (validated on fired x rho cells: bonds pay
-    # +0.85%/mo when armed & rho<0, lose -1.10%/mo when armed & rho>=0):
-    # when the vol channel is armed, trust the correlation tilt harder.
-    # Uses the REALIZED (horizon-matched) rho; inactive if z or rho_rlz NaN.
-    kappa_eff = kappa
-    rho_for_lam = rho_rlz if np.isfinite(rho_rlz) else rho_eff
-    armed = (lam != 0.0 and z is not None and np.isfinite(z) and z >= z_star
-             and np.isfinite(rho_for_lam))
+    # UNIFIED stress slope (one estimator, one lever): the armed state
+    # raises the aggressiveness of the SAME tilt, kappa_eff = kappa + lam.
+    #   w_B = clip(base - (kappa + lam*1[z>=z*]) * rho_eff, bounds)
+    # Under sign disagreement between rho_mix and rho_rlz, the blend
+    # shrinks rho_eff toward zero, so aggressive tilts require agreement.
+    # Note: with kappa = lam, this reproduces the legacy dual form
+    # (-kappa*rho_mix - lam*1[armed]*rho_rlz) EXACTLY in armed months at
+    # blend_w = lam/(kappa+lam); the legacy form is retired from code and
+    # survives only in pre-Jul-2026 _lam workbooks (spec-5 ladder row).
+    armed = (lam != 0.0 and z is not None and np.isfinite(z) and z >= z_star)
+    kappa_eff = kappa + (lam if armed else 0.0)
 
-    if (not kappa_eff and not armed) or not np.isfinite(rho_eff):
+    if not kappa_eff or not np.isfinite(rho_eff):
         bond_w = base_bond
     else:
         bond_w = base_bond - kappa_eff * rho_eff
-        if armed:
-            bond_w -= lam * rho_for_lam
         lo, hi = bond_bounds
         bond_w = min(max(bond_w, lo), hi)
     return {equity_ticker: 1.0 - bond_w, bond_ticker: bond_w}
@@ -222,6 +223,11 @@ def _test():
     s6 = corr_adjusted_core_split(0.4, base, "^SP500TR", "LT09TRUU", kappa=0.20,
                                   rho_realized=0.4, lam=0.2, z=1.0, z_star=2.0)
     assert abs(s6["LT09TRUU"] - 0.32) < 1e-9, s6
+    # unified semantics under sign DISAGREEMENT: armed, blend 0.5,
+    # rho_mix=-0.283, rho_rlz=+0.329 -> rho_eff=+0.023 -> bond 0.40-0.4*0.023=0.3908
+    s8 = corr_adjusted_core_split(-0.283, base, "^SP500TR", "LT09TRUU", kappa=0.20,
+                                  rho_realized=0.329, blend_w=0.5, lam=0.2, z=2.2, z_star=2.0)
+    assert abs(s8["LT09TRUU"] - (0.40 - 0.4 * 0.023)) < 1e-9, s8
     # defaults byte-identical to legacy
     s7 = corr_adjusted_core_split(-0.5, base, "^SP500TR", "LT09TRUU", kappa=0.20)
     assert abs(s7["LT09TRUU"] - s1["LT09TRUU"]) < 1e-12

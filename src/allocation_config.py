@@ -245,10 +245,11 @@ class AllocationConfig:
     # ── Channel B: realized (horizon-matched) bond-equity correlation ──
     # corr_blend_w: shrink the kappa term's mixture rho toward the realized
     #   h21x252 estimate (0.0 = mixture only, current behavior).
-    # corr_lambda: armed-state amplifier — when the vol channel is armed
-    #   (z >= vol_z_star), deepen the corr tilt by lambda * rho_realized,
-    #   two-sided (fired x rho cells: bonds +0.85%/mo at rho<0, -1.10%/mo
-    #   at rho>=0; Jul 2026 study). Requires vol_signal_enabled for the gate.
+    # corr_lambda: UNIFIED armed-state slope — when the vol channel is armed
+    #   (z >= vol_z_star), the tilt aggressiveness rises to (kappa + lambda)
+    #   on the SAME rho_eff. One estimator, one lever; sign disagreement
+    #   between mixture and realized shrinks rho_eff toward zero, so
+    #   aggressive tilts require agreement. Requires vol_signal_enabled.
     # Both default OFF; the rho_realized series is passed to the runner.
     corr_blend_w: float = 0.0
     corr_lambda: float = 0.0

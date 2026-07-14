@@ -142,8 +142,8 @@ HYBRID_VARIANT     = "B"   # "A" or "B"; see AllocationConfig.hybrid_variant
 
 # ── Channel B: realized horizon-matched bond-equity correlation ────────────
 # rho_h21x252 from daily SP500TR + IEF proxy (corr 0.998 with LT09TRUU).
-# CORR_BLEND_W shrinks the kappa term's mixture rho toward it; CORR_LAMBDA
-# is the armed-state amplifier (two-sided, gated by z >= VOL_Z_STAR).
+# CORR_BLEND_W blends mixture and realized rho into ONE rho_eff; CORR_LAMBDA
+# raises the tilt slope to (kappa + lambda) on rho_eff when armed (z >= z*).
 DAILY_BOND_CSV = "data/raw/IEF.csv"
 CORR_BLEND_W   = 0.0
 CORR_LAMBDA    = 0.0

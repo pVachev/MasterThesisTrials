@@ -95,6 +95,7 @@ def performance_summary_from_returns(
     benchmark_simple_returns: pd.Series | None = None,
     periods_per_year: int = 12,
     avg_turnover: float | None = None,
+    active_months: int | None = None,
     label: str = "strategy",
 ) -> pd.DataFrame:
     def _stats(r: pd.Series, name: str) -> dict[str, float | str]:
@@ -138,7 +139,12 @@ def performance_summary_from_returns(
 
     out = pd.DataFrame(rows)
     if avg_turnover is not None:
+        # NOTE (Jul 2026): avg_turnover is the mean over ACTIVE months only
+        # (turnover > 0). The previous all-months mean diluted the figure
+        # with NONE/no-trade months and understated per-trade activity.
         out["Avg_Turnover"] = avg_turnover
+    if active_months is not None:
+        out["Active_Months"] = active_months
     return out
 
 
@@ -348,7 +354,8 @@ def run_regime_allocation_backtest(
         strategy_simple_returns=strategy_returns,
         benchmark_simple_returns=benchmark_returns,
         periods_per_year=periods_per_year,
-        avg_turnover=realized_df["turnover"].mean(),
+        avg_turnover=realized_df.loc[realized_df["turnover"] > 0, "turnover"].mean(),
+        active_months=int((realized_df["turnover"] > 0).sum()),
         label=f"{res.spec.label} | {investor_cfg.name}",
     )
  
@@ -577,7 +584,8 @@ def run_fixed_parameter_train_test_backtest(
         strategy_simple_returns=strategy_returns,
         benchmark_simple_returns=benchmark_returns,
         periods_per_year=periods_per_year,
-        avg_turnover=realized_df["turnover"].mean(),
+        avg_turnover=realized_df.loc[realized_df["turnover"] > 0, "turnover"].mean(),
+        active_months=int((realized_df["turnover"] > 0).sum()),
         label=f"{res_core.spec.label} | {investor_cfg.name}",
     )
  
@@ -1082,7 +1090,8 @@ def run_expanding_window_backtest(
         strategy_simple_returns=strategy_returns,
         benchmark_simple_returns=benchmark_returns,
         periods_per_year=periods_per_year,
-        avg_turnover=realized_df["turnover"].mean(),
+        avg_turnover=realized_df.loc[realized_df["turnover"] > 0, "turnover"].mean(),
+        active_months=int((realized_df["turnover"] > 0).sum()),
         label=f"{res_core.spec.label} | {investor_cfg.name} | EW",
     )
  

@@ -35,7 +35,7 @@ TICKERS_ALL = [
     "SPY", "WFBIX", "^IRX", "LBUSTRUU", "LT09TRUU", "^SP500TR", "G1BM", "RF",
     "XAU", "USGG3M", "LT01TRUU", "LT12TRUU", "LT13TRUU", "DEMUSD", "Oil COMP",
     "XLB", "XLE", "XLF", "XLI", "XLK", "XLP", "XLU", "XLV", "XLY",
-    "LT09TRUUW", "RFW", "EEM",
+    "LT09TRUUW", "RFW", "EEM", "IEF"
 ]
 M_TICKERS = [
     "LBUSTRUU", "LT09TRUU", "LT01TRUU", "LT12TRUU", "XAU",
@@ -120,7 +120,7 @@ CASH_SLEEVE = CashSleeveConfig(
 # ── Channel A: vol-sharpened bear probability (sizing-only overlay) ────────
 # Flip VOL_SIGNAL_ENABLED only after vol_signal_study.py validates locally.
 # Empirical z quantiles 2004+: 1.5 ~ 74th pct, 2.0 ~ 85th pct (Z_Distribution).
-VOL_SIGNAL_ENABLED = False
+VOL_SIGNAL_ENABLED = True
 VOL_ETA            = 0.3
 VOL_Z_STAR         = 2.0
 DAILY_EQUITY_CSV   = "data/raw/^SP500TR.csv"
@@ -137,7 +137,7 @@ CORE_SPLIT_KAPPA = 0.2
 # ── Hybrid displacement (core-repl refinement) ─────────────────────────────
 # Cyclicals fund from equity only; defensives fund pro-rata. Ship dark;
 # flip per run and compare against hybrid-off at matched configs (ablation).
-HYBRID_DISPLACEMENT = False
+HYBRID_DISPLACEMENT = True
 HYBRID_VARIANT     = "B"   # "A" or "B"; see AllocationConfig.hybrid_variant
 
 # ── Channel B: realized horizon-matched bond-equity correlation ────────────
@@ -145,8 +145,8 @@ HYBRID_VARIANT     = "B"   # "A" or "B"; see AllocationConfig.hybrid_variant
 # CORR_BLEND_W blends mixture and realized rho into ONE rho_eff; CORR_LAMBDA
 # raises the tilt slope to (kappa + lambda) on rho_eff when armed (z >= z*).
 DAILY_BOND_CSV = "data/raw/IEF.csv"
-CORR_BLEND_W   = 0.0
-CORR_LAMBDA    = 0.0
+CORR_BLEND_W   = 0.5
+CORR_LAMBDA    = 0.2
 
 SENSITIVITY_GRID = [
     {"sleeve": 0.20, "floor": 0.001},
@@ -173,9 +173,9 @@ STORE_CANDIDATE_SCORES  = False
 RUN_EXPANDING_WINDOW    = True   # Full sensitivity grid
 EXPORT_EXPANDING_WINDOW = True
 
-ONLY_SLEEVE    = 0.45   # e.g. 0.45
+ONLY_SLEEVE    = None  # e.g. 0.45
 ONLY_FLOOR     = 0.001   # e.g. 0.001
-ONLY_INVESTORS = ["MVS", "MVS_cons", "MVK"]  # e.g. ["MV", "MVS"]
+ONLY_INVESTORS = None  # e.g. ["MV", "MVS"]
 
 CORE_MODEL_CODE = "A"
 

@@ -83,10 +83,26 @@ def build_total_portfolio_weights(
         total_weights = {k: (1.0 - pro_rata_total) * v for k, v in core.items()}
         eq_after = total_weights.get(equity_tk, 0.0) - equity_funded
         if eq_after < -1e-9:
-            raise ValueError(
-                f"hybrid_displacement({variant}): equity-funded total {equity_funded:.4f} "
-                f"exceeds remaining equity {total_weights.get(equity_tk, 0.0):.4f}."
-            )
+            # Boundary spillover: the corr-split / lambda tilt can cap the
+            # core bond weight at its upper bound (armed, deeply negative-
+            # rho months), leaving core equity = 1 - hi. Any equity-funded
+            # sleeve above that (e.g. all-defensive at sleeve > 0.40 with
+            # bounds (0.20, 0.60)) overshoots. The sleeve conviction
+            # OUTRANKS the core tilt: fund the shortfall pro-rata from the
+            # remaining core leg(s) and floor equity at zero. Long-only and
+            # sum-to-one preserved; bonds still end far above base in the
+            # trigger case (e.g. 0.55 vs 0.40).
+            shortfall = -eq_after
+            others = {k: v for k, v in total_weights.items() if k != equity_tk}
+            other_sum = float(sum(others.values()))
+            if shortfall > other_sum + 1e-9:
+                raise ValueError(
+                    f"hybrid_displacement({variant}): satellite total "
+                    f"{sat_total:.4f} infeasible against the core."
+                )
+            for k in others:
+                total_weights[k] -= shortfall * (others[k] / other_sum)
+            eq_after = 0.0
         total_weights[equity_tk] = max(eq_after, 0.0)
     else:
             # Default: scale all core weights down proportionally.

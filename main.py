@@ -149,18 +149,20 @@ CORR_BLEND_W   = 0.5
 CORR_LAMBDA    = 0.2
 
 SENSITIVITY_GRID = [
-    {"sleeve": 0.20, "floor": 0.001},
-    {"sleeve": 0.20, "floor": 0.002},
-    {"sleeve": 0.30, "floor": 0.001},
-    {"sleeve": 0.30, "floor": 0.002},
-    {"sleeve": 0.35, "floor": 0.001},
-    {"sleeve": 0.35, "floor": 0.002},
-    {"sleeve": 0.40, "floor": 0.001},
-    {"sleeve": 0.40, "floor": 0.002},
-    {"sleeve": 0.45, "floor": 0.001},
-    {"sleeve": 0.45, "floor": 0.002},
-    {"sleeve": 0.50, "floor": 0.001},
-    {"sleeve": 0.50, "floor": 0.002},
+    # {"sleeve": 0.20, "floor": 0.001},
+    # {"sleeve": 0.20, "floor": 0.002},
+    {"sleeve": 0.25, "floor": 0.001},
+    {"sleeve": 0.25, "floor": 0.002},
+    # {"sleeve": 0.30, "floor": 0.001},
+    # {"sleeve": 0.30, "floor": 0.002},
+    # {"sleeve": 0.35, "floor": 0.001},
+    # {"sleeve": 0.35, "floor": 0.002},
+    # {"sleeve": 0.40, "floor": 0.001},
+    # {"sleeve": 0.40, "floor": 0.002},
+    # {"sleeve": 0.45, "floor": 0.001},
+    # {"sleeve": 0.45, "floor": 0.002},
+    # {"sleeve": 0.50, "floor": 0.001},
+    # {"sleeve": 0.50, "floor": 0.002},
 ]
 
 

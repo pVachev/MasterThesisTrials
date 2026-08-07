@@ -325,7 +325,7 @@ def select_best_tilt_at_date(
     return decision, candidate_table
 
 
-def build_candidate_library_from_train(
+def build_candidate_library_from_train( # A1 MODEL -> DEPRECATED
     state_series_train: pd.Series,
     regime_names: list[str],
     allocation_df_train: pd.DataFrame,
@@ -446,7 +446,7 @@ def compute_regime_conviction_weights(
     return scaled_weights, conviction_scalars
 
 
-def apply_cash_sleeve(
+def apply_cash_sleeve( # HAVENT BEEN USED ANY TIME SOON ALSO DEPRECATED +
     portfolio_weights: dict[str, float],
     cash_sleeve_cfg,
     predictive_probabilities_row: pd.Series,
@@ -494,7 +494,7 @@ def apply_cash_sleeve(
     return final_weights, cash_weight
 
 
-def select_best_tilt_at_date_from_library(
+def select_best_tilt_at_date_from_library( # A1 -> DEPRECATED
     candidate_library: list[dict],
     predictive_probabilities_row: pd.Series,
     investor_cfg,

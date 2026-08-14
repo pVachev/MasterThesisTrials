@@ -1,6 +1,6 @@
 # Fdb version 4
-["pdflatex"] 1786510883.71449 "/Users/preslavhome/hmmlearn/MasterThesisTrials/ThesisDoc/cfa_quant.tex" "cfa_quant.pdf" "cfa_quant" 1786510887.43369 0
-  "/Users/preslavhome/hmmlearn/MasterThesisTrials/ThesisDoc/cfa_quant.tex" 1786510804.52167 111819 13423e643777bd3514c76d72ea5f2236 ""
+["pdflatex"] 1786653166.18166 "/Users/preslavhome/hmmlearn/MasterThesisTrials/ThesisDoc/cfa_quant.tex" "cfa_quant.pdf" "cfa_quant" 1786653169.93675 0
+  "/Users/preslavhome/hmmlearn/MasterThesisTrials/ThesisDoc/cfa_quant.tex" 1786653038.23522 119356 f6e7f80e5eee3470189eb60828111869 ""
   "/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc" 1136849721 2971 def0b6c1f0b107b3b936def894055589 ""
   "/usr/local/texlive/2026/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -203,10 +203,10 @@
   "/usr/local/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1777813469 5573038 b99aad5e4898a9034e953632f940512b ""
   "/usr/local/texlive/2026/texmf-var/web2c/pdftex/pdflatex.fmt" 1777813437 3636777 a7cda3851a1b79946b8cc92da38a67a7 ""
   "/usr/local/texlive/2026/texmf.cnf" 1774209515 577 648cd9f92f9c0eac486f4c71c85cfbbe ""
-  "cfa_quant.aux" 1786510887.36645 12938 6048c81553e9809b319a5fce655ddfa5 "pdflatex"
-  "cfa_quant.out" 1786510887.36727 7717 0368adc63a04b914451f7b00515feb6f "pdflatex"
-  "cfa_quant.tex" 1786510804.52167 111819 13423e643777bd3514c76d72ea5f2236 ""
-  "cfa_quant.toc" 1786510887.36743 3374 9968241f0d6a660141ba6fdf4ea550e5 "pdflatex"
+  "cfa_quant.aux" 1786653169.87506 13099 7fa95c14712d41a0a052e2a73cc05689 "pdflatex"
+  "cfa_quant.out" 1786653169.87603 8040 d0cb9242a19a08233e193794f2335b91 "pdflatex"
+  "cfa_quant.tex" 1786653038.23522 119356 f6e7f80e5eee3470189eb60828111869 ""
+  "cfa_quant.toc" 1786653169.87624 3491 e8e2a37eee338c237a24b969f1ddd41b "pdflatex"
   "figures/fig1_asset_price_levels.png" 1781805344.50963 799019 7080aca4bb242e63dc46adeaf0e37482 ""
   "figures/fig2_regime_probabilities.png" 1781805344.51303 821334 63daf309fb285c7c650055abe4478475 ""
   "figures/fig3_cumulative_wealth.png" 1781805344.51488 429999 d640af6007a6afb3ad3953798c33b462 ""

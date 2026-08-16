@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.5.3)  12 AUG 2026 08:01
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.5.3)  13 AUG 2026 23:32
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -804,61 +804,61 @@ l.225
        [1
 
 
-] [2] [3
+] [2] [3] [4
 
 
-] [4] [5] [6] [7] [8
+] [5] [6] [7] [8] [9] [10
 
 
 ]
-<figures/fig1_asset_price_levels.png, id=265, 1078.0275pt x 751.8489pt>
+<figures/fig1_asset_price_levels.png, id=279, 1078.0275pt x 751.8489pt>
 File: figures/fig1_asset_price_levels.png Graphic file (type png)
 <use figures/fig1_asset_price_levels.png>
-Package pdftex.def Info: figures/fig1_asset_price_levels.png  used on input line 474.
+Package pdftex.def Info: figures/fig1_asset_price_levels.png  used on input line 563.
 (pdftex.def)             Requested size: 441.02362pt x 307.58318pt.
- [9 <./figures/fig1_asset_price_levels.png>]
+ [11 <./figures/fig1_asset_price_levels.png>]
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 521.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 610.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7.4> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 521.
- [10
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 610.
+ [12
 
-{/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}] [11] [12
+{/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}] [13] [14
 
-] [13] [14]
-Overfull \hbox (7.40741pt too wide) in paragraph at lines 758--775
+] [15] [16]
+Overfull \hbox (7.40741pt too wide) in paragraph at lines 847--864
  [][] 
  []
 
-[15] [16] [17]
-<figures/fig2_regime_probabilities.png, id=335, 1079.4729pt x 479.1501pt>
+[17] [18] [19]
+<figures/fig2_regime_probabilities.png, id=350, 1079.4729pt x 479.1501pt>
 File: figures/fig2_regime_probabilities.png Graphic file (type png)
 <use figures/fig2_regime_probabilities.png>
-Package pdftex.def Info: figures/fig2_regime_probabilities.png  used on input line 902.
+Package pdftex.def Info: figures/fig2_regime_probabilities.png  used on input line 991.
 (pdftex.def)             Requested size: 702.78308pt x 311.95566pt.
- [18 <./figures/fig2_regime_probabilities.png>]
-<figures/fig3_cumulative_wealth.png, id=341, 1078.9911pt x 428.802pt>
+ [20 <./figures/fig2_regime_probabilities.png>]
+<figures/fig3_cumulative_wealth.png, id=356, 1078.9911pt x 428.802pt>
 File: figures/fig3_cumulative_wealth.png Graphic file (type png)
 <use figures/fig3_cumulative_wealth.png>
-Package pdftex.def Info: figures/fig3_cumulative_wealth.png  used on input line 913.
+Package pdftex.def Info: figures/fig3_cumulative_wealth.png  used on input line 1002.
 (pdftex.def)             Requested size: 702.78308pt x 279.30032pt.
- [19 <./figures/fig3_cumulative_wealth.png>]
-<figures/fig4_satellite_weights_grid.png, id=349, 944.0871pt x 562.2606pt>
+ [21 <./figures/fig3_cumulative_wealth.png>]
+<figures/fig4_satellite_weights_grid.png, id=363, 944.0871pt x 562.2606pt>
 File: figures/fig4_satellite_weights_grid.png Graphic file (type png)
 <use figures/fig4_satellite_weights_grid.png>
-Package pdftex.def Info: figures/fig4_satellite_weights_grid.png  used on input line 924.
+Package pdftex.def Info: figures/fig4_satellite_weights_grid.png  used on input line 1013.
 (pdftex.def)             Requested size: 702.78308pt x 418.55435pt.
 
 
-LaTeX Warning: Float too large for page by 8.73662pt on input line 930.
+LaTeX Warning: Float too large for page by 8.73662pt on input line 1019.
 
-[20 <./figures/fig4_satellite_weights_grid.png>]
-<figures/fig5_drawdown.png, id=356, 1079.232pt x 356.0502pt>
+[22 <./figures/fig4_satellite_weights_grid.png>]
+<figures/fig5_drawdown.png, id=370, 1079.232pt x 356.0502pt>
 File: figures/fig5_drawdown.png Graphic file (type png)
 <use figures/fig5_drawdown.png>
-Package pdftex.def Info: figures/fig5_drawdown.png  used on input line 936.
+Package pdftex.def Info: figures/fig5_drawdown.png  used on input line 1025.
 (pdftex.def)             Requested size: 702.78308pt x 231.8645pt.
- [21 <./figures/fig5_drawdown.png>] [22
+ [23 <./figures/fig5_drawdown.png>] [24
 
 
 
@@ -871,55 +871,55 @@ Package pdftex.def Info: figures/fig5_drawdown.png  used on input line 936.
 
 
 ]
-Overfull \hbox (31.57175pt too wide) in paragraph at lines 1010--1014
+Overfull \hbox (31.57175pt too wide) in paragraph at lines 1099--1103
 \T1/ptm/m/n/12 2002; Guidolin and Tim-mer-mann, 2007) are cer-tainty equiv-a-lent dif-fer-ences: $\OT1/ztmcm/m/n/12 ^^A[] = [](\OT1/ptm/b/n/12 w[]\OT1/ztmcm/m/n/12 ) \OMS/ztmcm/m/n/12 ^^@
  []
 
-[23] [24] [25] [26
-
-
-] [27] [28
+[25] [26] [27] [28
 
 
 ] [29] [30
 
 
-] [31] [32] [33] [34
-
-] [35
-
-] [36
+] [31] [32
 
 
-] [37] [38]
-ignored: Infinite glue shrinkage found in box being split [39
+] [33] [34] [35] [36
+
+] [37
+
+] [38
+
+
+] [39] [40] [41]
+ignored: Infinite glue shrinkage found in box being split [42
 
 ]
-Underfull \hbox (badness 10000) in paragraph at lines 1755--1759
+Underfull \hbox (badness 10000) in paragraph at lines 1860--1864
 []\T1/ptm/m/it/10 Notes: \T1/ptm/m/n/10 Bench-mark (60/40): CAGR=7.71%, Sharpe=0.875, MaxDD=$\OMS/ztmcm/m/n/10 ^^@$\T1/ptm/m/n/10 30.61%, Down-
  []
 
-[40] (./cfa_quant.aux)
+[43] (./cfa_quant.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
 Package rerunfilecheck Info: File `cfa_quant.out' has not changed.
-(rerunfilecheck)             Checksum: 0368ADC63A04B914451F7B00515FEB6F;7717.
+(rerunfilecheck)             Checksum: D0CB9242A19A08233E193794F2335B91;8040.
  ) 
 Here is how much of TeX's memory you used:
- 26694 strings out of 467525
- 505520 string characters out of 5418983
- 921375 words of memory out of 5000000
- 54998 multiletter control sequences out of 15000+600000
+ 26699 strings out of 467525
+ 505571 string characters out of 5418983
+ 921378 words of memory out of 5000000
+ 54999 multiletter control sequences out of 15000+600000
  718359 words of font info for 181 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  98i,15n,108p,1255b,646s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/rsfs/rsfs10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt1200.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/urw/symbol/usyr.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/urw/symbol/usyr.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on cfa_quant.pdf (46 pages, 3358945 bytes).
+Output written on cfa_quant.pdf (49 pages, 3366247 bytes).
 PDF statistics:
- 570 PDF objects out of 1000 (max. 8388607)
- 479 compressed objects within 5 object streams
- 118 named destinations out of 1000 (max. 500000)
- 326 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 590 PDF objects out of 1000 (max. 8388607)
+ 496 compressed objects within 5 object streams
+ 122 named destinations out of 1000 (max. 500000)
+ 334 words of extra memory for PDF output out of 10000 (max. 10000000)
 

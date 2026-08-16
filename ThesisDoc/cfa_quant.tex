@@ -24,7 +24,7 @@
 \usepackage{xcolor}
 %% Drafted text pending PV language review. To accept all and remove the red,
 %% change the definition below to:  \newcommand{\new}[1]{#1}
-\newcommand{\new}[1]{\textcolor{red}{#1}}
+\newcommand{\new}[1]{{\color{red}#1}}
 \usepackage{soul}               % \hl{} highlighting
 \usepackage{tcolorbox}          % fact-check boxes
 \usepackage[hang, flushmargin]{footmisc}
@@ -223,6 +223,18 @@ different attitudes toward tail risk. Finally, we integrate a score improvement 
 functions as a hurdle rate, ensuring that the model only deviates from the passive core when
 the regime signal provides sufficient expected utility justification.
 
+\new{These four elements define the selection engine, which scores candidate tilts on the
+predictive moments of the regime mixture alone. The present paper extends that engine with
+three mechanisms aimed specifically at drawdown protection, all confined to the sizing stage
+and none visible to selection: a style-dependent displacement rule that funds defensive tilts
+from equity so the bond block survives risk-off months; a downside realised-semivariance
+signal from daily returns that sharpens the bear probability sizing the satellite sleeve; and
+a blended bond--equity correlation, combining the regime-mixture estimate with a
+horizon-matched realised estimate, that sets the internal equity--bond split of the core.
+Keeping all three out of the selection stage preserves the two-stage separation: the regime
+model decides \emph{what} to hold and in \emph{which} direction to lean, while the scalars
+decide only \emph{how much}.}
+
 The academic literature on asset allocation under regime switching was opened by
 Ang and Bekaert (2002), who showed that the welfare cost of ignoring international
 diversification is significantly amplified in bear regimes, particularly when a risk-free asset
@@ -342,22 +354,29 @@ rebalancing MRS strategy, finding outperformance after transaction costs and pro
 additional evidence that ETF-based regime switching strategies are practically implementable
 at the institutional level.
 
-\new{A dimension that this literature leaves largely unexamined is the \emph{funding} of a
-sector tilt: which existing holdings are sold to pay for it. The papers above either hold
-the sector sleeve alongside a fixed core or fund it uniformly, so the question of whether
-the funding source should depend on the character of the tilt does not arise. It matters
-here because the two satellite styles play opposite roles. A cyclical tilt is an
-amplification of equity risk and is naturally financed by the portfolio as a whole; a
-defensive tilt is a substitution away from equity risk, and financing it pro-rata would
-liquidate part of the bond block at exactly the moment that block is most valuable. The
-present study therefore adopts a style-dependent displacement rule under which cyclical
-satellites are funded pro-rata from the core while defensive satellites and gold are funded
-from the equity leg alone, so that the bond weight scales only with the cyclical
-allocation. This is a portfolio-construction choice rather than an alpha signal, and it
-follows the separation advocated by Grinold and Kahn (2000) between the model that ranks
-opportunities and the rules that implement them: the displacement rule is applied
-identically to every candidate and uses only the static style label of each satellite, so
-it never enters the ranking itself.}
+\new{A dimension this literature leaves unexamined is the \emph{funding} of a sector tilt:
+which existing holdings are sold to pay for it. It matters because the two satellite styles
+play opposite roles. A cyclical tilt amplifies equity risk and is naturally financed by the
+portfolio as a whole; a defensive tilt substitutes away from equity risk, and financing it
+pro-rata would liquidate part of the bond block at exactly the moment that block is most
+valuable. The present study therefore funds cyclical satellites pro-rata from the core and
+defensive satellites from the equity leg alone, so the bond weight scales only with the
+cyclical allocation. Following the separation advocated by Grinold and Kahn (2000) between the
+model that ranks opportunities and the rules that implement them, this is a
+portfolio-construction rule rather than an alpha signal: it is applied identically to every
+candidate and uses only the static style label of each satellite, so it never enters the
+ranking itself.
+
+This funding rule shares its motivation with the two conditioning scalars introduced in
+Section~\ref{sec:allocation}. The upside of the regime signal was already established in the
+thesis-stage results; what remained was protection against sudden drawdown episodes, and all
+three mechanisms are organised around the same bear-regime read. The displacement rule
+preserves the bond block structurally whenever the model turns defensive; the volatility
+scalar sharpens the bear probability that triggers that rotation; and the correlation scalar
+decides how much of the core should be held in bonds once it does. Because the three act on
+different parts of the portfolio --- funding, sleeve size, and core composition --- but respond
+to the same underlying state, they compound rather than offset, which is why the downside
+metrics improve materially while the upside capture is preserved.}
 
 \subsection{Higher-Moment Preferences and Taylor-Expanded Utility}
 
@@ -421,6 +440,76 @@ The two-stage approach is both principled and practical, with one caveat: becaus
 is selected by inspecting the full sample that includes the evaluation period, this is a
 modelling assumption rather than a fully out-of-sample structural choice. The rolling backtest
 tests the performance of this fixed structural assumption under recursively updated parameters.
+
+\new{\subsection{Volatility and Correlation as Conditioning Signals}
+
+The two scalars added to the sizing stage rest on a separate empirical literature, which is
+reviewed here because it motivates both the choice of estimator and the decision to keep
+these signals out of the selection engine.
+
+The volatility side rests on two well-documented regularities. Volatility is strongly
+persistent, so that periods of elevated volatility tend to be followed by further elevated
+volatility, and it is asymmetric, in that negative returns raise subsequent volatility by
+more than positive returns of the same magnitude. Patton and Sheppard (2015) show that this
+asymmetry is driven specifically by the downside component of realised variance, which is
+what motivates the use of realised semivariance rather than total realised variance as the
+conditioning signal in this study. Moreira and Muir (2017) establish the portfolio
+implication: because volatility is persistent but is not compensated one-for-one in expected
+returns at the monthly horizon, scaling exposure down when volatility is high improves
+risk-adjusted performance. Their result also carries a caution that shapes the design here.
+Elevated volatility forecasts variance rather than the mean, which argues for rotating the
+sleeve toward defensive holdings rather than exiting risk altogether.
+
+The correlation side rests on the time-varying nature of the stock--bond relation. The sign
+of that correlation is not stable across decades: it was persistently positive before 2000,
+persistently negative through the 2000--2020 period, and turned positive again during the
+2022 rate shock. The negative-correlation state is the flight-to-quality regime in which
+bonds hedge equity drawdowns, and it is precisely the state in which a bond allocation earns
+its place. Baele, Bekaert and Inghelbrecht (2010) find that macroeconomic fundamentals
+explain remarkably little of the variation in stock--bond comovement, with liquidity and
+uncertainty proxies doing more of the work. That finding supports the decision taken here to
+keep the model endogenous: rather than conditioning on macroeconomic state variables, this
+study uses only volatility and correlation measured from returns themselves as candidate
+scaling signals.
+
+The choice to build these signals from daily data, while rebalancing monthly, follows
+Andersen, Bollerslev, Diebold and Labys (2003). Their central result is that realised
+measures constructed by aggregating high-frequency returns provide a model-free and
+essentially unbiased estimate of the underlying volatility, and that forecasts built on such
+measures outperform conventional parametric alternatives. Two features of their argument
+matter here. First, the accuracy gain comes from using higher-frequency data to \emph{measure}
+a lower-frequency quantity, which is exactly the role the daily series plays in this study:
+it measures the volatility and correlation state of a month, and never triggers an
+intra-month trade. Second, they emphasise that realised measures remain tractable in higher
+dimensions, where parametric multivariate volatility models become unwieldy. Since the
+allocation layer evaluates a large number of candidate combinations at each monthly
+rebalancing date, this tractability is a practical requirement rather than a theoretical
+nicety.
+
+\textcolor{red}{[PV: two claims from your draft I could not verify and did not want to assert
+on your behalf. (i) You wrote that Andersen et al. show ``worse results when trying to
+forecast daily''. As I read the paper, their realised-volatility forecasts \emph{outperform}
+GARCH-type models at both one-day and ten-day horizons, so I have not reproduced that claim
+above. Please check before restoring it. (ii) You wrote that the stock--bond relation ``over
+long periods remains in the low positive values''. That is true of the pre-2000 sample but not
+of 2000--2020, so I have written the sign as regime-dependent instead. Adjust if you meant
+something narrower.]}
+
+Finally, the treatment of estimation error in the correlation layer follows Ledoit and Wolf
+(2004), who show that sample covariance matrices estimated from short samples contain
+substantial estimation error and propose shrinking extreme entries toward a structured target.
+The same concern applies with particular force here, because the slow correlation estimate is
+conditioned on regimes and the thinnest regime in a sixty-month window is frequently populated
+by only a handful of observations. Two safeguards follow from this. Any regime with fewer than
+twelve observations inside the current estimation window has its covariance replaced by the
+pooled window covariance, so that a sparsely populated state cannot drive the core split. In
+addition, the resulting estimate is blended with a faster realised correlation computed from
+daily data, which further dilutes the influence of any single unstable regime estimate on the
+scaling mechanism.
+\textcolor{red}{[PV: the Ledoit--Wolf link is an analogy rather than an implementation --- we
+do not compute a shrinkage intensity. I have phrased it as ``follows'' and ``the same
+concern'', which is defensible. If you would rather claim less, say ``in the same spirit
+as''.]}}
 
 \clearpage
 % ============================================================
@@ -1594,6 +1683,9 @@ outcomes.
 
 \begin{description}[leftmargin=2em, itemsep=2pt]
 
+\new{\item Andersen, T.G., Bollerslev, T., Diebold, F.X. and Labys, P. (2003). Modeling and
+  forecasting realized volatility. \textit{Econometrica}, 71(2), 579--625.}
+
 \item Ang, A. and Bekaert, G. (2002). International asset allocation with regime shifts.
   \textit{Review of Financial Studies}, 15(4), 1137--1187.
 
@@ -1604,6 +1696,9 @@ outcomes.
   \textit{Annual Review of Financial Economics}, 4, 313--337.
 
 \item Echaust, K. and Just, M. (2022). Is gold still a safe haven for stock markets? New insights through the tail thickness of portfolio return distributions. \textit{Research in International Business and Finance}, 63, 101788.
+
+\new{\item Baele, L., Bekaert, G. and Inghelbrecht, K. (2010). The determinants of stock and
+  bond return comovements. \textit{Review of Financial Studies}, 23(6), 2374--2428.}
 
 \item Baur, D.G. and Lucey, B.M. (2010). Is gold a hedge or a safe haven? An analysis of
   stocks, bonds and gold. \textit{Financial Review}, 45(2), 217--229.
@@ -1647,15 +1742,25 @@ outcomes.
   COVID-19: 100 old and new cryptocurrencies, precious metals and commodities.
   \textit{Finance Research Letters}, 38, 101670.
 
+\new{\item Ledoit, O. and Wolf, M. (2004). Honey, I shrunk the sample covariance matrix.
+  \textit{Journal of Portfolio Management}, 30(4), 110--119.}
+
 \item Ma, Y., MacLean, L., Xu, K. and Zhao, Y. (2011). A portfolio optimisation model with
   regime-switching risk factors for sector exchange traded funds.
   \textit{Pacific-Basin Finance Journal}, 19(2), 206--226.
 
 \item Markowitz, H. (1952). Portfolio selection. \textit{Journal of Finance}, 7(1), 77--91.
 
+\new{\item Moreira, A. and Muir, T. (2017). Volatility-managed portfolios.
+  \textit{Journal of Finance}, 72(4), 1611--1644.}
+
 \item Nystrup, P., Hansen, B.W., Madsen, H. and Lindstr{\"o}m, E. (2015). Regime-based
   versus static asset allocation: Letting the data speak.
   \textit{Journal of Portfolio Management}, 42(1), 103--109.
+
+\new{\item Patton, A.J. and Sheppard, K. (2015). Good volatility, bad volatility: signed jumps
+  and the persistence of volatility. \textit{Review of Economics and Statistics}, 97(3),
+  683--697.}
 
 \item Pesaran, M.H. and Timmermann, A. (2007). Selection of estimation window in the
   presence of breaks. \textit{Journal of Econometrics}, 137(1), 134--161.

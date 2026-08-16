@@ -56,7 +56,7 @@ HMM_CFG = GlobalRunConfig(
     rf_mode="simple_return_monthly_decimal",
     freq="ME",
     start_date="1999-01-31",
-    end_date="2026-03-31",
+    end_date="2026-07-31",
     output_file="hmm_regime_results_monthly.xlsx",
 )
 
@@ -149,20 +149,20 @@ CORR_BLEND_W   = 0.5
 CORR_LAMBDA    = 0.2
 
 SENSITIVITY_GRID = [
-    # {"sleeve": 0.20, "floor": 0.001},
-    # {"sleeve": 0.20, "floor": 0.002},
+    {"sleeve": 0.20, "floor": 0.001},
+    {"sleeve": 0.20, "floor": 0.002},
     {"sleeve": 0.25, "floor": 0.001},
     {"sleeve": 0.25, "floor": 0.002},
-    # {"sleeve": 0.30, "floor": 0.001},
-    # {"sleeve": 0.30, "floor": 0.002},
-    # {"sleeve": 0.35, "floor": 0.001},
-    # {"sleeve": 0.35, "floor": 0.002},
-    # {"sleeve": 0.40, "floor": 0.001},
-    # {"sleeve": 0.40, "floor": 0.002},
-    # {"sleeve": 0.45, "floor": 0.001},
-    # {"sleeve": 0.45, "floor": 0.002},
-    # {"sleeve": 0.50, "floor": 0.001},
-    # {"sleeve": 0.50, "floor": 0.002},
+    {"sleeve": 0.30, "floor": 0.001},
+    {"sleeve": 0.30, "floor": 0.002},
+    {"sleeve": 0.35, "floor": 0.001},
+    {"sleeve": 0.35, "floor": 0.002},
+    {"sleeve": 0.40, "floor": 0.001},
+    {"sleeve": 0.40, "floor": 0.002},
+    {"sleeve": 0.45, "floor": 0.001},
+    {"sleeve": 0.45, "floor": 0.002},
+    {"sleeve": 0.50, "floor": 0.001},
+    {"sleeve": 0.50, "floor": 0.002},
 ]
 
 
@@ -172,8 +172,8 @@ EXPORT_ALLOCATION       = False
 PLOT_ALLOCATION         = False
 STORE_CANDIDATE_SCORES  = False
 
-RUN_EXPANDING_WINDOW    = True   # Full sensitivity grid
-EXPORT_EXPANDING_WINDOW = True
+RUN_EXPANDING_WINDOW    = False  # Full sensitivity grid
+EXPORT_EXPANDING_WINDOW = False
 
 ONLY_SLEEVE    = None  # e.g. 0.45
 ONLY_FLOOR     = 0.001   # e.g. 0.001

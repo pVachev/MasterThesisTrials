@@ -31,8 +31,7 @@ def fetch_data(
 
         if path.exists():
             try:
-                df = get_data(ticker)
-                df.to_csv(path) # pd.read_csv(path)
+                df = pd.read_csv(path)
                 if verbose:
                     print(f"{ticker} was overwritten") # is avaialble to be loaded"
             except Exception as e:

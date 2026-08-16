@@ -33,7 +33,7 @@ def fetch_data(
             try:
                 df = pd.read_csv(path)
                 if verbose:
-                    print(f"{ticker} was overwritten") # is avaialble to be loaded"
+                    print(f"{ticker} is avaialble to be loaded")
             except Exception as e:
                 if verbose:
                     print(f"{ticker}: failed ({type(e).__name__}: {e})")

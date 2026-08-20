@@ -133,38 +133,27 @@ I would also like to thank my mother, Palmina, for pushing me to pursue higher e
 % ── Abstract ────────────────────────────────────────────────
 \begin{abstract}
 \noindent
-This thesis develops and evaluates a regime-aware core-plus-satellite allocation framework
+This paper develops and evaluates a regime-aware core-plus-satellite allocation framework
 designed for implementation within the operational constraints of a wealth management context.
 A three-state Hidden Markov Model is estimated on monthly excess log returns of the S\&P~500
 Total Return index and the Bloomberg US Treasury 7--10 Year index. The resulting one-step-ahead
 predictive regime probabilities serve as the signal for a scoring engine that evaluates nine US
-sector ETFs and gold as candidate tilts against a 60/40 benchmark with a fixed 40\% Treasury allocation and a replaceable 60\% equity sleeve. Tilt scoring
-follows a Taylor-expanded expected utility function after Jondeau and Rockinger (2006),
-accommodating mean-variance, mean-variance-skewness, and mean-variance-kurtosis investor types.
-The central design feature is a rolling 60-month estimation window that enables
-the model to adapt to structural breaks in sector leadership, specifically the rotation from
-energy sector dominance during the 2003--2008 commodity supercycle to technology sector
-dominance in the post-2016 period. \new{A score improvement floor acts as an adoption hurdle: the portfolio holds the passive
-60/40 core in any month in which no candidate tilt improves on that core by more than the
-floor, so the model trades only when the scorecard justifies the cost of trading.
-Satellite tilts are funded by a style-dependent displacement rule: cyclical satellites are
-funded pro-rata from the whole core, while defensive satellites and gold are funded from the
-equity leg alone, so that the bond block is left intact precisely in the months the model
-turns defensive. Two conditioning scalars, both confined to the sizing stage and neither
-visible to selection, complete the design: a downside realised-semivariance ratio computed
-from daily returns sharpens the bear probability that sizes the satellite sleeve, and a
-blended bond--equity correlation---combining the regime-mixture estimate with a
-horizon-matched realised estimate from daily data---sets the internal equity--bond split of
-the core.}
-\textcolor{red}{[PV: headline numbers below now use the final grid (hybrid-B, $\kappa=0.2$,
-$\omega=0.5$, $\lambda=0.2$, MVS). Confirm you want BOTH anchors in the abstract, or pick one.]}
-\new{The framework is reported at two operating points on a single frontier. A risk-managed
-configuration (25\% satellite sleeve) achieves a CAGR of 9.05\% against a benchmark of
-7.71\%, a Sharpe ratio of 1.033 versus 0.875, a maximum drawdown of $-25.6$\% versus
-$-30.6$\%, and a downside deviation of 6.80\% versus 7.11\% --- improving on the benchmark
-on every risk-adjusted metric simultaneously. A return-seeking configuration (45\% sleeve)
-achieves a CAGR of 9.91\% and a Sharpe ratio of 0.998. At both operating points the strategy
-captures more than 100\% of benchmark upside while capturing less than 93\% of its downside.}
+sector ETFs and gold as candidate tilts against a 60/40 benchmark. Tilt scoring follows a
+Taylor-expanded expected utility function after Jondeau and Rockinger (2006), accommodating
+mean-variance, mean-variance-skewness, and mean-variance-kurtosis investor types, and a rolling
+60-month estimation window allows the model to adapt to structural breaks in sector leadership.
+\new{A score improvement floor holds the portfolio in the passive core in any month in which no
+candidate tilt improves on it by more than the floor. Three further mechanisms target drawdown
+protection, all confined to the sizing stage and none visible to selection: a style-dependent
+displacement rule funds defensive tilts from the equity leg alone, leaving the bond block intact
+in risk-off months; a downside realised-semivariance ratio computed from daily returns sharpens
+the bear probability that sizes the satellite sleeve; and a blended bond--equity correlation
+sets the internal equity--bond split of the core. At a 30\% satellite sleeve the framework
+achieves a CAGR of 9.26\% against a benchmark of 7.74\%, a Sharpe ratio of 1.029 versus 0.874,
+a maximum drawdown of $-26.6$\% versus $-30.6$\%, and a downside deviation of 6.99\% versus
+7.07\% --- improving on the benchmark on every risk-adjusted metric simultaneously. A 35\%
+sleeve raises CAGR to 9.64\% at a Sharpe ratio of 1.039. At both operating points up-capture
+exceeds 102\% of the benchmark while down-capture remains below 90\%.}
 \end{abstract}
 
 \vspace{6pt}
@@ -184,18 +173,15 @@ captures more than 100\% of benchmark upside while capturing less than 93\% of i
 \section{Introduction}
 % ============================================================
 
-In the wealth management business, only a small percentage of clients are managed actively,
-and that depends largely on the size and the cost of continuing operations of the firm. Most
-individual clients and their portfolios are managed passively or on very infrequent rebalancing
-schedules. These portfolios are usually standardised for several reasons: to facilitate the
-communication chain between client, relationship manager, portfolio manager, and trading desk,
-and to abide by rules and regulations.
+In the wealth management business, only a small percentage of clients are managed actively, and
+that depends largely on the size and the cost of continuing operations of the firm. Most
+individual clients are managed passively or on very infrequent rebalancing schedules, and their
+portfolios are standardised to facilitate the communication chain between client, relationship
+manager, portfolio manager, and trading desk, and to abide by rules and regulations.
 
 Once a standardised approach has been developed for a firm, an operational pipeline follows,
-with internal structures and processes built to maintain the order of business for smaller
-clients. In recent years these processes have been optimised across the industry, but their
-scale depends, again, on the size and cost of operations. According to PwC's Asset and Wealth
-Management 2025 report, passive AUM is projected to reach USD~70 trillion by 2030 at an
+and its scale depends, again, on the size and cost of operations. According to PwC's Asset and
+Wealth Management 2025 report, passive AUM is projected to reach USD~70 trillion by 2030 at an
 annualised rate of 10\%, and 89\% of asset managers reported profitability pressure over the
 five years preceding the report, with profit per AUM declining by approximately 19\% since 2018.
 \textcolor{red}{[PV: your note asked whether to add more sources here. My view: one more is enough and the trend is already stark. Suggest adding a single fee-compression datapoint (e.g. average expense ratios) and stopping there --- in 5--7 pages this paragraph earns its place by being short and pointed. Tell me if you want me to draft the sentence.]}
@@ -208,50 +194,33 @@ simultaneously addresses the concerns of investors with different preferences fo
 Most studies that use a regime switching framework to solve a portfolio allocation problem do so
 considering different types of investors, but not the type of portfolio manager who operates
 within a standardised, constrained mandate. This study deliberately caters to that audience.
-The final version of the model developed here is designed for a wealth management context,
-though it should not be excluded from other domains in the study of regime switching models,
-portfolio allocation signals, and sector risk-return analysis.
 
-The main empirical results are reported in \textbf{Table~\ref{tab:performance}}. We contribute to the regime-switching and portfolio allocation literature in several ways.
-First, our regime-switching model is integrated within a rolling 60-month estimation window that
-refits the HMM at every rebalance date, allowing the model to adapt to structural breaks in
-sector leadership. Second, we introduce scoring for allocation decisions rather than solving an
-optimisation problem, making the approach computationally manageable within a real operational
-pipeline. Third, we incorporate multiple investor preference types, from mean-variance to
-mean-variance-kurtosis, within the same framework, allowing the model to serve clients with
-different attitudes toward tail risk. Finally, we integrate a score improvement floor that
-functions as a hurdle rate, ensuring that the model only deviates from the passive core when
-the regime signal provides sufficient expected utility justification.
+The main empirical results are reported in \textbf{Table~\ref{tab:performance}}. We contribute
+to the regime-switching and portfolio allocation literature in four ways. First, the HMM is
+refit at every rebalance date within a rolling 60-month window, allowing the model to adapt to
+structural breaks in sector leadership. Second, allocation decisions are scored rather than
+optimised, making the approach computationally manageable within a real operational pipeline.
+Third, multiple investor preference types, from mean-variance to mean-variance-kurtosis, are
+accommodated within the same framework. Finally, a score improvement floor acts as a hurdle
+rate, so the model deviates from the passive core only when the regime signal justifies it.
 
 \new{These four elements define the selection engine, which scores candidate tilts on the
-predictive moments of the regime mixture alone. The present paper extends that engine with
-three mechanisms aimed specifically at drawdown protection, all confined to the sizing stage
-and none visible to selection: a style-dependent displacement rule that funds defensive tilts
-from equity so the bond block survives risk-off months; a downside realised-semivariance
-signal from daily returns that sharpens the bear probability sizing the satellite sleeve; and
-a blended bond--equity correlation, combining the regime-mixture estimate with a
-horizon-matched realised estimate, that sets the internal equity--bond split of the core.
-Keeping all three out of the selection stage preserves the two-stage separation: the regime
-model decides \emph{what} to hold and in \emph{which} direction to lean, while the scalars
-decide only \emph{how much}.}
+predictive moments of the regime mixture alone. We extend that engine with three mechanisms
+aimed at drawdown protection, all confined to the sizing stage: a style-dependent displacement
+rule that funds defensive tilts from equity so the bond block survives risk-off months; a
+downside realised-semivariance signal from daily returns that sharpens the bear probability
+sizing the sleeve; and a blended bond--equity correlation that sets the internal equity--bond
+split of the core. Keeping all three out of selection preserves the two-stage separation: the
+regime model decides \emph{what} to hold and \emph{which way} to lean, the scalars only
+\emph{how much}.}
 
-The academic literature on asset allocation under regime switching was opened by
-Ang and Bekaert (2002), who showed that the welfare cost of ignoring international
-diversification is significantly amplified in bear regimes, particularly when a risk-free asset
-is available. Ang and Bekaert (2004) subsequently demonstrated in a practitioner-oriented paper
-that regime-based allocation strategies outperform static 60/40 even after transaction costs,
-with the key insight being that the benefit comes from regime persistence rather than prediction.
-Guidolin and Timmermann (2007, 2008) extended this framework to a four-state model and showed
-that optimal allocations differ substantially across regimes and that ignoring regime switching
-generates welfare costs of several cents per dollar of initial wealth at short investment
-horizons, rising above eight cents at 60-month horizons under high risk aversion.
-\textcolor{red}{[PV: your note here asked whether to bring in points from above. The three departures are already stated immediately below, so the paragraph does not need them repeated. What is MISSING is the upgrade: the three departures listed are the thesis-era ones. Suggest adding a fourth --- that all signal conditioning is confined to the sizing stage, leaving selection a pure distribution-scoring problem. Confirm and I will write it.]}
-The present
-study sits in this tradition but departs from it in three important ways. We use a simpler,
-operationally manageable scoring approach rather than full Bellman equation optimisation. We
-focus on a US sector ETF universe rather than international equity. And we introduce rolling
-window re-estimation as the mechanism for handling structural breaks, an aspect that was not
-required in studies relying on the stable 1954--1999 data environment.
+\new{[cut: intro paragraph on Ang \& Bekaert / Guidolin \& Timmermann --- duplicated verbatim in Section~2.1, so removed here; the PV note on adding a fourth departure is retained below]}
+
+The present study sits in that tradition but departs from it in three ways: a simpler,
+operationally manageable scoring approach rather than full Bellman equation optimisation; a US
+sector ETF universe rather than international equity; and rolling window re-estimation as the
+mechanism for handling structural breaks, which studies relying on the stable 1954--1999 data
+environment did not require.
 
 The thesis is structured as follows. Section~\ref{sec:litreview} reviews the relevant
 literature. Section~\ref{sec:data} describes the data. Section~\ref{sec:model} presents
@@ -273,86 +242,44 @@ Section~\ref{sec:conclusion} concludes.
 
 \subsection{Regime Switching in Asset Allocation}
 
-The regime-switching framework for financial time series originates with Hamilton (1989),
-who introduced the Markov-switching model as a means of capturing structural change in
-macroeconomic time series. Hamilton's key contribution was the filtered probability recursion,
-which allows the latent state to be inferred from observed data using the EM algorithm,
-producing a probabilistic assessment of the current regime rather than a binary classification.
-This framework was subsequently extended to financial applications by a growing literature
-documenting the presence of regimes in both stock and bond returns.
+The regime-switching framework originates with Hamilton (1989), whose filtered probability
+recursion allows the latent state to be inferred from observed data, producing a probabilistic
+assessment of the current regime rather than a binary classification. The first direct
+application to portfolio allocation is Ang and Bekaert (2002), who show that correlations
+increase substantially during bear regimes, eroding the diversification benefit static
+mean-variance analysis predicts. Ang and Bekaert (2004) demonstrate that regime-aware
+allocation outperforms a static 60/40 benchmark even after transaction costs, with the key
+mechanism being regime persistence: regimes last long enough for the signal to be actionable.
+Guidolin and Timmermann (2007) provide the most comprehensive treatment, estimating a four-state
+model on US stocks and bonds and solving the full dynamic programming problem; the welfare cost
+of ignoring regimes reaches approximately eight cents per dollar at a 60-month horizon under
+high risk aversion. A finding directly relevant here is that no VAR terms are required,
+suggesting the return distribution itself, rather than predictive variables, carries the
+information. The Ang and Timmermann (2012) survey documents that three or more states outperform
+two-state models, supporting the specification used here.
 
-The first direct application to portfolio allocation under regime switching is Ang and
-Bekaert (2002), who evaluate international asset allocation in the presence of bear and bull
-regimes. Using a two-state HMM on international equity returns, they show that correlations
-increase substantially during bear regimes, eroding the diversification benefit that static
-mean-variance analysis predicts. The welfare cost of ignoring these regime-dependent
-correlations is estimated at two to three cents per dollar of initial wealth when a
-conditionally risk-free asset is included in the portfolio; in the all-equity case the cost
-is substantially lower, at around 0.2 to 0.4 cents. They find that optimal portfolio weights
-differ significantly across regimes. Ang and Bekaert (2004) extend this to a
-practitioner-oriented study, demonstrating that regime-aware allocation strategies outperform
-a static 60/40 benchmark even after transaction costs, with the key mechanism being regime
-persistence: the model generates value because regimes last long enough for the allocation
-signal to be actionable.
-
-Guidolin and Timmermann (2007) provide the most comprehensive treatment of multivariate
-regime switching for asset allocation, estimating a four-state model on US stocks and bonds
-over 1954--1999 and solving the full dynamic programming problem for buy-and-hold and
-rebalancing investors with power utility. Their four states, characterised as crash, slow
-growth, bull, and recovery, exhibit very different means, volatilities, and cross-asset
-correlations, and optimal allocations vary substantially across states. The welfare cost of
-ignoring regimes is reported in cents per dollar of initial wealth (Table~5 of that paper),
-reaching approximately eight cents at a 60-month horizon under high risk aversion. The paper
-documents out-of-sample performance evaluation across multiple investor types and horizons
-and finds that the regime model outperforms simpler benchmarks across most investment horizons.
-A key finding relevant to the present study is that no VAR terms are required in the model,
-suggesting that the return distribution itself, rather than predictive variables, carries the
-relevant information. Guidolin and Timmermann (2008) extend this to international equity
-markets, incorporating four-moment preferences and showing that regime switching generates
-endogenous non-normality in portfolio returns, with co-skewness and co-kurtosis properties
-playing an important role in home bias. The Ang and Timmermann (2012) survey subsequently
-documents that multi-state specifications, generally three or more states, outperform two-state
-models across a range of asset allocation applications, supporting the three-state specification
-used in the present study.
-
-The present study contributes to this literature in three specific ways. First, it applies the
-HMM framework to the US sector ETF universe --- a dimension of the allocation problem that the
-international equity focus of the preceding papers does not address. Second, it replaces the
-full Bellman equation optimisation with a operationally manageable scoring approach, making the framework viable within a wealth management pipeline. Third, and most importantly,
-it introduces a rolling 60-month estimation window as the mechanism for adapting to structural
-breaks in sector leadership, explicitly addressing the stale-moment problem that arises when
-an expanding window is used across multi-decade samples.
+\new{[cut: 2.1: Hamilton EM detail, the all-equity welfare-cost figures, G\&T state names and out-of-sample discussion, and the three-contributions paragraph --- the last is stated in the Introduction]}
 
 \subsection{Sector ETF Allocation under Regime Switching}
 
-The application of regime switching to sector-level allocation is a relatively recent and
-narrower strand of the literature. Ma, MacLean, Xu, and Zhao (2011) is the closest antecedent
-to the present study, proposing a regime-dependent factor-risk-neutral strategy for the nine
-State Street SPDR sector ETFs, the same universe used here. They model factor-risk-neutral
-allocation using a Markov regime-switching framework and compare performance against an
-equal-weight benchmark across the same ETF universe. Their results demonstrate that
-regime-dependent sector allocation outperforms the static benchmark, and they use the same
-sector ETF selection criteria applied here: the nine ETFs are from a single provider, have a
-long trading history beginning December 1998, and provide comprehensive coverage of the US
-market. The key difference between Ma et al.\ (2011) and the present study is that their
-framework does not include a fixed bond core, does not incorporate higher-moment investor
-preferences, and uses an expanding estimation window. The rolling window adaptation and the
-core-plus-satellite architecture are specific contributions of the present study.
-
-Dou, Gallagher, Schneider, and Walter (2014) provide direct empirical evidence that
-cross-sector regime-dependent allocation outperforms cross-regional allocation on Sharpe ratio,
-return, and beta in both in-sample and out-of-sample periods over 1995--2010. Their
-unconstrained regime-switching sector strategy achieves an out-of-sample Sharpe ratio of 0.93
-compared to 0.30 for the world market portfolio, with notably lower beta in bear regimes.
-Under a benchmark constraint, the out-of-sample Sharpe narrows to 0.39 versus 0.32. Their
-finding that sector allocation is more amenable to regime-based improvement than regional
-allocation is consistent with the sector ETF focus of the present study, and their
-documentation of lower cross-sector correlation during bear regimes supports the theoretical
-motivation for the conviction scalar used in the allocation layer here. Jiang, Liu, and
-Tse (2015) demonstrate similar results using international iShares ETFs with a daily
-rebalancing MRS strategy, finding outperformance after transaction costs and providing
-additional evidence that ETF-based regime switching strategies are practically implementable
+The application of regime switching to sector-level allocation is a narrower and more recent
+strand. Ma, MacLean, Xu, and Zhao (2011) is the closest antecedent, proposing a
+regime-dependent factor-risk-neutral strategy for the nine State Street SPDR sector ETFs, the
+same universe used here and selected on the same criteria: a single provider, a long trading
+history beginning December 1998, and comprehensive coverage of the US market. Their framework
+does not include a fixed bond core, does not incorporate higher-moment preferences, and uses an
+expanding estimation window; the rolling window adaptation and the core-plus-satellite
+architecture are contributions of the present study. Dou, Gallagher, Schneider, and Walter
+(2014) provide direct evidence that cross-sector regime-dependent allocation outperforms
+cross-regional allocation, reaching an out-of-sample Sharpe ratio of 0.93 against 0.30 for the
+world market portfolio, with notably lower beta in bear regimes. Their documentation of lower
+cross-sector correlation during bear regimes supports the motivation for the conviction scalar
+used here. Jiang, Liu, and Tse (2015) find comparable results on international iShares ETFs
+after transaction costs, evidence that ETF-based regime-switching strategies are implementable
 at the institutional level.
+\new{[cut: 2.2: benchmark-constrained Sharpe figures from Dou et al., and the daily-rebalancing detail from Jiang et al.]}
+
+\textcolor{red}{[PV: the two paragraphs below are mine and you said you want to rewrite them in your own voice --- left untouched for that. They are currently ~250 words; budget ~120.]}
 
 \new{A dimension this literature leaves unexamined is the \emph{funding} of a sector tilt:
 which existing holdings are sold to pay for it. It matters because the two satellite styles
@@ -380,136 +307,85 @@ metrics improve materially while the upside capture is preserved.}
 
 \subsection{Higher-Moment Preferences and Taylor-Expanded Utility}
 
-The theoretical foundation for incorporating skewness and kurtosis into investor preferences
-is provided by Scott and Horvath (1980), who use proof by contradiction under the assumption
-of decreasing absolute risk aversion to establish the sign of investor preference for moments
-of higher order than variance. Their result that the third moment of the utility function is
-positive (investors prefer positive skewness) and the fourth moment is negative (investors
-dislike excess kurtosis) holds broadly for risk-averse utility functions, not just specific
-parametric forms. This generality is important: it means the investor types defined in this
-study do not depend on a specific assumed utility function, but on a universal property of
-risk-averse behaviour.
+Scott and Horvath (1980) provide the theoretical foundation: their result that investors prefer
+positive skewness and dislike excess kurtosis holds broadly for risk-averse utility functions
+rather than specific parametric forms, so the investor types defined here rest on a universal
+property of risk-averse behaviour rather than an assumed functional form. Jondeau and Rockinger
+(2006) supply the operational implementation, a Taylor expansion of expected utility around the
+moments of the return distribution that yields a closed-form scoring function and avoids the
+computationally prohibitive co-skewness and co-kurtosis tensors direct optimisation would
+require. They find the opportunity cost of using only mean and variance ranges from negligible
+in near-normal environments to more than 25 cents per dollar in highly non-normal settings.
+Where they evaluate a single combined MVSK investor, we separate MVS and MVK types so the
+contribution of each moment can be isolated empirically.
 
-Jondeau and Rockinger (2006) provide the operational implementation of these preferences
-through a Taylor series expansion of expected utility around the moments of the return
-distribution. Their four-moment approximation gives a closed-form scoring function that is
-accurate for moderately non-normal distributions and that handles a large number of assets
-without requiring the computationally prohibitive co-skewness and co-kurtosis tensors that
-direct four-moment optimisation would require. A key finding in Jondeau and Rockinger (2006)
-is that the opportunity cost of using only mean and variance to approximate expected utility
-ranges from negligible in near-normal data environments to more than 25 cents per dollar in
-highly non-normal settings such as emerging market or individual stock return distributions,
-confirming that higher moments carry economically meaningful information when return
-distributions are sufficiently non-normal. They also present and evaluate a full four-moment
-MVSK investor who combines skewness preference and kurtosis aversion in a single objective
-function. The present study deliberately separates these into distinct MVS and MVK investor
-types, allowing the contribution of each moment to be isolated empirically. Kim, Fabozzi,
-Cheridito, and Fox (2014) demonstrate that robust mean-variance portfolios implicitly favour
-skewness and penalise kurtosis without requiring explicit higher-moment terms, providing a
-complementary argument for the tractability of this approach.
+\new{[cut: 2.3: Kim, Fabozzi, Cheridito \& Fox (2014) on robust mean-variance implicitly favouring skewness --- complementary but not load-bearing]}
 
 \subsection{Rolling Window Estimation and Time-Varying Parameters}
 
-The rolling window estimation approach used in this study is grounded in the parameter
-instability literature. Pesaran and Timmermann (2007) establish that in the presence of
-structural breaks, the optimal estimation window trades off bias from stale data against
-variance from insufficient observations, and that rolling windows are preferred over expanding
-windows when the data-generating process exhibits parameter instability. Their theoretical
-results provide the formal justification for preferring a fixed-length rolling window over
-the expanding window used in the earlier regime-switching literature. The Hematizadeh,
-Tajaddini, and Hallahan (2022) time-varying transition probability study is also relevant:
-their finding that even constant-transition-probability HMMs with rolling window estimation
-capture most of the time-variation benefit of more complex TVTP models provides support for
+The rolling window approach is grounded in the parameter instability literature. Pesaran and
+Timmermann (2007) establish that under structural breaks the optimal window trades off bias from
+stale data against variance from insufficient observations, and that rolling windows are
+preferred when the data-generating process exhibits parameter instability. Hematizadeh,
+Tajaddini, and Hallahan (2022) find that even constant-transition-probability HMMs with rolling
+estimation capture most of the time-variation benefit of more complex TVTP models, supporting
 the simpler constant-$P$ specification used here. Nystrup, Hansen, Madsen, and Lindstr{\"o}m
-(2015) demonstrate that regime-based allocation with adaptive parameter estimation outperforms
-static allocation without requiring return forecasting skill, with the key mechanism being
-regime persistence rather than prediction accuracy. Their use of a confidence threshold before
-changing positions is the conceptual antecedent of the score improvement floor mechanism in
-the present study.
+(2015) show that regime-based allocation with adaptive parameter estimation outperforms static
+allocation without requiring return forecasting skill, and their use of a confidence threshold
+before changing positions is the conceptual antecedent of the score improvement floor.
 
-The rolling window specification in this study introduces a specific design tension worth
-documenting in the literature. The number of states, $k=3$, is selected on the basis of the
-full 27-year sample. The rolling 60-month estimation then uses this established structural
-assumption to re-estimate only the parameter values within each window. This two-stage design
-is analogous to model selection followed by rolling out-of-sample evaluation: the structural
-form is validated on the full sample, and the rolling window then adapts the parameters of
-that structure to the current data environment. The alternative of re-selecting $k$ at every
-window would be computationally expensive, methodologically inconsistent, and likely to produce
-spurious variation in the number of states that would interfere with the allocation signal.
-The two-stage approach is both principled and practical, with one caveat: because $k=3$
-is selected by inspecting the full sample that includes the evaluation period, this is a
-modelling assumption rather than a fully out-of-sample structural choice. The rolling backtest
-tests the performance of this fixed structural assumption under recursively updated parameters.
+\new{[cut: 2.4: the $k=3$ design-tension paragraph. It is a LIMITATION rather than literature --- suggest one sentence in the robustness section instead: $k$ is selected on the full sample, so it is a modelling assumption rather than a fully out-of-sample choice]}
+
+\new{[cut: 2.4: the extended discussion of why re-selecting $k$ each window would be computationally expensive and methodologically inconsistent --- reduced to the caveat]}
 
 \new{\subsection{Volatility and Correlation as Conditioning Signals}
 
-The two scalars added to the sizing stage rest on a separate empirical literature, which is
-reviewed here because it motivates both the choice of estimator and the decision to keep
-these signals out of the selection engine.
+Numerous studies, most notably Moreira and Muir (2017) and Patton and Sheppard (2015), show
+empirically that high volatility and volatility spikes tend to be followed by further elevated
+volatility, and to be preceded by negative returns. Patton and Sheppard show that this
+asymmetry is driven specifically by the downside component of realised variance, which is why
+the signal used here is a realised semivariance rather than a total variance.
 
-The volatility side rests on two well-documented regularities. Volatility is strongly
-persistent, so that periods of elevated volatility tend to be followed by further elevated
-volatility, and it is asymmetric, in that negative returns raise subsequent volatility by
-more than positive returns of the same magnitude. Patton and Sheppard (2015) show that this
-asymmetry is driven specifically by the downside component of realised variance, which is
-what motivates the use of realised semivariance rather than total realised variance as the
-conditioning signal in this study. Moreira and Muir (2017) establish the portfolio
-implication: because volatility is persistent but is not compensated one-for-one in expected
-returns at the monthly horizon, scaling exposure down when volatility is high improves
-risk-adjusted performance. Their result also carries a caution that shapes the design here.
-Elevated volatility forecasts variance rather than the mean, which argues for rotating the
-sleeve toward defensive holdings rather than exiting risk altogether.
+A broad literature explores the time-varying relation between assets, and in particular the
+stock--bond relation. The sign of that relation is not stable: during crises and drawdown
+episodes the correlation between broad stocks and bonds flips negative, signifying
+flight-to-quality market movements. At the same time, Baele, Bekaert and Inghelbrecht (2010)
+find that macroeconomic fundamentals play little role in determining or even explaining
+stock--bond correlation. Their study underlines one of the reasons why we chose to keep this
+model endogenous and explore only volatility and correlation as potential scaling signal
+candidates.
 
-The correlation side rests on the time-varying nature of the stock--bond relation. The sign
-of that correlation is not stable across decades: it was persistently positive before 2000,
-persistently negative through the 2000--2020 period, and turned positive again during the
-2022 rate shock. The negative-correlation state is the flight-to-quality regime in which
-bonds hedge equity drawdowns, and it is precisely the state in which a bond allocation earns
-its place. Baele, Bekaert and Inghelbrecht (2010) find that macroeconomic fundamentals
-explain remarkably little of the variation in stock--bond comovement, with liquidity and
-uncertainty proxies doing more of the work. That finding supports the decision taken here to
-keep the model endogenous: rather than conditioning on macroeconomic state variables, this
-study uses only volatility and correlation measured from returns themselves as candidate
-scaling signals.
+In \textit{Modeling and Forecasting Realized Volatility}, Andersen, Bollerslev, Diebold and
+Labys (2003) show that high-frequency data can be aggregated to measure volatility accurately
+at lower frequencies. Their work uses exchange rates, but the authors underline the parallels
+to other asset classes. When we researched how monthly rebalancing could be influenced by
+volatility and correlation signals of higher frequency, a major concern was that daily data
+would introduce too much noise into the model. For that reason, we left the daily volatility
+and correlation data to work as a separate mechanism in the architecture, measuring the state
+of a month rather than triggering trades within it.
 
-The choice to build these signals from daily data, while rebalancing monthly, follows
-Andersen, Bollerslev, Diebold and Labys (2003). Their central result is that realised
-measures constructed by aggregating high-frequency returns provide a model-free and
-essentially unbiased estimate of the underlying volatility, and that forecasts built on such
-measures outperform conventional parametric alternatives. Two features of their argument
-matter here. First, the accuracy gain comes from using higher-frequency data to \emph{measure}
-a lower-frequency quantity, which is exactly the role the daily series plays in this study:
-it measures the volatility and correlation state of a month, and never triggers an
-intra-month trade. Second, they emphasise that realised measures remain tractable in higher
-dimensions, where parametric multivariate volatility models become unwieldy. Since the
-allocation layer evaluates a large number of candidate combinations at each monthly
-rebalancing date, this tractability is a practical requirement rather than a theoretical
-nicety.
+Their second main argument is that parametric volatility modelling becomes unwieldy as the
+number of assets grows, whereas realised measures remain a model-free and essentially unbiased
+estimator of return volatility, and stay tractable in a high-dimensional setting. Our model
+explores a large number of candidate combinations at each monthly rebalancing date, so this
+tractability is a practical requirement rather than a theoretical nicety. Following Andersen et
+al., we build a non-conflicting volatility and correlation mechanism.
 
-\textcolor{red}{[PV: two claims from your draft I could not verify and did not want to assert
-on your behalf. (i) You wrote that Andersen et al. show ``worse results when trying to
-forecast daily''. As I read the paper, their realised-volatility forecasts \emph{outperform}
-GARCH-type models at both one-day and ten-day horizons, so I have not reproduced that claim
-above. Please check before restoring it. (ii) You wrote that the stock--bond relation ``over
-long periods remains in the low positive values''. That is true of the pre-2000 sample but not
-of 2000--2020, so I have written the sign as regime-dependent instead. Adjust if you meant
-something narrower.]}
+Focusing on correlation, Ledoit and Wolf (2004) argue that covariance matrices contain
+substantial estimation error, and propose a shrinkage mechanism that rectifies it. The central
+idea is that extreme covariance values are pulled towards the centre, much as a winsorised mean
+pulls in outliers. We apply the same idea to the estimation error produced by small regimes:
+whenever a regime holds fewer than twelve observations inside the current five-year window, its
+covariance is replaced by the pooled window covariance, so that the slow correlation layer is
+never represented by an unstable estimate. On top of that we blend it with a faster-reacting
+correlation layer that further dilutes any erroneous signalling into the scaling mechanism.
 
-Finally, the treatment of estimation error in the correlation layer follows Ledoit and Wolf
-(2004), who show that sample covariance matrices estimated from short samples contain
-substantial estimation error and propose shrinking extreme entries toward a structured target.
-The same concern applies with particular force here, because the slow correlation estimate is
-conditioned on regimes and the thinnest regime in a sixty-month window is frequently populated
-by only a handful of observations. Two safeguards follow from this. Any regime with fewer than
-twelve observations inside the current estimation window has its covariance replaced by the
-pooled window covariance, so that a sparsely populated state cannot drive the core split. In
-addition, the resulting estimate is blended with a faster realised correlation computed from
-daily data, which further dilutes the influence of any single unstable regime estimate on the
-scaling mechanism.
-\textcolor{red}{[PV: the Ledoit--Wolf link is an analogy rather than an implementation --- we
-do not compute a shrinkage intensity. I have phrased it as ``follows'' and ``the same
-concern'', which is defensible. If you would rather claim less, say ``in the same spirit
-as''.]}}
+\textcolor{red}{[PV: two checks. (i) Your draft said Andersen et al. show ``worse results when
+forecasting daily'' --- as I read them, their realised-volatility forecasts beat GARCH at both
+one- and ten-day horizons, so I left the claim out. Verify before restoring. (ii) Your ``over
+long periods the relation stays low positive'' holds pre-2000 but not 2000--2020, so I cut that
+sentence rather than assert it. (iii) I replaced the direct quotation from Andersen et al.\ with
+a paraphrase.]}}
 
 \clearpage
 % ============================================================

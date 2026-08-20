@@ -1,37 +1,37 @@
 \contentsline {section}{\numberline {1}Introduction}{1}{section.1}%
-\contentsline {section}{\numberline {2}Literature Review}{4}{section.2}%
-\contentsline {subsection}{\numberline {2.1}Regime Switching in Asset Allocation}{4}{subsection.2.1}%
-\contentsline {subsection}{\numberline {2.2}Sector ETF Allocation under Regime Switching}{5}{subsection.2.2}%
-\contentsline {subsection}{\numberline {2.3}Higher-Moment Preferences and Taylor-Expanded Utility}{6}{subsection.2.3}%
-\contentsline {subsection}{\numberline {2.4}Rolling Window Estimation and Time-Varying Parameters}{7}{subsection.2.4}%
-\contentsline {subsection}{\numberline {2.5}Volatility and Correlation as Conditioning Signals}{8}{subsection.2.5}%
-\contentsline {section}{\numberline {3}Data}{10}{section.3}%
-\contentsline {section}{\numberline {4}Model}{14}{section.4}%
-\contentsline {subsection}{\numberline {4.1}HMM Specification}{15}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2}Estimation}{15}{subsection.4.2}%
-\contentsline {subsection}{\numberline {4.3}Model Selection and the Two-Stage Design Rationale}{17}{subsection.4.3}%
-\contentsline {subsection}{\numberline {4.4}Model Output and Economic Interpretation}{18}{subsection.4.4}%
-\contentsline {section}{\numberline {5}Investor Preference Theory}{24}{section.5}%
-\contentsline {subsection}{\numberline {5.1}Formal Framework: Optimisation, Welfare, Certainty Equivalent, and Scoring}{24}{subsection.5.1}%
-\contentsline {subsection}{\numberline {5.2}Direction of Higher-Moment Preference}{25}{subsection.5.2}%
-\contentsline {subsection}{\numberline {5.3}Scoring Under Higher-Moment Preferences}{26}{subsection.5.3}%
-\contentsline {subsection}{\numberline {5.4}Calibration of Preference Parameters}{27}{subsection.5.4}%
-\contentsline {section}{\numberline {6}Allocation Layer}{28}{section.6}%
-\contentsline {subsection}{\numberline {6.1}Filtered and Predictive Probabilities}{28}{subsection.6.1}%
-\contentsline {subsection}{\numberline {6.2}Candidate Enumeration and Scoring}{28}{subsection.6.2}%
-\contentsline {subsection}{\numberline {6.3}Score Improvement Floor}{29}{subsection.6.3}%
-\contentsline {section}{\numberline {7}Allocation Tilts and Computational Elements}{30}{section.7}%
-\contentsline {subsection}{\numberline {7.1}Satellite Universe and Regime Styles}{30}{subsection.7.1}%
-\contentsline {subsection}{\numberline {7.2}Conviction Scalar}{30}{subsection.7.2}%
-\contentsline {subsection}{\numberline {7.3}Rolling Window Rationale and the Structural Break Problem}{31}{subsection.7.3}%
-\contentsline {section}{\numberline {8}Key Findings}{32}{section.8}%
-\contentsline {subsection}{\numberline {8.1}HMM Model Findings}{32}{subsection.8.1}%
-\contentsline {subsection}{\numberline {8.2}Primary Allocation Results}{32}{subsection.8.2}%
-\contentsline {subsection}{\numberline {8.3}Sub-Period Alpha Analysis}{33}{subsection.8.3}%
-\contentsline {subsection}{\numberline {8.4}Rolling Window versus Expanding Window and the A1 Frozen Model}{34}{subsection.8.4}%
-\contentsline {subsection}{\numberline {8.5}Higher-Moment Investor Differentiation}{34}{subsection.8.5}%
-\contentsline {subsection}{\numberline {8.6}Sensitivity Analysis}{34}{subsection.8.6}%
-\contentsline {section}{\numberline {9}Gold as a Conditional Safe Haven}{37}{section.9}%
-\contentsline {section}{\numberline {10}Conclusion}{38}{section.10}%
-\contentsline {section}{References}{39}{section.10}%
-\contentsline {section}{\numberline {A}Full Sensitivity and Ratio Table}{42}{appendix.A}%
+\contentsline {section}{\numberline {2}Literature Review}{3}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Regime Switching in Asset Allocation}{3}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Sector ETF Allocation under Regime Switching}{3}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Higher-Moment Preferences and Taylor-Expanded Utility}{4}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Rolling Window Estimation and Time-Varying Parameters}{5}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}Volatility and Correlation as Conditioning Signals}{5}{subsection.2.5}%
+\contentsline {section}{\numberline {3}Data}{7}{section.3}%
+\contentsline {section}{\numberline {4}Model}{11}{section.4}%
+\contentsline {subsection}{\numberline {4.1}HMM Specification}{12}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Estimation}{12}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Model Selection and the Two-Stage Design Rationale}{14}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Model Output and Economic Interpretation}{15}{subsection.4.4}%
+\contentsline {section}{\numberline {5}Investor Preference Theory}{21}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Formal Framework: Optimisation, Welfare, Certainty Equivalent, and Scoring}{21}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Direction of Higher-Moment Preference}{22}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Scoring Under Higher-Moment Preferences}{23}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}Calibration of Preference Parameters}{24}{subsection.5.4}%
+\contentsline {section}{\numberline {6}Allocation Layer}{25}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Filtered and Predictive Probabilities}{25}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Candidate Enumeration and Scoring}{25}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Score Improvement Floor}{26}{subsection.6.3}%
+\contentsline {section}{\numberline {7}Allocation Tilts and Computational Elements}{27}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Satellite Universe and Regime Styles}{27}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Conviction Scalar}{27}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Rolling Window Rationale and the Structural Break Problem}{28}{subsection.7.3}%
+\contentsline {section}{\numberline {8}Key Findings}{29}{section.8}%
+\contentsline {subsection}{\numberline {8.1}HMM Model Findings}{29}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Primary Allocation Results}{29}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Sub-Period Alpha Analysis}{30}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.4}Rolling Window versus Expanding Window and the A1 Frozen Model}{31}{subsection.8.4}%
+\contentsline {subsection}{\numberline {8.5}Higher-Moment Investor Differentiation}{31}{subsection.8.5}%
+\contentsline {subsection}{\numberline {8.6}Sensitivity Analysis}{31}{subsection.8.6}%
+\contentsline {section}{\numberline {9}Gold as a Conditional Safe Haven}{34}{section.9}%
+\contentsline {section}{\numberline {10}Conclusion}{35}{section.10}%
+\contentsline {section}{References}{36}{section.10}%
+\contentsline {section}{\numberline {A}Full Sensitivity and Ratio Table}{39}{appendix.A}%

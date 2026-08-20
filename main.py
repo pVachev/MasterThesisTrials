@@ -146,7 +146,7 @@ HYBRID_VARIANT     = "B"   # "A" or "B"; see AllocationConfig.hybrid_variant
 # raises the tilt slope to (kappa + lambda) on rho_eff when armed (z >= z*).
 DAILY_BOND_CSV = "data/raw/IEF.csv"
 CORR_BLEND_W   = 0.5
-CORR_LAMBDA    = 0.2
+CORR_LAMBDA    = 0.0
 
 SENSITIVITY_GRID = [
     {"sleeve": 0.20, "floor": 0.001},

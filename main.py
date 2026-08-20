@@ -56,6 +56,8 @@ HMM_CFG = GlobalRunConfig(
     rf_mode="simple_return_monthly_decimal",
     freq="ME",
     start_date="1999-01-31",
+    make_dashboard=False,
+    make_distribution_plots=False,
     end_date="2026-07-31",
     output_file="hmm_regime_results_monthly.xlsx",
 )

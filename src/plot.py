@@ -48,6 +48,7 @@ def plot_regime_dashboard_stack(
 
     plt.tight_layout()
     plt.show()
+    plt.close()
 
 
 
@@ -182,6 +183,7 @@ def plot_regime_distribution_grid(
     fig.tight_layout(rect=[0, 0, 1, 0.98])
 
     plt.show()
+    plt.close()
     return fig, axes
 
 
@@ -256,6 +258,8 @@ def plot_regime_dashboard_stack(
 
     plt.tight_layout()
     plt.show()
+    plt.pause(1)
+    plt.close()
 
 
 
@@ -390,6 +394,7 @@ def plot_regime_distribution_grid(
     fig.tight_layout(rect=[0, 0, 1, 0.98])
 
     plt.show()
+    plt.close()
     return fig, axes
 
 

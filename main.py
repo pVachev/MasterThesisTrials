@@ -174,8 +174,8 @@ EXPORT_ALLOCATION       = False
 PLOT_ALLOCATION         = False
 STORE_CANDIDATE_SCORES  = False
 
-RUN_EXPANDING_WINDOW    = False  # Full sensitivity grid
-EXPORT_EXPANDING_WINDOW = False
+RUN_EXPANDING_WINDOW    = True  # Full sensitivity grid
+EXPORT_EXPANDING_WINDOW = True
 
 ONLY_SLEEVE    = None  # e.g. 0.45
 ONLY_FLOOR     = 0.001   # e.g. 0.001

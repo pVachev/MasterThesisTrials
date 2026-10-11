@@ -14,9 +14,9 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
 CORE_TICKERS = ["^SP500TR", "LT09TRUU"]
-SAT = ["XLB","XLE","XLF","XLI","XLK","XLY","XLP","XLU","XLV","XAU"]
+SAT = ["XLB","XLE","XLF","XLI","XLK","XLY","XLP","XLU","XLV", "XAU"]
 STYLE = {**{t:"cyclical" for t in ["XLB","XLE","XLF","XLI","XLK","XLY"]},
-         **{t:"defensive" for t in ["XLP","XLU","XLV","XAU"]}}
+         **{t:"defensive" for t in ["XLP","XLU","XLV","XAU"]}} 
 # Benchmark-drawdown episodes we always report (peak month, label)
 KEY_EPISODES = [("2007-11","GFC"), ("2020-02","COVID"), ("2022-01","Rate-2022")]
 

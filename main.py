@@ -56,8 +56,8 @@ HMM_CFG = GlobalRunConfig(
     rf_mode="simple_return_monthly_decimal",
     freq="ME",
     start_date="1999-01-31",
-    make_dashboard=False,
-    make_distribution_plots=False,
+    make_dashboard=True,
+    make_distribution_plots=True,
     end_date="2026-07-31",
     output_file="hmm_regime_results_monthly.xlsx",
 )
@@ -79,17 +79,17 @@ INVESTOR_CONFIGS = {
     ),
     "MVS_cons": InvestorPreferenceConfig(
         name="MVS Investor (conservative)", investor_type="MVS",
-        lambda_=3.0, gamma=0.000431,  # 15% × 3.0 × 0.000672 / 0.7014
+        lambda_=3.0, gamma=0.000431,  # 15% × 3.0 × 0.000672 / 0.7014 
     ),
     "MVS": InvestorPreferenceConfig(
         name="MVS Investor", investor_type="MVS",
-        lambda_=3.0, gamma=0.000574,  # 20% × 3.0 × 0.000672 / 0.7014
+        lambda_=3.0, gamma=0.000574,  # 20% × 3.0 × 0.000672 / 0.7014 
     ),
     "MVK": InvestorPreferenceConfig(
         name="MVK Investor", investor_type="MVK",
         lambda_=3.0,
-        gamma=0.000574,   # 20% × 3.0 × 0.000672 / 0.7014
-        delta=0.000207,   # 20% × 3.0 × 0.000672 / 1.9482
+        gamma=0.0,   # 20% × 3.0 × 0.000672 / 0.7014
+        delta=0.000207,   # 20% × 3.0 × 0.000672 / 1.9482 
     ),
 }
 
@@ -148,7 +148,7 @@ HYBRID_VARIANT     = "B"   # "A" or "B"; see AllocationConfig.hybrid_variant
 # raises the tilt slope to (kappa + lambda) on rho_eff when armed (z >= z*).
 DAILY_BOND_CSV = "data/raw/IEF.csv"
 CORR_BLEND_W   = 0.5
-CORR_LAMBDA    = 0.0
+CORR_LAMBDA    = 0.2
 
 SENSITIVITY_GRID = [
     {"sleeve": 0.20, "floor": 0.001},
@@ -174,12 +174,12 @@ EXPORT_ALLOCATION       = False
 PLOT_ALLOCATION         = False
 STORE_CANDIDATE_SCORES  = False
 
-RUN_EXPANDING_WINDOW    = True  # Full sensitivity grid
-EXPORT_EXPANDING_WINDOW = True
+RUN_EXPANDING_WINDOW    = False  # Full sensitivity grid
+EXPORT_EXPANDING_WINDOW = False
 
 ONLY_SLEEVE    = None  # e.g. 0.45
 ONLY_FLOOR     = 0.001   # e.g. 0.001
-ONLY_INVESTORS = None  # e.g. ["MV", "MVS"]
+ONLY_5 = None  # e.g. ["MV", "MVS"]
 
 CORE_MODEL_CODE = "A"
 
@@ -259,7 +259,7 @@ def run_a1_backtest(results: list, df: pd.DataFrame) -> dict:
         shrinkage_intensity=0.0,
         score_improvement_floor=0.001,       # primary thesis config
         export_file="allocation_results.xlsx",
-        equity_only_displacement=True,
+        equity_only_displacement=False,
         equity_ticker="^SP500TR",
     )
     alloc_cfg_a1.validate()
@@ -390,6 +390,8 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
         hyb_tag = f"_hyb{HYBRID_VARIANT}" if HYBRID_DISPLACEMENT else ""
         corr_tag = ((f"_rb{int(CORR_BLEND_W*100)}" if CORR_BLEND_W > 0 else "")
                     + (f"_lam{CORR_LAMBDA:g}".replace(".", "") if CORR_LAMBDA != 0 else ""))
+        
+       
 
         for inv_key, investor_cfg in investors.items():
             run_n += 1

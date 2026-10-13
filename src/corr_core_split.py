@@ -42,7 +42,7 @@ def predictive_bond_equity_corr(
     bond_ret: pd.Series,
     predictive_probabilities_row: pd.Series,
     min_obs: int = 12,
-) -> float:
+) -> tuple[float, dict]:
     """Predictive bond-equity correlation from the regime-mixture covariance.
 
     Parameters
@@ -63,28 +63,39 @@ def predictive_bond_equity_corr(
 
     Returns
     -------
-    float
+    (rho, details)
         rho in [-1, 1], or np.nan if undefined (degenerate variance).
+        details = {"n": observations per regime, "own": True if the regime used
+        its own covariance, False if it fell back to the pooled window}.
     """
     df = pd.DataFrame({"state": state_series, "E": eq_ret, "B": bond_ret}).dropna()
-    if len(df) < 2:
-        return float("nan")
-
     regimes = list(predictive_probabilities_row.index)
+    K = len(regimes)
+    if len(df) < 2:
+        return float("nan"), {"n": [0] * K, "own": [False] * K}
+
     pi = predictive_probabilities_row.to_numpy(dtype=float)
+
+    # state k <-> regimes[k] ("Regime k"); every window month must belong to one of them
+    counts = [int((df["state"] == k).sum()) for k in range(K)]
+    if sum(counts) != len(df):
+        raise ValueError(f"State labels don't match regime names: counts {counts}, window {len(df)}")
 
     pooled_mu = df[["E", "B"]].mean().to_numpy()
     pooled_cov = np.cov(df[["E", "B"]].to_numpy().T, ddof=1)
 
-    mus, covs = [], []
-    for rg in regimes:
-        sub = df.loc[df["state"] == rg, ["E", "B"]]
+    mus, covs, own = [], [], []
+    for k in range(K):
+        sub = df.loc[df["state"] == k, ["E", "B"]]
         if len(sub) >= min_obs:
             mus.append(sub.mean().to_numpy())
             covs.append(np.cov(sub.to_numpy().T, ddof=1))
+            own.append(True)
         else:
             mus.append(pooled_mu.copy())
             covs.append(pooled_cov.copy())
+            own.append(False)
+    details = {"n": counts, "own": own}
 
     mus = np.asarray(mus)            # K x 2
     covs = np.asarray(covs)          # K x 2 x 2
@@ -96,8 +107,8 @@ def predictive_bond_equity_corr(
 
     var_e, var_b = cov_mix[0, 0], cov_mix[1, 1]
     if var_e <= 1e-18 or var_b <= 1e-18:
-        return float("nan")
-    return float(cov_mix[0, 1] / np.sqrt(var_e * var_b))
+        return float("nan"), details
+    return float(cov_mix[0, 1] / np.sqrt(var_e * var_b)), details
 
 
 def corr_adjusted_core_split(
@@ -169,25 +180,43 @@ def _test():
     A = draw(nA, -0.6, 0.04, 0.02, 0.004, 0.002)
     B = draw(nB, +0.5, 0.07, 0.03, -0.002, -0.001)
     data = np.vstack([A, B])
-    state = pd.Series(["RA"] * nA + ["RB"] * nB, index=idx)
+    state = pd.Series([0] * nA + [1] * nB, index=idx)   # integer states, like the engine
+    names = ["Regime 0", "Regime 1"]                     # default regime names
     eq = pd.Series(data[:, 0], index=idx)
     bd = pd.Series(data[:, 1], index=idx)
 
     # If predictive prob is all on A -> rho should be close to -0.6
-    pA = pd.Series([1.0, 0.0], index=["RA", "RB"])
-    rhoA = predictive_bond_equity_corr(state, eq, bd, pA)
+    pA = pd.Series([1.0, 0.0], index=names)
+    rhoA, _ = predictive_bond_equity_corr(state, eq, bd, pA)
     assert -0.7 < rhoA < -0.5, rhoA
 
     # All on B -> close to +0.5
-    pB = pd.Series([0.0, 1.0], index=["RA", "RB"])
-    rhoB = predictive_bond_equity_corr(state, eq, bd, pB)
+    pB = pd.Series([0.0, 1.0], index=names)
+    rhoB, _ = predictive_bond_equity_corr(state, eq, bd, pB)
     assert 0.4 < rhoB < 0.6, rhoB
 
     # Mixed 50/50 -> between the two, and the between-regime mean dispersion
     # (means differ across regimes) pulls it; just check it is between.
-    pM = pd.Series([0.5, 0.5], index=["RA", "RB"])
-    rhoM = predictive_bond_equity_corr(state, eq, bd, pM)
+    pM = pd.Series([0.5, 0.5], index=names)
+    rhoM, _ = predictive_bond_equity_corr(state, eq, bd, pM)
     assert rhoA < rhoM < rhoB + 0.2, (rhoA, rhoM, rhoB)
+
+    # both regimes well populated -> both use their own covariance
+    _, info = predictive_bond_equity_corr(state, eq, bd, pA)
+    assert info["n"] == [300, 300] and info["own"] == [True, True], info
+
+    # thin regime: window = 300 months of A + 5 of B -> B falls back to pooled
+    _, info = predictive_bond_equity_corr(state.iloc[:305], eq, bd, pA)
+    assert info["n"] == [300, 5] and info["own"] == [True, False], info
+
+    # the old bug (text labels vs integer positions) must now fail loudly
+    try:
+        predictive_bond_equity_corr(state.map({0: "RA", 1: "RB"}), eq, bd, pA)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("label mismatch was not caught")
+
 
     # --- split function ---
     base = {"^SP500TR": 0.60, "LT09TRUU": 0.40}

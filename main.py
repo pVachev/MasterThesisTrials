@@ -179,7 +179,7 @@ EXPORT_EXPANDING_WINDOW = False
 
 ONLY_SLEEVE    = None  # e.g. 0.45
 ONLY_FLOOR     = 0.001   # e.g. 0.001
-ONLY_5 = None  # e.g. ["MV", "MVS"]
+ONLY_INVESTORS = None  # e.g. ["MV", "MVS"]
 
 CORE_MODEL_CODE = "A"
 

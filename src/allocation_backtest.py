@@ -955,6 +955,7 @@ def run_expanding_window_backtest(
         core_override = None
         rho = float("nan")
         rr_t = float("nan")
+        corr_n, corr_own = [], []
         if rho_realized is not None:
             rr_t = float(rho_realized.get(rebalance_date, float("nan")))
         _corr_active = (getattr(alloc_cfg, "core_split_kappa", 0.0)
@@ -962,12 +963,13 @@ def run_expanding_window_backtest(
         if _corr_active and not alloc_cfg.equity_only_displacement:
             eq_tk = alloc_cfg.equity_ticker
             bond_tk = next(t for t in alloc_cfg.fixed_core_weights if t != eq_tk)
-            rho = predictive_bond_equity_corr(
+            rho, corr_info = predictive_bond_equity_corr(
                 state_series=frozen.train_df_m["state"],
                 eq_ret=allocation_df[f"{signal_return_prefix}{eq_tk}"],
                 bond_ret=allocation_df[f"{signal_return_prefix}{bond_tk}"],
                 predictive_probabilities_row=pred_row,
             )
+            corr_n, corr_own = corr_info["n"], corr_info["own"]
             core_override = corr_adjusted_core_split(
                 rho=rho, base_core_weights=alloc_cfg.fixed_core_weights,
                 equity_ticker=eq_tk, bond_ticker=bond_tk,
@@ -1025,6 +1027,8 @@ def run_expanding_window_backtest(
             "vol_z":                               z_t,
             "corr_rho_mixture":                    rho,
             "corr_rho_realized":                   rr_t,
+            "corr_regime_n":                       corr_n,
+            "corr_regime_own":                     corr_own,
             "applied_weights_after_turnover_limit": applied_weights,
             "turnover":                            realized_turnover,
             "transaction_cost":                    transaction_cost,
@@ -1065,6 +1069,9 @@ def run_expanding_window_backtest(
     decision_log["gross_simple_return"] = [d.metadata["gross_simple_return"] for d in decisions]
     decision_log["net_simple_return"]   = [d.metadata["net_simple_return"]   for d in decisions]
     decision_log["window_size"]         = [d.metadata["window_size"]         for d in decisions]
+    decision_log["corr_regime_n"] = [" / ".join(map(str, d.metadata["corr_regime_n"])) for d in decisions]
+    decision_log["corr_source"]   = [" / ".join("own" if o else "pooled" for o in d.metadata["corr_regime_own"])
+                                     for d in decisions]
  
     weights_df   = pd.DataFrame(weights_rows).sort_index()
     realized_df  = pd.DataFrame(realized_rows).sort_index()

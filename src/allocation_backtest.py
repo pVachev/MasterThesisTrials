@@ -1010,14 +1010,15 @@ def run_expanding_window_backtest(
         )
  
         realized_log_row    = realized_asset_returns.loc[realized_date]
-        realized_log_return = float(
+        weights_vec = np.array([applied_weights.get(a, 0.0) for a in all_assets], dtype=float)
+
+        gross_simple_return = float(
             np.dot(
-                np.array([applied_weights.get(a, 0.0) for a in all_assets], dtype=float),
-                realized_log_row.to_numpy(dtype=float),
-            )
+                np.array(weights_vec), 
+                np.expm1(realized_log_row.to_numpy(dtype=float))
+
+                )
         )
- 
-        gross_simple_return = float(np.expm1(realized_log_return))
         transaction_cost    = realized_turnover * (alloc_cfg.transaction_cost_bps / 10000.0)
         net_simple_return   = gross_simple_return - transaction_cost
  
@@ -1089,7 +1090,9 @@ def run_expanding_window_backtest(
         benchmark_log_return = (
             realized_asset_returns.loc[weights_df.index, all_assets] * bw.values
         ).sum(axis=1)
-        benchmark_returns  = np.expm1(benchmark_log_return)
+        benchmark_returns  = (
+            np.expm1(realized_asset_returns.loc[weights_df.index, all_assets]) * bw.values
+        ).sum(axis=1)
         benchmark_wealth   = (1.0 + benchmark_returns.fillna(0.0)).cumprod()
         benchmark_drawdown = benchmark_wealth / benchmark_wealth.cummax() - 1.0
  

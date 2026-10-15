@@ -258,8 +258,8 @@ def estimate_state_conditional_portfolio_moments(
 
     # portfolio return series
     w = pd.Series(total_weights, dtype=float)
-    portfolio_r = (asset_panel * w.values).sum(axis=1)
-
+    portfolio_r = (np.expm1(asset_panel) * w.values).sum(axis=1)
+    
     # unconditional moments as fallback / shrinkage anchor
     uncond = _compute_raw_and_central_moments(portfolio_r)
 
@@ -386,7 +386,7 @@ def estimate_state_conditional_portfolio_moments_from_sample(
         raise ValueError("No overlap between state_series and allocation_df_sample.")
 
     w = pd.Series(total_weights, dtype=float)
-    portfolio_r = (asset_panel * w.values).sum(axis=1)
+    portfolio_r = (np.expm1(asset_panel) * w.values).sum(axis=1)
 
     uncond = _compute_raw_and_central_moments(portfolio_r)
 

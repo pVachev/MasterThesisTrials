@@ -1087,9 +1087,6 @@ def run_expanding_window_backtest(
  
     if benchmark_weights is not None:
         bw = pd.Series({a: benchmark_weights.get(a, 0.0) for a in all_assets}, dtype=float)
-        benchmark_log_return = (
-            realized_asset_returns.loc[weights_df.index, all_assets] * bw.values
-        ).sum(axis=1)
         benchmark_returns  = (
             np.expm1(realized_asset_returns.loc[weights_df.index, all_assets]) * bw.values
         ).sum(axis=1)

@@ -88,7 +88,7 @@ INVESTOR_CONFIGS = {
     "MVK": InvestorPreferenceConfig(
         name="MVK Investor", investor_type="MVK",
         lambda_=3.0,
-        gamma=0.0,   # 20% × 3.0 × 0.000672 / 0.7014
+        gamma=0.0,   # no skewness term within the mean-variance-skewness investor preference
         delta=0.000207,   # 20% × 3.0 × 0.000672 / 1.9482 
     ),
 }
@@ -174,12 +174,12 @@ EXPORT_ALLOCATION       = False
 PLOT_ALLOCATION         = False
 STORE_CANDIDATE_SCORES  = False
 
-RUN_EXPANDING_WINDOW    = False  # Full sensitivity grid
+RUN_EXPANDING_WINDOW    = True  # Full sensitivity grid
 EXPORT_EXPANDING_WINDOW = False
 
-ONLY_SLEEVE    = None  # e.g. 0.45
+ONLY_SLEEVE    = 0.20  # e.g. 0.45
 ONLY_FLOOR     = 0.001   # e.g. 0.001
-ONLY_INVESTORS = None  # e.g. ["MV", "MVS"]
+ONLY_INVESTORS = ["MV"]  # e.g. ["MV", "MVS"]
 
 CORE_MODEL_CODE = "A"
 
@@ -402,6 +402,7 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
                 res_core=res_core,
                 allocation_df=allocation_df,
                 hmm_cfg=HMM_CFG,
+                rf_col = HMM_CFG.rf_col,
                 alloc_cfg=alloc_cfg_run,
                 investor_cfg=investor_cfg,
                 satellite_specs=SECTOR_SPECS,

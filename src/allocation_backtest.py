@@ -32,6 +32,9 @@ def _extract_return_panel(
     assets: list[str],
     return_prefix: str,
 ) -> pd.DataFrame:
+    """
+    Checks 
+    """
     cols = [f"{return_prefix}{a}" for a in assets]
     missing = [c for c in cols if c not in allocation_df.columns]
     if missing:
@@ -97,6 +100,8 @@ def performance_summary_from_returns(
     avg_turnover: float | None = None,
     active_months: int | None = None,
     label: str = "strategy",
+    allocation_df: pd.Series | None = None,
+    rf_col: str | None = None,
 ) -> pd.DataFrame:
     def _stats(r: pd.Series, name: str) -> dict[str, float | str]:
         r = pd.to_numeric(r, errors="coerce").dropna()
@@ -120,7 +125,8 @@ def performance_summary_from_returns(
         drawdown = wealth / running_max - 1.0
         max_dd = drawdown.min()
 
-        downside = r[r < 0]
+        downside = max(allocation_df[rf_col] - r,0)**2 
+
         downside_dev = downside.std(ddof=1) * np.sqrt(periods_per_year) if len(downside) > 1 else np.nan
 
         return {
@@ -1100,6 +1106,8 @@ def run_expanding_window_backtest(
         avg_turnover=realized_df.loc[realized_df["turnover"] > 0, "turnover"].mean(),
         active_months=int((realized_df["turnover"] > 0).sum()),
         label=f"{res_core.spec.label} | {investor_cfg.name} | EW",
+        allocation_df=allocation_df,
+        rf_col=hmm_cfg.rf_col,
     )
  
     candidate_scores = None

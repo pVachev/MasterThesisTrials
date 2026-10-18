@@ -118,10 +118,11 @@ def performance_summary_from_returns(
             }
 
         rf = allocation_df[rf_col].reindex(r.index)
+        ex_r = r - rf
         wealth = (1.0 + r).cumprod()
         cagr = wealth.iloc[-1] ** (periods_per_year / len(r)) - 1.0
-        vol = r.std(ddof=1) * np.sqrt(periods_per_year)
-        sharpe = (r.mean() - rf.mean() * periods_per_year) / vol if vol > 0 else np.nan
+        vol = ex_r.std(ddof=1) * np.sqrt(periods_per_year)
+        sharpe = (ex_r.mean() * periods_per_year) / vol if vol > 0 else np.nan
 
         running_max = wealth.cummax()
         drawdown = wealth / running_max - 1.0

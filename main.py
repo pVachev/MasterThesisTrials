@@ -14,19 +14,16 @@ from src.allocation_config import (
     InvestorPreferenceConfig,
     SatelliteSpec,
     AllocationConfig,
-    TrainTestConfig,
     CashSleeveConfig,
 )
 from src.allocation_moments import calibrate_investor_params
 from src.allocation_backtest import (
-    run_fixed_parameter_train_test_backtest,
     run_expanding_window_backtest,
     ExpandingWindowConfig,
 )
 from src.allocation_export import export_allocation_backtest_to_excel, export_model_results_to_excel
 from src.vol_signal import build_monthly_vol_signal
 from src.corr_signal import build_monthly_horizon_corr
-from src.allocation_plot import plot_allocation_dashboard, plot_distribution_comparison
 
 
 # ── Shared configuration ───────────────────────────────────────────────────
@@ -89,7 +86,7 @@ INVESTOR_CONFIGS = {
     "MVK": InvestorPreferenceConfig(
         name="MVK Investor", investor_type="MVK",
         lambda_=3.0,
-        gamma=0.0,   # no skewness term within the mean-variance-skewness investor preference
+        gamma=0.0,   # no skewness term within the mean-variance-kurtosis investor preference
         delta=0.000207,   # 20% × 3.0 × 0.000672 / 1.9482 
     ),
 }
@@ -170,17 +167,13 @@ SENSITIVITY_GRID = [
 
 
 # ── Run flags ──────────────────────────────────────────────────────────────
-RUN_ALLOCATION          = False   # A1 honest train/test backtest
-EXPORT_ALLOCATION       = False
-PLOT_ALLOCATION         = False
-STORE_CANDIDATE_SCORES  = False
 
 RUN_EXPANDING_WINDOW    = True  # Full sensitivity grid
-EXPORT_EXPANDING_WINDOW = False
+EXPORT_EXPANDING_WINDOW = True
 
-ONLY_SLEEVE    = 0.20 # e.g. 0.45
+ONLY_SLEEVE    = 0.30 # e.g. 0.45
 ONLY_FLOOR     = 0.001   # e.g. 0.001
-ONLY_INVESTORS = ["MV"]  # e.g. ["MV", "MVS"]
+ONLY_INVESTORS = None  # e.g. ["MV", "MVS"]
 
 CORE_MODEL_CODE = "A"
 
@@ -220,86 +213,6 @@ def run_hmm_models(df: pd.DataFrame) -> list:
     # )
 
     return results
-
-
-def run_a1_backtest(results: list, df: pd.DataFrame) -> dict:
-    """
-    A1 honest train/test backtest.
-    HMM and satellite moments frozen on 1999-2016 training window,
-    evaluated out-of-sample from 2017 onwards.
-    Primary thesis configuration: 45% sleeve, floor = 0.001.
-    """
-    if not RUN_ALLOCATION:
-        return {}
-
-    res_core = next(r for r in results if r.spec.code == CORE_MODEL_CODE)
-    satellite_tickers = [s.ticker for s in SECTOR_SPECS]
-    allocation_cols = ["^SP500TR", "LT09TRUU"] + satellite_tickers + [HMM_CFG.rf_col]
-    allocation_df = diff_data(
-        df, cols=allocation_cols, rf_col=HMM_CFG.rf_col,
-        monthly_cols=M_TICKERS, rf_mode=HMM_CFG.rf_mode, freq=HMM_CFG.freq,
-    )
-
-    tt_cfg = TrainTestConfig(
-        train_start="1999-01-31", train_end="2016-12-31",
-        test_start="2017-01-31", test_end=None,
-        min_train_observations=60,
-    )
-
-    # ── Primary thesis config: 45% sleeve / floor 0.001 ───────────────────
-    alloc_cfg_a1 = AllocationConfig(
-        rebalance_frequency="ME",
-        top_n_satellites=2,
-        max_satellite_weight=0.45,           # primary thesis config
-        fixed_core_weights=BENCHMARK_WEIGHTS,
-        long_only=True,
-        no_leverage=True,
-        transaction_cost_bps=5.0,
-        turnover_limit=None,
-        min_regime_obs=24,
-        shrinkage_intensity=0.0,
-        score_improvement_floor=0.001,       # primary thesis config
-        export_file="allocation_results.xlsx",
-        equity_only_displacement=False,
-        equity_ticker="^SP500TR",
-    )
-    alloc_cfg_a1.validate()
-
-    allocation_results = {}
-    for inv_key, investor_cfg in INVESTOR_CONFIGS.items():
-        bt, _ = run_fixed_parameter_train_test_backtest(
-            res_core=res_core,
-            allocation_df=allocation_df,
-            hmm_cfg=HMM_CFG,
-            tt_cfg=tt_cfg,
-            alloc_cfg=alloc_cfg_a1,
-            investor_cfg=investor_cfg,
-            satellite_specs=SECTOR_SPECS,
-            benchmark_weights=BENCHMARK_WEIGHTS,
-            signal_return_prefix="ExcessLog",
-            realized_return_prefix="Log",
-            periods_per_year=12,
-            store_candidate_scores=STORE_CANDIDATE_SCORES,
-            cash_sleeve_cfg=CASH_SLEEVE,
-        )
-        allocation_results[inv_key] = bt
-        print(f"\n=== A1 HONEST BACKTEST | {investor_cfg.name} ===")
-        print(bt.performance_summary)
-
-        if EXPORT_ALLOCATION:
-            export_allocation_backtest_to_excel(
-                backtest_res=bt,
-                alloc_cfg=alloc_cfg_a1,
-                investor_cfg=investor_cfg,
-                satellite_specs=SECTOR_SPECS,
-                res_core=res_core,
-                output_file=f"allocation_backtest_A1_{inv_key}.xlsx",
-            )
-        if PLOT_ALLOCATION:
-            plot_allocation_dashboard(bt)
-            plot_distribution_comparison(bt)
-
-    return allocation_results
 
 
 def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
@@ -434,7 +347,6 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
 def main():
     df = clean_data(TICKERS_ALL, M_TICKERS, W_TICKERS)
     results = run_hmm_models(df)
-    run_a1_backtest(results, df)
     run_sensitivity_grid(results, df)
 
 

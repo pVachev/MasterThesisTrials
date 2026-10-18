@@ -140,8 +140,12 @@ def episode_protection(ep_df, peak_ym):
 
 def metrics_row(r):
     cap=capture(r); hc=hit_and_conviction(r); ep=episodes(r)
+    rf=r["wd"]["rf"]
     s=r["wd"]["strategy_return"]
-    sortino=(s.mean()*12)/ (s[s<0].std(ddof=0)*np.sqrt(12)) if (s<0).any() else np.nan
+    d_dev = float(r["srow"].Downside_Deviation)
+
+
+    sortino=(((s - rf).mean())*12) / d_dev if d_dev>0 else np.nan
     row={
         "investor":r["inv"], "sleeve":r["sleeve"], "floor":r["floor"],
         "displacement":("equity-only" if r["eq_only"] else (f"core-repl-hyb{r.get('hyb_var','A')}" if r.get("hyb") else "core-repl")),

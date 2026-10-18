@@ -7,14 +7,10 @@ from src.corr_core_split import predictive_bond_equity_corr, corr_adjusted_core_
 from src.vol_signal import effective_bear_probability
 
 from src.allocation_regime import (
-    fit_hmm_train_only_for_allocation,
-    filter_test_probabilities_fixed_params,
-    build_test_predictive_probability_panel,
     _extract_filtered_probabilities_from_dfm,
     _reorder_hmm_params,
-    forward_filter_fixed_hmm,
-    predictive_regime_probabilities_from_filtered,
 )
+
 from src.allocation_scoring import (
     build_candidate_library_from_train,
     select_best_tilt_at_date_from_library,
@@ -43,13 +39,6 @@ def _extract_return_panel(
     out = allocation_df[cols].copy()
     out.columns = assets
     return out
-
-
-def _compute_turnover(prev_weights: dict[str, float], new_weights: dict[str, float], assets: list[str]) -> float:
-    prev = pd.Series({a: prev_weights.get(a, 0.0) for a in assets}, dtype=float)
-    new = pd.Series({a: new_weights.get(a, 0.0) for a in assets}, dtype=float)
-    return float((new - prev).abs().sum())
-
 
 def _apply_turnover_limit(
     prev_weights: dict[str, float],
@@ -121,8 +110,9 @@ def performance_summary_from_returns(
         ex_r = r - rf
         wealth = (1.0 + r).cumprod()
         cagr = wealth.iloc[-1] ** (periods_per_year / len(r)) - 1.0
-        vol = ex_r.std(ddof=1) * np.sqrt(periods_per_year)
-        sharpe = (ex_r.mean() * periods_per_year) / vol if vol > 0 else np.nan
+        vol = r.std(ddof=1) * np.sqrt(periods_per_year)
+        ex_vol = ex_r.std(ddof=1) * np.sqrt(periods_per_year)
+        sharpe = (ex_r.mean() * periods_per_year) / ex_vol if ex_vol > 0 else np.nan
 
         running_max = wealth.cummax()
         drawdown = wealth / running_max - 1.0
@@ -130,7 +120,6 @@ def performance_summary_from_returns(
 
 
         downside = np.maximum(((rf - r).dropna()),0)
-
         downside_dev = np.sqrt((downside**2).mean()) * np.sqrt(periods_per_year) if len(downside) > 1 else np.nan
 
         return {
@@ -152,475 +141,10 @@ def performance_summary_from_returns(
         # NOTE (Jul 2026): avg_turnover is the mean over ACTIVE months only
         # (turnover > 0). The previous all-months mean diluted the figure
         # with NONE/no-trade months and understated per-trade activity.
-        out["Avg_Turnover"] = avg_turnover
+        out.loc[0, "Avg_Turnover"] = avg_turnover
     if active_months is not None:
-        out["Active_Months"] = active_months
+        out.loc[0, "Active_Months"] = active_months
     return out
-
-
-# ---------------------------------------------------------------------
-# 2) MAIN STAGE 6 BACKTEST RUNNER
-# ---------------------------------------------------------------------
-
-def run_regime_allocation_backtest(
-    res: "ModelRunResult",
-    allocation_df: pd.DataFrame,
-    alloc_cfg,
-    investor_cfg,
-    satellite_specs: list,
-    benchmark_weights: dict[str, float] | None = None,
-    signal_return_prefix: str = "ExcessLog",
-    realized_return_prefix: str = "Log",
-    periods_per_year: int = 12,
-    store_candidate_scores: bool = True,
-) -> BacktestResult:
-    """
-    Run the prototype regime-aware allocation backtest.
- 
-    Prototype timing convention
-    ---------------------------
-    At date t:
-      1) use filtered probabilities from the existing HMM result
-      2) compute one-step predictive probabilities pi_{t+1|t}
-      3) evaluate candidate tilts
-      4) choose the best tilt
-      5) apply chosen weights to realized return at t+1
- 
-    This is the correct Stage 6 prototype because:
-    - decisions are next-period only
-    - no smoothed probabilities are used
-    - the logic stays wrapped around your current HMM pipeline
- 
-    Parameters
-    ----------
-    res : ModelRunResult
-        Core regime-engine result from the current HMM pipeline.
- 
-    allocation_df : pd.DataFrame
-        Return panel containing both:
-        - signal columns (e.g. ExcessLog...)
-        - realized columns (e.g. Log...)
- 
-    alloc_cfg : AllocationConfig
-        Allocation settings.
- 
-    investor_cfg : InvestorPreferenceConfig
-        Investor preference to score candidate tilts.
- 
-    satellite_specs : list[SatelliteSpec]
-        Satellite candidate definitions.
- 
-    benchmark_weights : dict[str, float] | None
-        Optional static benchmark portfolio over the same allocation universe.
- 
-    signal_return_prefix : str
-        Prefix used by Stage 4/5 scoring, usually "ExcessLog".
- 
-    realized_return_prefix : str
-        Prefix used for actual backtest PnL, usually "Log".
- 
-    periods_per_year : int
-        12 for monthly, 52 for weekly.
- 
-    store_candidate_scores : bool
-        If True, keep the full candidate-score table through time.
- 
-    Returns
-    -------
-    BacktestResult
-    """
-    # 1) predictive regime probabilities
-    pred_probs = build_predictive_probability_panel(res, steps_ahead=1) # deprecated
- 
-    # 2) build the tradable asset universe
-    core_assets = list(alloc_cfg.fixed_core_weights.keys())
-    sat_assets = [s.ticker for s in satellite_specs]
-    all_assets = list(dict.fromkeys(core_assets + sat_assets))  # preserve order, unique
- 
-    realized_asset_returns = _extract_return_panel(
-        allocation_df=allocation_df,
-        assets=all_assets,
-        return_prefix=realized_return_prefix,
-    )
- 
-    # 3) align dates
-    common_dates = pred_probs.index.intersection(realized_asset_returns.index)
-    common_dates = common_dates.sort_values()
- 
-    if len(common_dates) < 2:
-        raise ValueError("Not enough overlapping dates to run a next-period backtest.")
- 
-    decisions = []
-    candidate_score_tables = []
- 
-    realized_rows = []
-    weights_rows = []
- 
-    prev_applied_weights = alloc_cfg.fixed_core_weights.copy()
- 
-    # We decide at date t and realize at the next date t+1
-    for i in range(len(common_dates) - 1):
-        rebalance_date = common_dates[i]
-        realized_date = common_dates[i + 1]
- 
-        decision, candidate_table = select_best_tilt_at_date( # deprecated 
-            res=res,
-            allocation_df=allocation_df,
-            alloc_cfg=alloc_cfg,
-            investor_cfg=investor_cfg,
-            satellite_specs=satellite_specs,
-            predictive_probability_panel=pred_probs,
-            rebalance_date=rebalance_date,
-            return_prefix=signal_return_prefix,
-        )
- 
-        # turnover control (optional)
-        applied_weights, realized_turnover = _apply_turnover_limit(
-            prev_weights=prev_applied_weights,
-            target_weights=decision.total_portfolio_weights,
-            assets=all_assets,
-            turnover_limit=alloc_cfg.turnover_limit,
-        )
- 
-        # realized period return at t+1
-        realized_log_row = realized_asset_returns.loc[realized_date]
-        realized_log_return = float(
-            np.dot(
-                np.array([applied_weights.get(a, 0.0) for a in all_assets], dtype=float),
-                realized_log_row.to_numpy(dtype=float),
-            )
-        )
- 
-        gross_simple_return = float(np.expm1(realized_log_return))
- 
-        # optional transaction costs
-        transaction_cost = realized_turnover * (alloc_cfg.transaction_cost_bps / 10000.0)
-        net_simple_return = gross_simple_return - transaction_cost
- 
-        # store decision and realized outcome
-        decision.metadata = {
-            **decision.metadata,
-            "realized_date": realized_date,
-            "applied_weights_after_turnover_limit": applied_weights,
-            "turnover": realized_turnover,
-            "transaction_cost": transaction_cost,
-            "gross_simple_return": gross_simple_return,
-            "net_simple_return": net_simple_return,
-        }
-        decisions.append(decision)
- 
-        # decision log / weight history / realized returns
-        weights_rows.append(
-            pd.Series(applied_weights, name=realized_date)
-        )
- 
-        row = {
-            "rebalance_date": rebalance_date,
-            "realized_date": realized_date,
-            "gross_simple_return": gross_simple_return,
-            "net_simple_return": net_simple_return,
-            "turnover": realized_turnover,
-            "transaction_cost": transaction_cost,
-        }
-        realized_rows.append(pd.Series(row, name=realized_date))
- 
-        if store_candidate_scores:
-            ct = candidate_table.copy()
-            ct["realized_date"] = realized_date
-            ct["model_label"] = res.spec.label
-            candidate_score_tables.append(ct)
- 
-        prev_applied_weights = applied_weights
- 
-    # 4) assemble outputs
-    decision_log = _decision_list_to_df(decisions)
-    decision_log["realized_date"] = [d.metadata["realized_date"] for d in decisions]
-    decision_log["turnover"] = [d.metadata["turnover"] for d in decisions]
-    decision_log["transaction_cost"] = [d.metadata["transaction_cost"] for d in decisions]
-    decision_log["gross_simple_return"] = [d.metadata["gross_simple_return"] for d in decisions]
-    decision_log["net_simple_return"] = [d.metadata["net_simple_return"] for d in decisions]
- 
-    weights_df = pd.DataFrame(weights_rows).sort_index()
-    realized_df = pd.DataFrame(realized_rows).sort_index()
- 
-    strategy_returns = realized_df["net_simple_return"].copy()
- 
-    cumulative_wealth = (1.0 + strategy_returns.fillna(0.0)).cumprod()
-    running_max = cumulative_wealth.cummax()
-    drawdown = cumulative_wealth / running_max - 1.0
- 
-    benchmark_returns = None
-    benchmark_wealth = None
-    benchmark_drawdown = None
- 
-    if benchmark_weights is not None:
-        bw = pd.Series({a: benchmark_weights.get(a, 0.0) for a in all_assets}, dtype=float)
-        benchmark_log_return = (realized_asset_returns.loc[weights_df.index, all_assets] * bw.values).sum(axis=1)
-        benchmark_returns = np.expm1(benchmark_log_return)
-        benchmark_wealth = (1.0 + benchmark_returns.fillna(0.0)).cumprod()
-        benchmark_drawdown = benchmark_wealth / benchmark_wealth.cummax() - 1.0
- 
-    perf = performance_summary_from_returns(
-        strategy_simple_returns=strategy_returns,
-        benchmark_simple_returns=benchmark_returns,
-        periods_per_year=periods_per_year,
-        avg_turnover=realized_df.loc[realized_df["turnover"] > 0, "turnover"].mean(),
-        active_months=int((realized_df["turnover"] > 0).sum()),
-        label=f"{res.spec.label} | {investor_cfg.name}",
-    )
- 
-    candidate_scores = None
-    if store_candidate_scores and candidate_score_tables:
-        candidate_scores = pd.concat(candidate_score_tables, ignore_index=True)
- 
-    return BacktestResult(
-        model_label=res.spec.label,
-        investor_name=investor_cfg.name,
-        decisions=decisions,
-        decision_log=decision_log,
-        weights=weights_df,
-        asset_returns=realized_asset_returns.loc[weights_df.index, all_assets].copy(),
-        strategy_returns=strategy_returns,
-        benchmark_returns=benchmark_returns,
-        cumulative_wealth=cumulative_wealth,
-        benchmark_wealth=benchmark_wealth,
-        drawdown=drawdown,
-        benchmark_drawdown=benchmark_drawdown,
-        performance_summary=perf,
-        candidate_scores=candidate_scores,
-    )
- 
-
-def run_fixed_parameter_train_test_backtest(
-    res_core,
-    allocation_df: pd.DataFrame,
-    hmm_cfg,
-    tt_cfg,
-    alloc_cfg,
-    investor_cfg,
-    satellite_specs: list,
-    benchmark_weights: dict[str, float] | None = None,
-    signal_return_prefix: str = "ExcessLog",
-    realized_return_prefix: str = "Log",
-    periods_per_year: int = 12,
-    store_candidate_scores: bool = True,
-    cash_sleeve_cfg=None,
-    vol_z: "pd.Series | None" = None,
-) -> tuple[BacktestResult, object]:
-    """
-    Honest A1 regime-allocation backtest.
- 
-    Train
-    -----
-    - fit HMM on train only
-    - freeze HMM parameters
-    - estimate candidate moments on train only
-    - freeze candidate library
- 
-    Test
-    ----
-    At each rebalance date t in test:
-      - update filtered probability using frozen HMM and only data up to t
-      - compute pi_{t+1|t}
-      - score candidates using TRAIN-only moment library
-      - choose best tilt
-      - apply to realized return at t+1
-    """
-    # 1) fit HMM on train only and freeze parameters
-    frozen_state = fit_hmm_train_only_for_allocation(
-        res_core=res_core,
-        hmm_cfg=hmm_cfg,
-        tt_cfg=tt_cfg,
-    )
- 
-    # 2) honest test-period filtered and predictive probabilities
-    filtered_test = filter_test_probabilities_fixed_params(frozen_state)
-    pred_test = build_test_predictive_probability_panel(frozen_state, steps_ahead=1)
- 
-    # 3) build train-sample allocation panel for candidate moments
-    core_assets = list(alloc_cfg.fixed_core_weights.keys())
-    sat_assets = [s.ticker for s in satellite_specs]
-    all_assets = list(dict.fromkeys(core_assets + sat_assets))
-
-    # include RF in realized returns if cash sleeve is active
-    if cash_sleeve_cfg is not None and cash_sleeve_cfg.enabled:
-        rf_tk = cash_sleeve_cfg.rf_ticker
-        if rf_tk not in all_assets:
-            all_assets.append(rf_tk)
-
-    allocation_df_train = allocation_df.loc[frozen_state.train_x.index].copy()
- 
-    # 4) precompute candidate library using TRAIN only
-    candidate_library = build_candidate_library_from_train(
-        state_series_train=frozen_state.train_df_m["state"],
-        regime_names=frozen_state.regime_names,
-        allocation_df_train=allocation_df_train,
-        alloc_cfg=alloc_cfg,
-        satellite_specs=satellite_specs,
-        return_prefix=signal_return_prefix,
-    )
- 
-    # 5) realized asset return panel
-    realized_asset_returns = _extract_return_panel(
-        allocation_df=allocation_df,
-        assets=all_assets,
-        return_prefix=realized_return_prefix,
-    )
- 
-    test_dates = pred_test.index.intersection(realized_asset_returns.index).sort_values()
-    if len(test_dates) < 2:
-        raise ValueError("Need at least 2 test dates for next-period realized backtest.")
- 
-    decisions = []
-    candidate_score_tables = []
-    realized_rows = []
-    weights_rows = []
- 
-    prev_applied_weights = alloc_cfg.fixed_core_weights.copy()
- 
-    # decide at t, realize at t+1
-    for i in range(len(test_dates) - 1):
-        rebalance_date = test_dates[i]
-        realized_date = test_dates[i + 1]
- 
-        pred_row = pred_test.loc[rebalance_date]
-
-        # ── Channel A: vol-sharpened bear probability (sizing-only) ──
-        # p_eff feeds compute_regime_conviction_weights via p_bear_override.
-        # Stage-1 scoring consumes the untouched pred_row.
-        p_bear_override = None
-        z_t = float("nan")
-        if getattr(alloc_cfg, "vol_signal_enabled", False) and vol_z is not None:
-            z_t = float(vol_z.get(rebalance_date, float("nan")))
-            p_bear_override = effective_bear_probability(
-                float(pred_row.iloc[0]), z_t,
-                alloc_cfg.vol_eta, alloc_cfg.vol_z_star, alloc_cfg.vol_p_cap,
-            )
- 
-        decision, candidate_table = select_best_tilt_at_date_from_library(
-            candidate_library=candidate_library,
-            predictive_probabilities_row=pred_row,
-            investor_cfg=investor_cfg,
-            alloc_cfg=alloc_cfg,
-            rebalance_date=rebalance_date,
-            satellite_specs=satellite_specs,
-            p_bear_override=p_bear_override,
-        )
-
-        # ── cash sleeve ──────────────────────────────────────────
-        cash_weights, cash_weight = apply_cash_sleeve(
-            portfolio_weights=decision.total_portfolio_weights,
-            cash_sleeve_cfg=cash_sleeve_cfg,
-            predictive_probabilities_row=pred_row,
-        )
-
-        applied_weights, realized_turnover = _apply_turnover_limit(
-            prev_weights=prev_applied_weights,
-            target_weights=cash_weights,
-            assets=all_assets,
-            turnover_limit=alloc_cfg.turnover_limit,
-        )
- 
-        realized_log_row = realized_asset_returns.loc[realized_date]
-        realized_log_return = float(
-            np.dot(
-                np.array([applied_weights.get(a, 0.0) for a in all_assets], dtype=float),
-                realized_log_row.to_numpy(dtype=float),
-            )
-        )
- 
-        gross_simple_return = float(np.expm1(realized_log_return))
-        transaction_cost = realized_turnover * (alloc_cfg.transaction_cost_bps / 10000.0)
-        net_simple_return = gross_simple_return - transaction_cost
- 
-        decision.metadata = {
-            **decision.metadata,
-            "realized_date": realized_date,
-            "applied_weights_after_turnover_limit": applied_weights,
-            "turnover": realized_turnover,
-            "transaction_cost": transaction_cost,
-            "gross_simple_return": gross_simple_return,
-            "net_simple_return": net_simple_return,
-            "cash_weight": cash_weight,
-        }
-        decisions.append(decision)
- 
-        weights_rows.append(pd.Series(applied_weights, name=realized_date))
- 
-        row = {
-            "rebalance_date": rebalance_date,
-            "realized_date": realized_date,
-            "gross_simple_return": gross_simple_return,
-            "net_simple_return": net_simple_return,
-            "turnover": realized_turnover,
-            "transaction_cost": transaction_cost,
-        }
-        realized_rows.append(pd.Series(row, name=realized_date))
- 
-        if store_candidate_scores:
-            ct = candidate_table.copy()
-            ct["realized_date"] = realized_date
-            ct["model_label"] = res_core.spec.label
-            candidate_score_tables.append(ct)
- 
-        prev_applied_weights = applied_weights
- 
-    decision_log = _decision_list_to_df(decisions)
-    decision_log["realized_date"] = [d.metadata["realized_date"] for d in decisions]
-    decision_log["turnover"] = [d.metadata["turnover"] for d in decisions]
-    decision_log["transaction_cost"] = [d.metadata["transaction_cost"] for d in decisions]
-    decision_log["gross_simple_return"] = [d.metadata["gross_simple_return"] for d in decisions]
-    decision_log["net_simple_return"] = [d.metadata["net_simple_return"] for d in decisions]
- 
-    weights_df = pd.DataFrame(weights_rows).sort_index()
-    realized_df = pd.DataFrame(realized_rows).sort_index()
- 
-    strategy_returns = realized_df["net_simple_return"].copy()
-    cumulative_wealth = (1.0 + strategy_returns.fillna(0.0)).cumprod()
-    drawdown = cumulative_wealth / cumulative_wealth.cummax() - 1.0
- 
-    benchmark_returns = None
-    benchmark_wealth = None
-    benchmark_drawdown = None
- 
-    if benchmark_weights is not None:
-        bw = pd.Series({a: benchmark_weights.get(a, 0.0) for a in all_assets}, dtype=float)
-        benchmark_log_return = (realized_asset_returns.loc[weights_df.index, all_assets] * bw.values).sum(axis=1)
-        benchmark_returns = np.expm1(benchmark_log_return)
-        benchmark_wealth = (1.0 + benchmark_returns.fillna(0.0)).cumprod()
-        benchmark_drawdown = benchmark_wealth / benchmark_wealth.cummax() - 1.0
- 
-    perf = performance_summary_from_returns(
-        strategy_simple_returns=strategy_returns,
-        benchmark_simple_returns=benchmark_returns,
-        periods_per_year=periods_per_year,
-        avg_turnover=realized_df.loc[realized_df["turnover"] > 0, "turnover"].mean(),
-        active_months=int((realized_df["turnover"] > 0).sum()),
-        label=f"{res_core.spec.label} | {investor_cfg.name}",
-    )
- 
-    candidate_scores = None
-    if store_candidate_scores and candidate_score_tables:
-        candidate_scores = pd.concat(candidate_score_tables, ignore_index=True)
- 
-    backtest_res = BacktestResult(
-        model_label=res_core.spec.label,
-        investor_name=investor_cfg.name,
-        decisions=decisions,
-        decision_log=decision_log,
-        weights=weights_df,
-        asset_returns=realized_asset_returns.loc[weights_df.index, all_assets].copy(),
-        strategy_returns=strategy_returns,
-        benchmark_returns=benchmark_returns,
-        cumulative_wealth=cumulative_wealth,
-        benchmark_wealth=benchmark_wealth,
-        drawdown=drawdown,
-        benchmark_drawdown=benchmark_drawdown,
-        performance_summary=perf,
-        candidate_scores=candidate_scores,
-    )
- 
-    return backtest_res, frozen_state
 
 
 # =====================================================================
@@ -1125,6 +649,7 @@ def run_expanding_window_backtest(
         decision_log=decision_log,
         weights=weights_df,
         asset_returns=realized_asset_returns.loc[weights_df.index, all_assets].copy(),
+        risk_free_rate=allocation_df[hmm_cfg.rf_col].loc[weights_df.index],
         strategy_returns=strategy_returns,
         benchmark_returns=benchmark_returns,
         cumulative_wealth=cumulative_wealth,

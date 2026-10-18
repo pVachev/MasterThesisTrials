@@ -71,14 +71,15 @@ def rolling_windows(returns: pd.Series, n_months: int) -> pd.DataFrame:
     return df
 
 
-def horizon_sharpe(returns: pd.Series, n_months: int) -> pd.Series:
+def horizon_sharpe(returns: pd.Series, rf:pd.Series, n_months: int) -> pd.Series:
     r = returns.dropna()
     idx = r.index
     vals = []
     for i in range(len(r) - n_months + 1):
         w = r.iloc[i: i + n_months]
-        mu, sd = w.mean(), w.std(ddof=1)
-        vals.append((mu * 12) / (sd * np.sqrt(12)) if sd > 1e-12 else np.nan)
+        ex_r = w - rf.reindex(w.index)
+        ex_vol = ex_r.std(ddof=1)
+        vals.append((ex_r.mean() * 12) / (ex_vol * np.sqrt(12)) if ex_vol > 1e-12 else np.nan)
     return pd.Series(vals)
 
 
@@ -86,6 +87,7 @@ def analyze_run(run: dict) -> dict:
     """For one run: per-horizon paired (strategy, benchmark) rolling-window tables."""
     s = run["wd"]["strategy_return"]
     b = run["wd"]["benchmark_return"]
+    rf = run["wd"]["rf"]
     out = {}
     for hname, n in HORIZONS.items():
         ws = rolling_windows(s, n)
@@ -95,8 +97,8 @@ def analyze_run(run: dict) -> dict:
         merged["active_return"] = merged["total_return_strat"] - merged["total_return_bench"]
         merged["strat_beats_bench"] = merged["active_return"] > 0
         if hname in SHARPE_HORIZONS:
-            merged["sharpe_strat"] = horizon_sharpe(s, n).values
-            merged["sharpe_bench"] = horizon_sharpe(b, n).values
+            merged["sharpe_strat"] = horizon_sharpe(s, rf, n).values
+            merged["sharpe_bench"] = horizon_sharpe(b, rf, n).values
         out[hname] = merged
     return out
 

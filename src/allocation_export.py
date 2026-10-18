@@ -26,6 +26,7 @@ def _build_wealth_drawdown_table(backtest_res) -> pd.DataFrame:
     out["strategy_return"] = backtest_res.strategy_returns
     out["strategy_wealth"] = backtest_res.cumulative_wealth
     out["strategy_drawdown"] = backtest_res.drawdown
+    out["rf"] = backtest_res.risk_free_rate
 
     if backtest_res.benchmark_returns is not None:
         out["benchmark_return"] = backtest_res.benchmark_returns
@@ -34,6 +35,7 @@ def _build_wealth_drawdown_table(backtest_res) -> pd.DataFrame:
     if backtest_res.benchmark_drawdown is not None:
         out["benchmark_drawdown"] = backtest_res.benchmark_drawdown
 
+        
     return out
 
 

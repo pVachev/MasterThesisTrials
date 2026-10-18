@@ -100,7 +100,7 @@ def performance_summary_from_returns(
     avg_turnover: float | None = None,
     active_months: int | None = None,
     label: str = "strategy",
-    allocation_df: pd.Series | None = None,
+    allocation_df: pd.DataFrame| None = None,
     rf_col: str | None = None,
 ) -> pd.DataFrame:
     def _stats(r: pd.Series, name: str) -> dict[str, float | str]:
@@ -125,9 +125,9 @@ def performance_summary_from_returns(
         drawdown = wealth / running_max - 1.0
         max_dd = drawdown.min()
 
-        downside = max(allocation_df[rf_col] - r,0)**2 
+        downside = np.maximum(((allocation_df[rf_col] - r).dropna()),0)
 
-        downside_dev = downside.std(ddof=1) * np.sqrt(periods_per_year) if len(downside) > 1 else np.nan
+        downside_dev = np.sqrt((downside**2).mean()) * np.sqrt(periods_per_year) if len(downside) > 1 else np.nan
 
         return {
             "strategy": name,

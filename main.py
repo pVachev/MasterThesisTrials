@@ -56,8 +56,9 @@ HMM_CFG = GlobalRunConfig(
     rf_mode="simple_return_monthly_decimal",
     freq="ME",
     start_date="1999-01-31",
-    make_dashboard=True,
-    make_distribution_plots=True,
+    make_dashboard=False,
+    make_distribution_plots=False,
+    export_excel=True,
     end_date="2026-07-31",
     output_file="hmm_regime_results_monthly.xlsx",
 )
@@ -177,7 +178,7 @@ STORE_CANDIDATE_SCORES  = False
 RUN_EXPANDING_WINDOW    = True  # Full sensitivity grid
 EXPORT_EXPANDING_WINDOW = False
 
-ONLY_SLEEVE    = 0.20  # e.g. 0.45
+ONLY_SLEEVE    = 0.20 # e.g. 0.45
 ONLY_FLOOR     = 0.001   # e.g. 0.001
 ONLY_INVESTORS = ["MV"]  # e.g. ["MV", "MVS"]
 
@@ -402,7 +403,6 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
                 res_core=res_core,
                 allocation_df=allocation_df,
                 hmm_cfg=HMM_CFG,
-                rf_col = HMM_CFG.rf_col,
                 alloc_cfg=alloc_cfg_run,
                 investor_cfg=investor_cfg,
                 satellite_specs=SECTOR_SPECS,

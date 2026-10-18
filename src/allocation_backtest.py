@@ -100,8 +100,9 @@ def performance_summary_from_returns(
     avg_turnover: float | None = None,
     active_months: int | None = None,
     label: str = "strategy",
-    allocation_df: pd.DataFrame| None = None,
-    rf_col: str | None = None,
+    *,
+    allocation_df: pd.DataFrame,
+    rf_col: str,
 ) -> pd.DataFrame:
     def _stats(r: pd.Series, name: str) -> dict[str, float | str]:
         r = pd.to_numeric(r, errors="coerce").dropna()
@@ -116,16 +117,18 @@ def performance_summary_from_returns(
                 "Downside_Deviation": np.nan,
             }
 
+        rf = allocation_df[rf_col].reindex(r.index)
         wealth = (1.0 + r).cumprod()
         cagr = wealth.iloc[-1] ** (periods_per_year / len(r)) - 1.0
         vol = r.std(ddof=1) * np.sqrt(periods_per_year)
-        sharpe = (r.mean() * periods_per_year) / vol if vol > 0 else np.nan
+        sharpe = (r.mean() - rf.mean() * periods_per_year) / vol if vol > 0 else np.nan
 
         running_max = wealth.cummax()
         drawdown = wealth / running_max - 1.0
         max_dd = drawdown.min()
 
-        downside = np.maximum(((allocation_df[rf_col] - r).dropna()),0)
+
+        downside = np.maximum(((rf - r).dropna()),0)
 
         downside_dev = np.sqrt((downside**2).mean()) * np.sqrt(periods_per_year) if len(downside) > 1 else np.nan
 

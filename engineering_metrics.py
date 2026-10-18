@@ -67,7 +67,10 @@ def read_run(path):
     return dict(path=path, inv=inv, sleeve=sleeve, floor=floor, tcbps=tcbps, eq_only=eq_only, vol=vol_lab, kappa=kappa, hyb=hyb, hyb_var=hyb_var, corr=corr_lab,
                 core=core, srow=srow, brow=brow, wd=wd, ar=ar, dl=dl)
 
-def _funding(arr, eq_only, core):
+def _funding(arr, eq_only, core): # fix in post - low priority 
+    """
+    funding is currently wrong it needs to be fixed with a simple return
+    """
     if eq_only: return arr["^SP500TR"]
     return sum(core.get(t,0.0)*arr[t] for t in CORE_TICKERS)
 

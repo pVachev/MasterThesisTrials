@@ -7,8 +7,8 @@ from src.corr_core_split import predictive_bond_equity_corr, corr_adjusted_core_
 from src.vol_signal import effective_bear_probability
 
 from src.allocation_regime import (
-    _extract_filtered_probabilities_from_dfm,
-    _reorder_hmm_params,
+    extract_filtered_probabilities_from_dfm,
+    reorder_hmm_params,
 )
 
 from src.allocation_scoring import (
@@ -415,11 +415,11 @@ def run_expanding_window_backtest(
                     key_col=res_core.spec.key_col,
                 ).fit(df_m_train, out_train)
  
-                filtered_train = _extract_filtered_probabilities_from_dfm(
+                filtered_train = extract_filtered_probabilities_from_dfm(
                     pp.df_m, pp.regime_names
                 )
  
-                startprob, transmat, means, covars = _reorder_hmm_params(
+                startprob, transmat, means, covars = reorder_hmm_params(
                     model_train, pp.order_old, hmm_cfg.cov_type
                 )
  

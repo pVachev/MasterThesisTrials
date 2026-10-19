@@ -3,7 +3,7 @@ import pandas as pd
 
 
 
-def _extract_filtered_probabilities_from_dfm(df_m: pd.DataFrame, regime_names: list[str]) -> pd.DataFrame:
+def extract_filtered_probabilities_from_dfm(df_m: pd.DataFrame, regime_names: list[str]) -> pd.DataFrame:
     prob_cols = [c for c in df_m.columns if c.startswith("p_state")]
     if not prob_cols:
         raise ValueError("No p_state* columns found in df_m.")
@@ -15,7 +15,7 @@ def _extract_filtered_probabilities_from_dfm(df_m: pd.DataFrame, regime_names: l
     return probs
 
 
-def _reorder_hmm_params(model, order_old: list[int], covariance_type: str):
+def reorder_hmm_params(model, order_old: list[int], covariance_type: str):
     """
     Reorder frozen HMM parameters into the postprocessed regime order.
     """

@@ -125,7 +125,7 @@ def enumerate_candidate_tilts(satellite_specs: list, alloc_cfg) -> list[dict[str
 
 
 
-def build_candidate_library_from_train( # A1 MODEL -> DEPRECATED
+def build_candidate_library_from_train( 
     state_series_train: pd.Series,
     regime_names: list[str],
     allocation_df_train: pd.DataFrame,

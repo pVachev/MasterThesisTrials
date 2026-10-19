@@ -77,17 +77,17 @@ INVESTOR_CONFIGS = {
     ),
     "MVS_cons": InvestorPreferenceConfig(
         name="MVS Investor (conservative)", investor_type="MVS",
-        lambda_=3.0, gamma=0.000431,  # 15% × 3.0 × 0.000672 / 0.7014 
+        lambda_=3.0, gamma=0.00051395,  
     ),
     "MVS": InvestorPreferenceConfig(
         name="MVS Investor", investor_type="MVS",
-        lambda_=3.0, gamma=0.000574,  # 20% × 3.0 × 0.000672 / 0.7014 
+        lambda_=3.0, gamma=0.00068526,  # 20% × 3.0 × 0.000672 / 0.7014 
     ),
     "MVK": InvestorPreferenceConfig(
         name="MVK Investor", investor_type="MVK",
         lambda_=3.0,
         gamma=0.0,   # no skewness term within the mean-variance-kurtosis investor preference
-        delta=0.000207,   # 20% × 3.0 × 0.000672 / 1.9482 
+        delta=0.00023824,   # 20% × 3.0 × 0.000672 / 1.9482 
     ),
 }
 
@@ -149,29 +149,29 @@ CORR_BLEND_W   = 0.5
 CORR_LAMBDA    = 0.2
 
 SENSITIVITY_GRID = [
-    {"sleeve": 0.20, "floor": 0.001},
-    {"sleeve": 0.20, "floor": 0.002},
-    {"sleeve": 0.25, "floor": 0.001},
-    {"sleeve": 0.25, "floor": 0.002},
+    # {"sleeve": 0.20, "floor": 0.001},
+    # {"sleeve": 0.20, "floor": 0.002},
+    # {"sleeve": 0.25, "floor": 0.001},
+    # {"sleeve": 0.25, "floor": 0.002},
     {"sleeve": 0.30, "floor": 0.001},
-    {"sleeve": 0.30, "floor": 0.002},
-    {"sleeve": 0.35, "floor": 0.001},
+    # {"sleeve": 0.30, "floor": 0.002},
+    # {"sleeve": 0.35, "floor": 0.001},
     {"sleeve": 0.35, "floor": 0.002},
-    {"sleeve": 0.40, "floor": 0.001},
-    {"sleeve": 0.40, "floor": 0.002},
-    {"sleeve": 0.45, "floor": 0.001},
-    {"sleeve": 0.45, "floor": 0.002},
-    {"sleeve": 0.50, "floor": 0.001},
-    {"sleeve": 0.50, "floor": 0.002},
+    # {"sleeve": 0.40, "floor": 0.001},
+    # {"sleeve": 0.40, "floor": 0.002},
+    # {"sleeve": 0.45, "floor": 0.001},
+    # {"sleeve": 0.45, "floor": 0.002},
+    # {"sleeve": 0.50, "floor": 0.001},
+    # {"sleeve": 0.50, "floor": 0.002},
 ]
 
 
 # ── Run flags ──────────────────────────────────────────────────────────────
 
-RUN_EXPANDING_WINDOW    = True  # Full sensitivity grid
+RUN_EXPANDING_WINDOW    = True # Full sensitivity grid
 EXPORT_EXPANDING_WINDOW = True
 
-ONLY_SLEEVE    = 0.30 # e.g. 0.45
+ONLY_SLEEVE    = None # e.g. 0.45
 ONLY_FLOOR     = 0.001   # e.g. 0.001
 ONLY_INVESTORS = None  # e.g. ["MV", "MVS"]
 
@@ -226,8 +226,7 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
       - Both regime signal and satellite moments update recursively
       - Fixes the stale-moment problem of the expanding window
     """
-    if not RUN_EXPANDING_WINDOW:
-        return
+
 
     res_core = next(r for r in results if r.spec.code == CORE_MODEL_CODE)
     satellite_tickers = [s.ticker for s in SECTOR_SPECS]
@@ -236,6 +235,25 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
         df, cols=allocation_cols, rf_col=HMM_CFG.rf_col,
         monthly_cols=M_TICKERS, rf_mode=HMM_CFG.rf_mode, freq=HMM_CFG.freq,
     )
+    simple_returns = (np.expm1(allocation_df["ExcessLog^SP500TR"]) * 0.6) + \
+    (np.expm1(allocation_df["ExcessLogLT09TRUU"]) * 0.4) 
+
+    simple_returns = sum(w * np.expm1(allocation_df[f"ExcessLog{t}"]) for t, w in BENCHMARK_WEIGHTS.items())
+
+    simple_returns = simple_returns.loc["2004-02-29":]
+
+    calibrations = calibrate_investor_params(simple_returns)
+
+    "{'lambda_': 3.0, 'gamma': np.float64(0.00068526), 'delta': np.float64(0.00023824)}" # .loc["2004-02-29":]
+
+    "{'lambda_': 3.0, 'gamma': np.float64(0.00090565), 'delta': np.float64(0.00038915)}" # since the start a.k,a 1999 
+
+
+
+    if not RUN_EXPANDING_WINDOW:
+        print(calibrations)
+        return                   
+
 
     ew_cfg = ExpandingWindowConfig(
         burn_in_periods=60,
@@ -348,6 +366,7 @@ def main():
     df = clean_data(TICKERS_ALL, M_TICKERS, W_TICKERS)
     results = run_hmm_models(df)
     run_sensitivity_grid(results, df)
+    
 
 
 if __name__ == "__main__":

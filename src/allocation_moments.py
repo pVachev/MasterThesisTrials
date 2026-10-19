@@ -291,7 +291,7 @@ def estimate_state_conditional_portfolio_moments_from_sample(
 def calibrate_investor_params(
     benchmark_returns: pd.Series,
     lambda_: float = 3.0,
-    skewness_target_pct: float = 0.20,
+    skewness_target_pct: float = 0.15,
     kurtosis_target_pct: float = 0.20,
 ) -> dict:
     """
@@ -313,6 +313,6 @@ def calibrate_investor_params(
     ekurt = abs(stats.kurtosis(benchmark_returns, fisher=True))
     return {
         "lambda_": lambda_,
-        "gamma":   round(skewness_target_pct * lambda_ * var / skew, 6),
-        "delta":   round(kurtosis_target_pct * lambda_ * var / ekurt, 6),
+        "gamma":   round(skewness_target_pct * lambda_ * var / skew, 8),
+        "delta":   round(kurtosis_target_pct * lambda_ * var / ekurt, 8),
     }

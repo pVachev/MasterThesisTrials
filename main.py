@@ -91,6 +91,13 @@ INVESTOR_CONFIGS = {
     ),
 }
 
+# Decided to use the starting of the backtest for consistency. 
+# Robusntess check in the paper shows that calibration parameters and their differences 
+# have little impact on the results. 
+
+"{'lambda_': 3.0, 'gamma': np.float64(0.00068526), gamma15pct: 0.00051395 'delta': np.float64(0.00023824)}" # .loc["2004-02-29":]
+
+
 SECTOR_WEIGHTS = [0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50]
 
 SECTOR_SPECS = [
@@ -153,15 +160,15 @@ SENSITIVITY_GRID = [
     # {"sleeve": 0.20, "floor": 0.002},
     # {"sleeve": 0.25, "floor": 0.001},
     # {"sleeve": 0.25, "floor": 0.002},
-    {"sleeve": 0.30, "floor": 0.001},
+    # {"sleeve": 0.30, "floor": 0.001},
     # {"sleeve": 0.30, "floor": 0.002},
     # {"sleeve": 0.35, "floor": 0.001},
-    {"sleeve": 0.35, "floor": 0.002},
-    # {"sleeve": 0.40, "floor": 0.001},
+    # {"sleeve": 0.35, "floor": 0.002},
+    {"sleeve": 0.40, "floor": 0.001},
     # {"sleeve": 0.40, "floor": 0.002},
-    # {"sleeve": 0.45, "floor": 0.001},
+    {"sleeve": 0.45, "floor": 0.001},
     # {"sleeve": 0.45, "floor": 0.002},
-    # {"sleeve": 0.50, "floor": 0.001},
+    {"sleeve": 0.50, "floor": 0.001},
     # {"sleeve": 0.50, "floor": 0.002},
 ]
 
@@ -244,9 +251,9 @@ def run_sensitivity_grid(results: list, df: pd.DataFrame) -> None:
 
     calibrations = calibrate_investor_params(simple_returns)
 
-    "{'lambda_': 3.0, 'gamma': np.float64(0.00068526), 'delta': np.float64(0.00023824)}" # .loc["2004-02-29":]
+    "{'lambda_': 3.0, 'gamma': np.float64(0.00068526), gamma15pct: 0.00051395 'delta': np.float64(0.00023824)}" # .loc["2004-02-29":]
 
-    "{'lambda_': 3.0, 'gamma': np.float64(0.00090565), 'delta': np.float64(0.00038915)}" # since the start a.k,a 1999 
+    "{'lambda_': 3.0, 'gamma': np.float64(0.00090565), gamma15pct: 0.00067923 'delta': np.float64(0.00038915)}" # since the start a.k,a 1999 
 
 
 

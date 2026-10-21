@@ -94,9 +94,8 @@ class InvestorPreferenceConfig:
     # Preference parameters — calibrated from benchmark unconditional moments
     # via calibrate_investor_params(). See docstring above.
     lambda_: float = 3.0
-    gamma: float   = 0.000574
-    delta: float   = 0.000207
-
+    gamma: float   = 0.0
+    delta: float   = 0.0
 
 
 
